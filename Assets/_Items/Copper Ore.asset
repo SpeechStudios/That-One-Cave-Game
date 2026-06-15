@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fed75455a645c4f4fa2fc680ebf2deda, type: 3}
+  m_Name: Copper Ore
+  m_EditorClassIdentifier: Assembly-CSharp::Item
+  ID: 3
+  Name: Copper Ore
+  MaxStackSize: 1
+  Icon: {fileID: 21300000, guid: 5b84b92a2b1e77544bffd5fd973c4f9b, type: 3}
+  WorldItemPrefab: {fileID: 1427971128060797199, guid: f016f42aa72629644beb8ee9bcecb5b8, type: 3}
+  EquipPrefab: {fileID: 0}
+  ItemSlotType: 0
+  ItemType: 0
+  Damage: 0
+  Accuracy: 0
+  ProjectileSpeed: 0
+  RecoveryTime: 0
+  ChargeTime: 0
+  SwingSpeed: 0
+  RequiresAmmo: 0
+  ResourceType: 1
+  MaterialType: 7

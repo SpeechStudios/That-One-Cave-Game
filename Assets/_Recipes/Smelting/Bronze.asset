@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0bc4ebd5e742c84f9ed25576d54cc7f, type: 3}
+  m_Name: Bronze
+  m_EditorClassIdentifier: Assembly-CSharp::SmeltingRecipe
+  ID: 0
+  Resource1: 7
+  Resource2: 8
+  SmeltingOutcome: {fileID: 11400000, guid: 756df4a4328b4e64eacbfa9adcdd2e16, type: 2}
+  OutcomeQuantity: 2
+  SmeltingTime: 6
