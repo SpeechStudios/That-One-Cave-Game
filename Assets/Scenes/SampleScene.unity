@@ -3213,7 +3213,7 @@ Camera:
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 1975
+    m_Bits: 1983
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -22161,7 +22161,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5647138932229540258, guid: b01469161b803c24e98a7847d012a7ca, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: -15
       objectReference: {fileID: 0}
     - target: {fileID: 5647138932229540258, guid: b01469161b803c24e98a7847d012a7ca, type: 3}
       propertyPath: m_LocalPosition.y
@@ -22203,13 +22203,17 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree
       objectReference: {fileID: 0}
+    - target: {fileID: 7554747567308520618, guid: b01469161b803c24e98a7847d012a7ca, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7573034261917423889, guid: b01469161b803c24e98a7847d012a7ca, type: 3}
       propertyPath: SceneId
       value: 2079252315
       objectReference: {fileID: 0}
     - target: {fileID: 7573034261917423889, guid: b01469161b803c24e98a7847d012a7ca, type: 3}
       propertyPath: WasActiveDuringEdit
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

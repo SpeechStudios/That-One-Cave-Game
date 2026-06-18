@@ -1,5 +1,7 @@
 ﻿using FishNet.Connection;
 using FishNet.Object;
+using FishNet.Object.Prediction;
+using FishNet.Transporting;
 using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
@@ -8,7 +10,61 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(CharacterController))]
 public class PlayerControllerModule : NetworkBehaviour
 {
-    [HideInInspector] public Controls PlayerInput;
+    public struct ReplicationData : IReplicateData
+    {
+        public readonly Vector2 MoveInput;
+        public readonly float LookYaw;
+        public readonly bool Jump;
+        private uint Tick;
+
+        public ReplicationData(Vector2 moveInput, float lookYaw, bool jump)
+        {
+            MoveInput = moveInput;
+            LookYaw = lookYaw;
+            Jump = jump;
+            Tick = 0;
+        }
+        public readonly uint GetTick() => Tick;
+        public void SetTick(uint value) => Tick = value;
+        public void Dispose(){}
+    }
+    public struct ReconciliationData : IReconcileData
+    {
+        public readonly Vector3 Position;
+        public readonly Vector3 Velocity;
+        public readonly bool IsGrounded;
+        public readonly bool WasGrounded;
+        public readonly bool HasJumpedOnce;
+        public readonly bool WishJump;
+        public readonly float WishJumpTimer;
+        public readonly float PerfectJumpAcceleration;
+        public readonly float LookYaw;
+        private uint Tick;
+
+        public ReconciliationData(Vector3 position, Vector3 velocity,
+            bool isGrounded, bool wasGrounded, bool hasJumpedOnce,
+            bool wishJump, float wishJumpTimer, float perfectJumpAccel, float lookYaw)
+        {
+            Position = position;
+            Velocity = velocity;
+            LookYaw = lookYaw;
+            IsGrounded = isGrounded;
+            WasGrounded = wasGrounded;
+            HasJumpedOnce = hasJumpedOnce;
+            WishJump = wishJump;
+            WishJumpTimer = wishJumpTimer;
+            PerfectJumpAcceleration = perfectJumpAccel;
+            Tick = 0;
+        }
+        public readonly uint GetTick() => Tick;
+        public void SetTick(uint value) => Tick = value;
+        public void Dispose() { }
+    }
+
+    [Header("Transform Components")]
+    [SerializeField] private CharacterController CC;
+    [SerializeField] private Transform CameraParent;
+    [SerializeField] private GameObject TPRoot;
 
     [Header("Movement")]
     public float RunSpeed = 7.5f;
@@ -19,33 +75,38 @@ public class PlayerControllerModule : NetworkBehaviour
     public float Gravity = 20f;
     public float JumpHeight = 1.5f;
 
+    [Header("Grounded")]
+    public LayerMask GroundLayers;
+    public float SphereCastRadius = 0.2f;
+    public float SphereCastDownPosition = 0.9f;
+    private readonly Collider[] _groundCheckResults = new Collider[8];
+
     [Header("Perfect Jump")]
     public float PerfectJumpSpeedBonus = 2f;
     public float PerfectJumpMaxSpeed = 10f;
     public float PerfectJumpAcceleration = 10f;
-    public float PerfectJumpDecceleration = 60f;
+    public float PerfectJumpDeceleration = 60f;
     public float PerfectJumpThreshold = 0.15f;
-
-    private float PerfectJumpCurrentAccelleration = 0f;
-    private bool WasGrounded = true;
-    private bool HasJumpedOnce = false;
 
     [Header("Look")]
     public float LookSensitivity = 0.2f;
     public float LookYLimit = 85f;
 
-    [Header("Transform Components")]
-    [SerializeField] private Transform Body;
-    [SerializeField] private Transform HeadPivot;
-    [SerializeField] private Transform CameraParent;
-    [SerializeField] private GameObject TPRoot;
+    private float PerfectJumpCurrentAcceleration = 0f;
+    private bool WasGrounded = true;
+    private bool PerfectJumpComplete = false;
 
-    private CharacterController CC;
     private Camera PlayerCamera;
+
+    [HideInInspector] public Controls PlayerInput;
+    private Vector2 MoveInput;
+    private bool JumpInput;
+    private float YawInput;
+    private float PitchInput;
+    private bool IsGrounded;
 
     private float LookYaw;
     private float LookPitch;
-    private quaternion TargetRotation;
     private Vector3 Velocity;
 
     private bool WishJump = false;
@@ -54,7 +115,6 @@ public class PlayerControllerModule : NetworkBehaviour
 
     [HideInInspector] public bool CanMove = false;
     [HideInInspector] public bool CanSprint = false;
-
     public void Init()
     {
         TPRoot.SetActive(false);
@@ -62,7 +122,7 @@ public class PlayerControllerModule : NetworkBehaviour
         PlayerCamera.transform.SetPositionAndRotation(CameraParent.transform.position, CameraParent.transform.rotation);
         PlayerCamera.transform.SetParent(CameraParent.transform);
 
-        CC = GetComponent<CharacterController>();
+
         PlayerInput = new Controls();
         PlayerInput.Enable();
         PlayerInput.UI.Enable();
@@ -71,54 +131,115 @@ public class PlayerControllerModule : NetworkBehaviour
         Cursor.visible = false;
         CanMove = true;
     }
+    public override void OnStartNetwork()
+    {
+        TimeManager.OnTick += TimeManagerTickEventHandler;
+        TimeManager.OnPostTick += TimeManagerPostTickEventHandler;
+    }
+    public override void OnStopNetwork()
+    {
+        TimeManager.OnTick -= TimeManagerTickEventHandler;
+        TimeManager.OnPostTick -= TimeManagerPostTickEventHandler;
+    }
+    private void TimeManagerTickEventHandler()
+    {
+        if(IsOwner)
+        {
+            ReplicationData data = new(MoveInput, LookYaw, JumpInput);
+            Replicate(data);
+            JumpInput = false;
+        }
+        else
+        {
+            Replicate(default);
+        }
+    }
+    private void TimeManagerPostTickEventHandler()
+    {
+        CreateReconcile();
+    }
+
+    [Replicate]
+    private void Replicate(ReplicationData data, ReplicateState state = ReplicateState.Invalid, Channel channel = Channel.Unreliable)
+    {
+        UpdateRotation(data.LookYaw);
+        UpdatePosition(data.MoveInput, data.Jump, (float)TimeManager.TickDelta);
+    }
+    public override void CreateReconcile()
+    {
+        ReconciliationData data = new(transform.position, Velocity, IsGrounded, WasGrounded, PerfectJumpComplete, WishJump, WishJumpTimer, PerfectJumpCurrentAcceleration, LookYaw);
+        Reconcile(data);
+    }
+    [Reconcile]
+    private void Reconcile(ReconciliationData data, Channel channel = Channel.Unreliable)
+    {
+        CC.enabled = false;
+        transform.SetPositionAndRotation(data.Position, quaternion.RotateY(LookYaw));
+        CC.enabled = true;
+
+        Velocity = data.Velocity;
+
+        IsGrounded = data.IsGrounded;
+        WasGrounded = data.WasGrounded;
+        PerfectJumpComplete = data.HasJumpedOnce;
+        WishJump = data.WishJump;
+        WishJumpTimer = data.WishJumpTimer;
+        PerfectJumpCurrentAcceleration = data.PerfectJumpAcceleration;
+    }
 
     private void Update()
     {
         if (!CanMove) return;
 
-        float dt = Time.deltaTime;
-        if(PlayerCamera!=null && !Cursor.visible)
+        if (PlayerCamera != null && !Cursor.visible)
         {
-            UpdateCamera(dt);
+            SetLookInputs();
+            SetCameraRotation();
         }
         if (CC.enabled)
         {
-            UpdateMovement(dt);
+            SetMoveInputs();
         }
     }
-
-    private void UpdateCamera(float dt)
+    private void SetLookInputs()
     {
-        Vector2 lookInput = PlayerInput.Player.Look.ReadValue<Vector2>();
-        LookYaw += lookInput.x * LookSensitivity * dt;
-        LookPitch -= lookInput.y * LookSensitivity * dt;
-        LookPitch = math.clamp(LookPitch, -math.radians(LookYLimit), math.radians(LookYLimit));
-        quaternion yawRotation = quaternion.RotateY(LookYaw);
-        quaternion pitchRotation = quaternion.RotateX(LookPitch);
-        TargetRotation = math.mul(yawRotation, pitchRotation);
-        CameraParent.transform.rotation = TargetRotation;
-
-        quaternion yRotation = quaternion.RotateY(LookYaw);
-        HeadPivot.rotation = yRotation;
-        Body.rotation = yRotation;
+        Vector2 lookinput = PlayerInput.Player.Look.ReadValue<Vector2>();
+        YawInput = lookinput.x;
+        PitchInput = lookinput.y;
+        LookYaw += YawInput * LookSensitivity * Time.deltaTime;
     }
-    private void UpdateMovement(float dt)
+    private void SetCameraRotation()
     {
-        Vector2 moveInput = PlayerInput.Player.Move.ReadValue<Vector2>();
-        bool sprint = CanSprint && PlayerInput.Player.Sprint.IsPressed();
-        float wishSpeed = sprint ? SprintSpeed : RunSpeed;
+        LookPitch -= PitchInput * LookSensitivity * Time.deltaTime;
+        LookPitch = math.clamp(LookPitch, -math.radians(LookYLimit), math.radians(LookYLimit));
+        CameraParent.localRotation = quaternion.RotateX(LookPitch);
+    }
+    private void SetMoveInputs()
+    {
+        MoveInput = PlayerInput.Player.Move.ReadValue<Vector2>();
+        if (PlayerInput.Player.Jump.WasPressedThisFrame())
+        {
+            JumpInput = true;
+        }
+    }
+    private void UpdateRotation(float lookYaw)
+    {
+        transform.rotation = quaternion.RotateY(lookYaw);
+    }
+    private void UpdatePosition(Vector2 moveInput, bool jump, float dt)
+    {
+        float wishSpeed = RunSpeed;
 
-        SetWishJump(PlayerInput.Player.Jump.WasPressedThisFrame(), ref WishJump, ref WishJumpTimer, WishJumpTime, dt);
+        SetWishJump(jump, ref WishJump, ref WishJumpTimer, WishJumpTime, dt);
 
-        bool isGrounded = CC.isGrounded;
+        bool isGrounded = IsGrounded;
         bool justLanded = isGrounded && !WasGrounded;
 
         Vector3 wishDir = GetWishDirection(moveInput);
         Vector3 horizontal = new(Velocity.x, 0f, Velocity.z);
 
-        // Determine effective cap and acceleration before clamping
-        bool hasPerfectJumpBoost = PerfectJumpCurrentAccelleration > 0f;
-        float effectiveCap = wishSpeed + PerfectJumpCurrentAccelleration;
+        bool hasPerfectJumpBoost = PerfectJumpCurrentAcceleration > 0f;
+        float effectiveCap = wishSpeed + PerfectJumpCurrentAcceleration;
         float effectiveAccel = hasPerfectJumpBoost ? PerfectJumpAcceleration : GroundAcceleration;
 
         if (horizontal.magnitude > effectiveCap)
@@ -137,30 +258,30 @@ public class PlayerControllerModule : NetworkBehaviour
         float vertY = Velocity.y;
         vertY = ApplyGravity(vertY, isGrounded, dt);
 
-        bool nearGround = Physics.Raycast(transform.position - new Vector3(0,CC.height /2), Vector3.down, PerfectJumpThreshold);
-        Debug.DrawRay(transform.position - new Vector3(0, CC.height / 2), Vector3.down * PerfectJumpThreshold, nearGround ? Color.green : Color.red);
-        bool isPerfectJump = justLanded && WishJump && horizontal.magnitude > 0.1f && nearGround && HasJumpedOnce;
+        bool nearGround = Physics.Raycast(transform.position - new Vector3(0, CC.height / 2), Vector3.down, PerfectJumpThreshold);
+        bool isPerfectJump = justLanded && WishJump && horizontal.magnitude > 0.1f && nearGround && PerfectJumpComplete;
 
         if (isPerfectJump)
-        {
-            PerfectJumpCurrentAccelleration = Mathf.Min(PerfectJumpCurrentAccelleration + PerfectJumpSpeedBonus, PerfectJumpMaxSpeed - wishSpeed);
-        }
+            PerfectJumpCurrentAcceleration = Mathf.Min(PerfectJumpCurrentAcceleration + PerfectJumpSpeedBonus, PerfectJumpMaxSpeed - wishSpeed);
         else if (justLanded && !WishJump)
-        {
-            HasJumpedOnce = false;
-            PerfectJumpCurrentAccelleration = Mathf.Max(0f, PerfectJumpCurrentAccelleration - PerfectJumpSpeedBonus / PerfectJumpDecceleration);
-        }
+            PerfectJumpComplete = false;
 
-        vertY = TryJump(vertY, ref WishJump, isGrounded);
+        if(!isPerfectJump && isGrounded)
+            PerfectJumpCurrentAcceleration = Mathf.Max(0f, PerfectJumpCurrentAcceleration - PerfectJumpSpeedBonus / PerfectJumpDeceleration);
+
+        bool didJump = TryJump(ref vertY, ref WishJump, isGrounded);
 
         Velocity = new Vector3(horizontal.x, vertY, horizontal.z);
         CC.Move(Velocity * dt);
 
+
+        IsGrounded = !didJump && CheckGrounded();
         WasGrounded = isGrounded;
     }
+
     private Vector3 GetWishDirection(Vector2 moveInput)
     {
-        Vector3 forward = Body.TransformDirection(Vector3.forward);
+        Vector3 forward = transform.forward;//transform.TransformDirection(Vector3.forward);
         forward.y = 0f;
         if (forward.sqrMagnitude > 0.001f) forward.Normalize();
 
@@ -206,14 +327,30 @@ public class PlayerControllerModule : NetworkBehaviour
             }
         }
     }
-    private float TryJump(float vertY, ref bool jumpPressed, bool isGrounded)
+    private bool TryJump(ref float vertY, ref bool jumpPressed, bool isGrounded)
     {
         if (jumpPressed && isGrounded)
         {
             jumpPressed = false;
-            HasJumpedOnce = true;
-            return Mathf.Sqrt(2f * Gravity * JumpHeight);
+            PerfectJumpComplete = true;
+            vertY = Mathf.Sqrt(2f * Gravity * JumpHeight);
+            return true;
         }
-        return vertY;
+        return false;
+    }
+    private bool CheckGrounded()
+    {
+        Vector3 spherePosition = transform.position + Vector3.down * SphereCastDownPosition;
+        return Physics.OverlapSphereNonAlloc(spherePosition, SphereCastRadius, _groundCheckResults, GroundLayers, QueryTriggerInteraction.Ignore) > 0;
+        /*
+        for (int i = 0; i < count; i++)
+        {
+            Collider col = _groundCheckResults[i];
+            if (col == null) continue;
+            if (col.transform == transform || col.transform.IsChildOf(transform)) continue;
+            return true;
+        }
+        return false;
+        */
     }
 }
