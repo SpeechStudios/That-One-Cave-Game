@@ -18,7 +18,7 @@ public enum MaterialType
     Birch,
     Oak,
     Ash,
-    Phatnom,
+    Phantom,
     Mantium,
     Swift,
 

@@ -14276,6 +14276,7 @@ MonoBehaviour:
   StartingItems:
   - {fileID: 11400000, guid: aa2ca78c49ca9404495649ffaffc9331, type: 2}
   - {fileID: 11400000, guid: fde311513ceac1a48b05ccc26762901b, type: 2}
+  - {fileID: 11400000, guid: f9dbb13172a85b845ae8b16acb139b6d, type: 2}
   ItemList:
   - {fileID: 11400000, guid: aa2ca78c49ca9404495649ffaffc9331, type: 2}
   - {fileID: 11400000, guid: fde311513ceac1a48b05ccc26762901b, type: 2}
@@ -14283,6 +14284,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: bcc36b20cd3b83947a8da4d84f4f2753, type: 2}
   - {fileID: 11400000, guid: 976c13cb4f57ecc409016a7379bcb10e, type: 2}
   - {fileID: 11400000, guid: 756df4a4328b4e64eacbfa9adcdd2e16, type: 2}
+  - {fileID: 11400000, guid: f9dbb13172a85b845ae8b16acb139b6d, type: 2}
   CraftingRecipeList:
   - {fileID: 11400000, guid: 148d27215640b454b822cab8e3e4e73f, type: 2}
   - {fileID: 11400000, guid: 204a4c43685362245aaa1f2b495ee187, type: 2}
@@ -22161,7 +22163,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5647138932229540258, guid: b01469161b803c24e98a7847d012a7ca, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -15
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5647138932229540258, guid: b01469161b803c24e98a7847d012a7ca, type: 3}
       propertyPath: m_LocalPosition.y
@@ -22205,7 +22207,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7554747567308520618, guid: b01469161b803c24e98a7847d012a7ca, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7573034261917423889, guid: b01469161b803c24e98a7847d012a7ca, type: 3}
       propertyPath: SceneId
@@ -24570,6 +24572,7 @@ GameObject:
   - component: {fileID: 7443408887499563346}
   - component: {fileID: 7443408887499563347}
   - component: {fileID: 7443408887499563348}
+  - component: {fileID: 7443408887499563349}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -24727,6 +24730,23 @@ MonoBehaviour:
   _tickRate: 30
   _pingInterval: 1
   _physicsMode: 1
+--- !u!114 &7443408887499563349
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7443408887499563328}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b185516acd802904383e2a5f1a666750, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FishNet.Runtime::FishNet.Component.ColliderRollback.RollbackManager
+  _boundingBoxLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  _maximumRollbackTime: 1.25
+  Interpolation: 2
 --- !u!222 &7480014453194632841
 CanvasRenderer:
   m_ObjectHideFlags: 0

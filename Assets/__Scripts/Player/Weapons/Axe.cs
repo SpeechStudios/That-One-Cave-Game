@@ -9,8 +9,9 @@ public class Axe : Weapon
     private float Range = 5f;
 
 
-    public override void Attack(PlayerLoadoutModule loadout, Camera cam)
+    public override void AttackRequest()
     {
+        /*
         if (!CanAttack)
             return;
 
@@ -25,6 +26,7 @@ public class Axe : Weapon
         }
 
         // Start cooldown
-        loadout.StartWeaponCooldown(this);
+        Loadout.StartWeaponCooldown(this);
+        */
     }
 }

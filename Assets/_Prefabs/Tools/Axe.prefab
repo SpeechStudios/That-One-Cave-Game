@@ -26,13 +26,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2726804983319893828}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0.02, y: 0.1, z: -0.1}
-  m_LocalScale: {x: 1.2, y: 1.2, z: 1}
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3022800812151104596}
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!33 &3364079512397256920
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -102,7 +102,6 @@ GameObject:
   - component: {fileID: 7555949746550905514}
   - component: {fileID: 6320778673051009488}
   - component: {fileID: 6829134068657762296}
-  - component: {fileID: -4612393150496360793}
   m_Layer: 0
   m_Name: Axe
   m_TagString: Untagged
@@ -172,7 +171,7 @@ MonoBehaviour:
   <PredictedSpawn>k__BackingField: {fileID: 0}
   <PredictedOwner>k__BackingField: {fileID: 0}
   NetworkBehaviours:
-  - {fileID: -4612393150496360793}
+  - {fileID: 0}
   InitializedParentNetworkBehaviour: {fileID: 0}
   InitializedNestedNetworkObjects: []
   RuntimeParentNetworkBehaviour: {fileID: 0}
@@ -212,6 +211,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 824f503b0d8428749b9eef2e0bc03f96, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Axe
+  _componentIndexCache: 255
+  _addedNetworkObject: {fileID: 7555949746550905514}
+  _networkObjectCache: {fileID: 0}
   IsMainHand: 0
   IsTwoHanded: 0
   AttackCooldown: 1
@@ -219,18 +221,3 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 512
   MaxDamage: 7
---- !u!114 &-4612393150496360793
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9085365382996255321}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8a6a39c46bf52104ba8efe3100bce3f7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FishNet.Runtime::FishNet.Object.EmptyNetworkBehaviour
-  _componentIndexCache: 0
-  _addedNetworkObject: {fileID: 7555949746550905514}
-  _networkObjectCache: {fileID: 7555949746550905514}

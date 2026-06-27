@@ -26,13 +26,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6363424619891696730}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 100, y: 100, z: 100}
+  m_LocalRotation: {x: -0.5, y: 0.5, z: 0.5, w: 0.5}
+  m_LocalPosition: {x: 0, y: 0.3, z: 0}
+  m_LocalScale: {x: 70, y: 70, z: 70}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 9182647560065902523}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -90, y: 90, z: 0}
 --- !u!33 &7254005715434598725
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -102,7 +102,6 @@ GameObject:
   - component: {fileID: -620494512046127655}
   - component: {fileID: 5300949189740302533}
   - component: {fileID: -3371887044759353373}
-  - component: {fileID: -5377789809531528966}
   m_Layer: 0
   m_Name: Pickaxe
   m_TagString: Untagged
@@ -166,13 +165,13 @@ MonoBehaviour:
     Scale: {x: 1, y: 1, z: 1}
     IsValid: 1
   <IsNested>k__BackingField: 0
-  WasActiveDuringEdit: 0
+  WasActiveDuringEdit: 1
   WasActiveDuringEdit_Set1: 1
   <ComponentIndex>k__BackingField: 0
   <PredictedSpawn>k__BackingField: {fileID: 0}
   <PredictedOwner>k__BackingField: {fileID: 0}
   NetworkBehaviours:
-  - {fileID: -5377789809531528966}
+  - {fileID: 0}
   InitializedParentNetworkBehaviour: {fileID: 0}
   InitializedNestedNetworkObjects: []
   RuntimeParentNetworkBehaviour: {fileID: 0}
@@ -212,6 +211,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d716021b045fe940afee29362183eed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Pickaxe
+  _componentIndexCache: 255
+  _addedNetworkObject: {fileID: -620494512046127655}
+  _networkObjectCache: {fileID: 0}
   IsMainHand: 0
   IsTwoHanded: 0
   AttackCooldown: 1
@@ -220,18 +222,3 @@ MonoBehaviour:
     m_Bits: 128
   MaxDamage: 7
   MinCooldown: 1
---- !u!114 &-5377789809531528966
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8368956812034424065}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8a6a39c46bf52104ba8efe3100bce3f7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FishNet.Runtime::FishNet.Object.EmptyNetworkBehaviour
-  _componentIndexCache: 0
-  _addedNetworkObject: {fileID: -620494512046127655}
-  _networkObjectCache: {fileID: -620494512046127655}

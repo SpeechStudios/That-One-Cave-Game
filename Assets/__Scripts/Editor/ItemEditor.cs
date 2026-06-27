@@ -140,7 +140,7 @@ public class ItemEditor : Editor
                     MaterialType.Birch,
                     MaterialType.Oak,
                     MaterialType.Ash,
-                    MaterialType.Phatnom,
+                    MaterialType.Phantom,
                     MaterialType.Mantium,
                     MaterialType.Swift
                 };

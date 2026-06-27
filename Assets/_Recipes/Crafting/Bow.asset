@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CraftingRecipe
   ID: 0
   Components:
-  - ResourceType: 1
+  - ResourceType: 3
     RequiredQuantity: 1
   - ResourceType: 1
     RequiredQuantity: 1
-  CraftedOutcome: {fileID: 11400000, guid: aa2ca78c49ca9404495649ffaffc9331, type: 2}
+  CraftedOutcome: {fileID: 11400000, guid: f9dbb13172a85b845ae8b16acb139b6d, type: 2}
   CraftedOutcomeQuantity: 1

@@ -8,8 +8,9 @@ public class Pickaxe : Weapon
     [SerializeField] private float MaxDamage = 50f;
     [SerializeField] private float MinCooldown = 0.3f;
     private float Range = 5f;
-    public override void Attack(PlayerLoadoutModule loadout, Camera cam)
+    public override void AttackRequest()
     {
+        /*
         if (!CanAttack)
             return;
 
@@ -23,5 +24,6 @@ public class Pickaxe : Weapon
             ore.Server_DamageOre_RPC(MaxDamage);
         }
         loadout.StartWeaponCooldown(this);
+        */
     }
 }

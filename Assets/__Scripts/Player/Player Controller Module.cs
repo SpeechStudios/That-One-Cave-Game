@@ -89,7 +89,7 @@ public class PlayerControllerModule : NetworkBehaviour
     public float PerfectJumpThreshold = 0.15f;
 
     [Header("Look")]
-    public float LookSensitivity = 0.2f;
+    public float LookSensitivity = 0.5f;
     public float LookYLimit = 85f;
 
     private float PerfectJumpCurrentAcceleration = 0f;
@@ -341,8 +341,8 @@ public class PlayerControllerModule : NetworkBehaviour
     private bool CheckGrounded()
     {
         Vector3 spherePosition = transform.position + Vector3.down * SphereCastDownPosition;
-        return Physics.OverlapSphereNonAlloc(spherePosition, SphereCastRadius, _groundCheckResults, GroundLayers, QueryTriggerInteraction.Ignore) > 0;
-        /*
+        var count = Physics.OverlapSphereNonAlloc(spherePosition, SphereCastRadius, _groundCheckResults, GroundLayers, QueryTriggerInteraction.Ignore);
+        
         for (int i = 0; i < count; i++)
         {
             Collider col = _groundCheckResults[i];
@@ -351,6 +351,6 @@ public class PlayerControllerModule : NetworkBehaviour
             return true;
         }
         return false;
-        */
+        
     }
 }

@@ -40,12 +40,9 @@ public class PlayerInventoryModule : NetworkBehaviour
     private bool IsInventoryOpen;
 
     [Space]
-    public Transform FP_MainHandParent;
-    public Transform FP_OffhandParent;
-    public Transform TP_MainHandParent;
-    public Transform TP_OffhandParent;
 
-    private Dictionary<ItemSlotType, EquippedSlot> ServerLoadout = new();
+
+
     [HideInInspector] public List<InventorySlotData> ClientSlots = new();
     [HideInInspector] public List<InventorySlotData> ServerSlots = new();
     private Dictionary<ItemSlotType, int> EquipSlotLookup = new();
@@ -415,7 +412,7 @@ public class PlayerInventoryModule : NetworkBehaviour
             }
 
             if (quantity == slots[from].Data.Quantity)
-                UnequipItem(slots[from].Type, conn);
+                Loadout.UnequipItem(slots[from].Type, conn);
         }
 
         ghost.ID = slotData.ID;
@@ -452,9 +449,9 @@ public class PlayerInventoryModule : NetworkBehaviour
                 return new LocalResponse { Accepted = false };
 
             if (toItem != null)
-                UnequipItem(slots[to].Type, conn);
+                Loadout.UnequipItem(slots[to].Type, conn);
 
-            EquipItem(tryGhostItem, slots[to].Type, conn);
+            Loadout.EquipItem(tryGhostItem,  slots[to].Type, slots[to].Data.Materials, conn);
         }
 
         if (PlayerHelperFunctions.StackingValid(ghost, slots[to].Data, ghostItem.MaxStackSize))
@@ -521,7 +518,7 @@ public class PlayerInventoryModule : NetworkBehaviour
             int emptySlot = slots.FindIndex(s => s.Type == ItemSlotType.Inventory && !s.Data.HasItem());
             if (emptySlot < 0) return InvalidateInstantEquip(ref patches, slots, from, isClient);
 
-            if (!isClient) UnequipItem(slots[unEquipSlots[1]].Type, conn);
+            if (!isClient) Loadout.UnequipItem(slots[unEquipSlots[1]].Type, conn);
 
             ItemSlotData overflowData = slots[unEquipSlots[1]].Data;
             ItemSlotData emptyData = slots[emptySlot].Data;
@@ -540,8 +537,8 @@ public class PlayerInventoryModule : NetworkBehaviour
         if (!isClient)
         {
             if (firstSlotData.HasItem())
-                UnequipItem(slots[firstSlot].Type, conn);
-            EquipItem(item, slots[to].Type, conn);
+                Loadout.UnequipItem(slots[firstSlot].Type, conn);
+            Loadout.EquipItem(item, slots[to].Type, slots[to].Data.Materials, conn);
         }
 
         (fromData, firstSlotData) = (firstSlotData, fromData);
@@ -577,20 +574,7 @@ public class PlayerInventoryModule : NetworkBehaviour
 
         return false;
     }
-    public void EquipItem(Item item, ItemSlotType type, NetworkConnection conn)
-    {
-        NetworkObject itemPrefab = Instantiate(item.EquipPrefab);
-        InstanceFinder.ServerManager.Spawn(itemPrefab, conn);
-        Observer_Equip_RPC(itemPrefab, type);
-        ServerLoadout[type] = new EquippedSlot { Item = itemPrefab, IsEquipped = true };
-    }
-    public void UnequipItem(ItemSlotType type, NetworkConnection conn)
-    {
-        NetworkObject itemPrefab = ServerLoadout[type].Item;
-        itemPrefab.Despawn();
-        Observer_UnEquip_RPC(type);
-        ServerLoadout[type] = null;
-    }
+
     public List<int> GetEffectedEquipSlots(ItemSlotType type)
     {
         List<int> indices = new();
@@ -676,61 +660,8 @@ public class PlayerInventoryModule : NetworkBehaviour
         LocalSyncSlots(patches.ToList(), false);
         InvokeChange(new List<SlotPatch>(patches));
     }
-    [ObserversRpc]
-    private void Observer_Equip_RPC(NetworkObject obj, ItemSlotType slotType)
-    {
-        if (IsServerInitialized && !IsHostInitialized) return;
-        bool isLocalOwner = obj.Owner == LocalConnection;
 
-        if(isLocalOwner)
-            SetLayerRecursively(obj.gameObject, LayerMask.NameToLayer("LocalTools"));
 
-        if (slotType == ItemSlotType.Pick)
-        {
-            Loadout.Pickaxe = obj.GetComponent<Weapon>();
-            Loadout.Pickaxe.Initalize(true);
-            Loadout.EquipNewWeapon(ItemSlotType.Pick);
-            Transform parent = isLocalOwner ? FP_MainHandParent : TP_MainHandParent;
-            obj.transform.SetParent(parent, false);
-            obj.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
-        }
-        if (slotType == ItemSlotType.Axe)
-        {
-            Loadout.Axe = obj.GetComponent<Weapon>();
-            Loadout.Axe.Initalize(true);
-            Loadout.EquipNewWeapon(ItemSlotType.Axe);
-            Transform parent = isLocalOwner ? FP_MainHandParent : TP_MainHandParent;
-            obj.transform.SetParent(parent, false);
-            obj.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
-        }
-        if (slotType == ItemSlotType.OffHand)
-        {
-            Loadout.OffHand = obj.GetComponent<Weapon>();
-            Loadout.OffHand.Initalize(false);
-            Loadout.EquipNewWeapon(ItemSlotType.OffHand);
-            Transform parent = isLocalOwner ? FP_OffhandParent : TP_OffhandParent;
-            obj.transform.SetParent(parent, false);
-            obj.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
-        }
-    }
-    [ObserversRpc]
-    private void Observer_UnEquip_RPC(ItemSlotType slotType)
-    {
-        if (IsServerInitialized && !IsHostInitialized) return;
-
-        if (slotType == ItemSlotType.Pick)
-        {
-            Loadout.Pickaxe = null;
-        }
-        if (slotType == ItemSlotType.Axe)
-        {
-            Loadout.Axe = null;
-        }
-        if (slotType == ItemSlotType.OffHand)
-        {
-            Loadout.OffHand = null;
-        }
-    }
     #endregion
 
     #region Validation
@@ -869,12 +800,7 @@ public class PlayerInventoryModule : NetworkBehaviour
         }
         return beforePatches;
     }
-    void SetLayerRecursively(GameObject obj, int layer)
-    {
-        obj.layer = layer;
-        foreach (Transform child in obj.transform)
-            SetLayerRecursively(child.gameObject, layer);
-    }
+
     public void InvokeChange(List<SlotPatch> patches)
     {
         OnInventoryChanged?.Invoke(patches);

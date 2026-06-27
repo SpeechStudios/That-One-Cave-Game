@@ -9,7 +9,7 @@ public class PlayerModule : NetworkBehaviour
     public PlayerInventoryModule Inventory;
     public PlayerCraftingModule Crafting;
     public PlayerLoadoutModule Loadout;
-
+    public DamageableComponent Damageable;
     public override void OnStartServer()
     {
         base.OnStartServer();
@@ -30,21 +30,23 @@ public class PlayerModule : NetworkBehaviour
     public void ServerInit()
     {
         Inventory.ServerInit();
+        Damageable.ServerInit();
     }
     public void ClientInit()
     {
+        Damageable.ClientInit();
         if (!IsOwner)
         {
             enabled = false;
             return;
         }
+        Damageable.HealthBar.SetActive(false);
         Controller.enabled = true;
         Interact.enabled = true;
         DragGhost.enabled = true;
         Inventory.enabled = true;
         Crafting.enabled = true;
         Loadout.enabled = true;
-
 
         Controller.Init();
         Interact.Init();

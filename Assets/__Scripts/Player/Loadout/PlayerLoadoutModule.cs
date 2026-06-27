@@ -1,29 +1,130 @@
+using FishNet;
+using FishNet.Connection;
 using FishNet.Object;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerLoadoutModule : NetworkBehaviour
 {
     public PlayerControllerModule Controller;
+    public Animator MainHandAnimator;
 
+    public Transform FP_MainHandParent;
+    public Transform FP_OffhandParent;
+    public Transform TP_MainHandParent;
+    public Transform TP_OffhandParent;
+    [Space]
+    public Transform MainHandRoot;
+    public Transform OffHandRoot;
 
     [Header("Loadout")]
-    public Weapon MainHand;
-    public Weapon OffHand;
-    public Weapon Pickaxe;
-    public Weapon Axe;
-    public Armor Head;
-    public Armor Chest;
-    public Armor Legs;
+    internal Weapon MainHand;
+    internal Weapon OffHand;
+    private Weapon Pickaxe;
+    private Weapon Axe;
+    private Armor Head;
+    private Armor Chest;
+    private Armor Legs;
 
     private Camera PlayerCamera;
     private int CurrentWeaponIndex = 1;
     private bool Initalized;
+    private Dictionary<ItemSlotType, EquippedSlot> ServerLoadout = new();
     public void Init()
     {
         PlayerCamera = Camera.main;
         Initalized = true;
     }
+
+    [Server]
+    public void EquipItem(Item item, ItemSlotType type, int[] materialArray, NetworkConnection conn)
+    {
+        NetworkObject itemPrefab = Instantiate(item.EquipPrefab);
+        InstanceFinder.ServerManager.Spawn(itemPrefab, conn);
+        Observer_Equip_RPC(itemPrefab, materialArray, type);
+        ServerLoadout[type] = new EquippedSlot { Item = itemPrefab, IsEquipped = true };
+        Weapon weapon = itemPrefab.GetComponent<Weapon>();
+        weapon.Initalize(this, materialArray, IsMainHand(type));
+    }
+    [Server]
+    public void UnequipItem(ItemSlotType type, NetworkConnection conn)
+    {
+        NetworkObject itemPrefab = ServerLoadout[type].Item;
+        itemPrefab.GetComponent<Weapon>().Deinitialize();
+        itemPrefab.Despawn();
+        Observer_UnEquip_RPC(type);
+        ServerLoadout[type] = null;
+
+    }
+    [ObserversRpc]
+    private void Observer_Equip_RPC(NetworkObject obj, int[] materialArray, ItemSlotType slotType)
+    {
+        if (IsServerInitialized && !IsHostInitialized) return;
+        bool isLocalOwner = obj.Owner == LocalConnection;
+
+        if (isLocalOwner)
+            SetLayerRecursively(obj.gameObject, LayerMask.NameToLayer("LocalTools"));
+
+        Weapon weapon = obj.GetComponent<Weapon>();
+        Transform parent;
+        bool isMainHandWeapon = IsMainHand(slotType);
+
+        switch (slotType)
+        {
+            case ItemSlotType.MainHand:
+                MainHand = weapon;
+                parent = isLocalOwner ? FP_MainHandParent : TP_MainHandParent;
+                break;
+            case ItemSlotType.OffHand:
+                OffHand = weapon;
+                parent = isLocalOwner ? FP_OffhandParent : TP_OffhandParent;
+                break;
+            case ItemSlotType.Pick:
+                Pickaxe = weapon;
+                parent = isLocalOwner ? FP_MainHandParent : TP_MainHandParent;
+                break;
+            case ItemSlotType.Axe:
+                Axe = weapon;
+                parent = isLocalOwner ? FP_MainHandParent : TP_MainHandParent;
+                break;
+            default:
+                return;
+        }
+
+        weapon.Initalize(this, materialArray, isMainHandWeapon);
+        VisualEquip(slotType);
+        obj.transform.SetParent(parent, false);
+        obj.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+    }
+    [ObserversRpc]
+    private void Observer_UnEquip_RPC(ItemSlotType slotType)
+    {
+        if (IsServerInitialized && !IsHostInitialized) return;
+
+        if (slotType == ItemSlotType.MainHand)
+        {
+            MainHand.Deinitialize();
+            MainHand = null;
+        }
+        if (slotType == ItemSlotType.OffHand)
+        {
+            OffHand.Deinitialize();
+            OffHand = null;
+        }
+        if (slotType == ItemSlotType.Pick)
+        {
+            Pickaxe.Deinitialize();
+            Pickaxe = null;
+        }
+        if (slotType == ItemSlotType.Axe)
+        {
+            Axe.Deinitialize();
+            Axe = null;
+        }
+
+    }
+
     void Update()
     {
         if (!Initalized) return;
@@ -34,21 +135,21 @@ public class PlayerLoadoutModule : NetworkBehaviour
         {
             if (CurrentWeaponIndex == 0 && MainHand != null)
             {
-                MainHand.Attack(this, PlayerCamera);
+                MainHand.AttackRequest();
             }
             if (CurrentWeaponIndex == 1 && Pickaxe != null)
             {
-                Pickaxe.Attack(this, PlayerCamera);
+                Pickaxe.AttackRequest();
             }
             if (CurrentWeaponIndex == 2 && Axe != null)
             {
-                Axe.Attack(this, PlayerCamera);
+                Axe.AttackRequest();
             }
         }
     }
     public void CheckWeaponSwapInputs()
     {
-        if(Controller.PlayerInput.Player.Option1.WasPressedThisFrame())
+        if (Controller.PlayerInput.Player.Option1.WasPressedThisFrame())
         {
             UpdateCurrentWeapon(0);
         }
@@ -63,7 +164,6 @@ public class PlayerLoadoutModule : NetworkBehaviour
     }
     public void UpdateCurrentWeapon(int index)
     {
-        Debug.Log("Updating weapon to index: " + index);
         if (CurrentWeaponIndex == index)
             return;
 
@@ -95,7 +195,7 @@ public class PlayerLoadoutModule : NetworkBehaviour
                 break;
         }
     }
-    public void EquipNewWeapon(ItemSlotType slotType)
+    public void VisualEquip(ItemSlotType slotType)
     {
         switch (slotType)
         {
@@ -151,15 +251,39 @@ public class PlayerLoadoutModule : NetworkBehaviour
                 break;
         }
     }
-
-    public void StartWeaponCooldown(Weapon weapon)
+    public void StartWeaponCooldown(Weapon weapon, float cooldown, bool isServer)
     {
-        StartCoroutine(AttackCooldownCoroutine(weapon));
+        StartCoroutine(AttackCooldownCoroutine(weapon, cooldown, isServer));
     }
-    public IEnumerator AttackCooldownCoroutine(Weapon weapon)
+    public IEnumerator AttackCooldownCoroutine(Weapon weapon, float cooldown, bool isServer)
     {
-        yield return new WaitForSecondsRealtime(weapon.AttackCooldown);
-        weapon.CanAttack = true;
+        yield return new WaitForSecondsRealtime(cooldown);
+        if (isServer)
+            weapon.ServerCanAttack = true;
+        else
+            weapon.ClientCanAttack = true;
+    }
+    void SetLayerRecursively(GameObject obj, int layer)
+    {
+        obj.layer = layer;
+        foreach (Transform child in obj.transform)
+            SetLayerRecursively(child.gameObject, layer);
     }
 
+    private bool IsMainHand(ItemSlotType slotType)
+    {
+        switch (slotType)
+        {
+            case ItemSlotType.MainHand:
+                return true;
+            case ItemSlotType.OffHand:
+                return false;
+            case ItemSlotType.Pick:
+                return true;
+            case ItemSlotType.Axe:
+                return true;
+            default:
+                return false;
+        }
+    }
 }
