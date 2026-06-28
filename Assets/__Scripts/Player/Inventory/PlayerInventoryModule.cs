@@ -483,68 +483,24 @@ public class PlayerInventoryModule : NetworkBehaviour
             return InvalidateInstantEquip(ref patches, slots, from, isClient);
         }
 
-        List<int> unEquipSlots = GetEffectedEquipSlots(item.ItemSlotType);
-        int to = GetEquipSlotIndex(item.ItemSlotType);
-
-        //Try Stack
-        if (PlayerHelperFunctions.MaxStackingValid(slots[from].Data, slots[to].Data))
-        {
-            ItemSlotData slotToData = slots[to].Data;
-            if (slots[to].Data.Quantity == item.MaxStackSize)
-                return new LocalResponse { Accepted = false };
-
-            var (stack, remainder) = PlayerHelperFunctions.TryStackItems(slotData, slotToData, item.MaxStackSize);
-            slotData.Quantity = remainder;
-            slotData.Quantity = stack;
-            if (slotData.Quantity <= 0)
-                slotData.Clear();
-
-            return new LocalResponse
-            {
-                Accepted = true,
-                Patches = new List<SlotPatch>
-                {
-                    new() { Index = to, Data = slotToData, Type = SlotType.Inventory },
-                    new() { Index = from, Data = slotData, Type = SlotType.Inventory }
-                }
-            };
-        }
-
-        //Unequip overflow items
-        bool hasOverflow = unEquipSlots.Count == 2 && slots[unEquipSlots[0]].Data.HasItem()  && slots[unEquipSlots[1]].Data.HasItem();
-
-        if (hasOverflow)
-        {
-            int emptySlot = slots.FindIndex(s => s.Type == ItemSlotType.Inventory && !s.Data.HasItem());
-            if (emptySlot < 0) return InvalidateInstantEquip(ref patches, slots, from, isClient);
-
-            if (!isClient) Loadout.UnequipItem(slots[unEquipSlots[1]].Type, conn);
-
-            ItemSlotData overflowData = slots[unEquipSlots[1]].Data;
-            ItemSlotData emptyData = slots[emptySlot].Data;
-
-            (overflowData, emptyData) = (emptyData, overflowData);
-
-            patches.Add(new SlotPatch { Index = emptySlot, Data = emptyData, Type = SlotType.Inventory });
-            patches.Add(new SlotPatch { Index = unEquipSlots[1], Data = overflowData, Type = SlotType.Inventory });
-        }
-
-        int firstSlot = unEquipSlots.Count > 0 ? unEquipSlots[0] : to;
+        int EquipSlot = GetEquipSlot(item.ItemSlotType);
+        if(EquipSlot == -1)
+            return InvalidateInstantEquip(ref patches, slots, from, isClient);
 
         ItemSlotData fromData = slots[from].Data;
-        ItemSlotData firstSlotData = slots[firstSlot].Data;
+        ItemSlotData firstSlotData = slots[EquipSlot].Data;
 
         if (!isClient)
         {
             if (firstSlotData.HasItem())
-                Loadout.UnequipItem(slots[firstSlot].Type, conn);
-            Loadout.EquipItem(item, slots[to].Type, slots[to].Data.Materials, conn);
+                Loadout.UnequipItem(slots[EquipSlot].Type, conn);
+            Loadout.EquipItem(item, slots[EquipSlot].Type, slots[EquipSlot].Data.Materials, conn);
         }
 
         (fromData, firstSlotData) = (firstSlotData, fromData);
 
         patches.Add(new SlotPatch { Index = from, Data = fromData, Type = SlotType.Inventory });
-        patches.Add(new SlotPatch { Index = firstSlot, Data = firstSlotData, Type = SlotType.Inventory });
+        patches.Add(new SlotPatch { Index = EquipSlot, Data = firstSlotData, Type = SlotType.Inventory });
 
         return new LocalResponse { Accepted = true, Patches = patches };
     }
@@ -575,80 +531,21 @@ public class PlayerInventoryModule : NetworkBehaviour
         return false;
     }
 
-    public List<int> GetEffectedEquipSlots(ItemSlotType type)
-    {
-        List<int> indices = new();
-        switch (type)
-        {
-            case ItemSlotType.MainHand:
-                indices.Add(EquipSlotLookup[ItemSlotType.MainHand]);
-                break;
-            case ItemSlotType.OffHand:
-                indices.Add(EquipSlotLookup[ItemSlotType.OffHand]);
-                break;
-            case ItemSlotType.TwoHanded:
-                indices.Add(EquipSlotLookup[ItemSlotType.MainHand]);
-                indices.Add(EquipSlotLookup[ItemSlotType.OffHand]);
-                break;
-            case ItemSlotType.AnyHand:
-                if(Loadout.MainHand == null)
-                    indices.Add(EquipSlotLookup[ItemSlotType.MainHand]);
-                else if(Loadout.OffHand == null)
-                    indices.Add(EquipSlotLookup[ItemSlotType.OffHand]);
-                else
-                    indices.Add(EquipSlotLookup[ItemSlotType.MainHand]);
-                break;
-            case ItemSlotType.Pick:
-                indices.Add(EquipSlotLookup[ItemSlotType.Pick]);
-                break;
-            case ItemSlotType.Axe:
-                indices.Add(EquipSlotLookup[ItemSlotType.Axe]);
-                break;
-            case ItemSlotType.Head:
-                indices.Add(EquipSlotLookup[ItemSlotType.Head]);
-                break;
-            case ItemSlotType.Chest:
-                indices.Add(EquipSlotLookup[ItemSlotType.Chest]);
-                break;
-            case ItemSlotType.Legs:
-               indices.Add(EquipSlotLookup[ItemSlotType.Legs]);
-                break;
-            default:
-                break;
-        }
-        return indices;
-    }
-    public int GetEquipSlotIndex(ItemSlotType type)
+    public int GetEquipSlot(ItemSlotType type)
     {
         switch (type)
         {
-            case ItemSlotType.MainHand:
-                return EquipSlotLookup[ItemSlotType.MainHand];
-            case ItemSlotType.OffHand:
-                return EquipSlotLookup[ItemSlotType.OffHand];
-            case ItemSlotType.TwoHanded:
-                return EquipSlotLookup[ItemSlotType.MainHand];
-            case ItemSlotType.AnyHand:
-                if (Loadout.MainHand == null)
-                    return EquipSlotLookup[ItemSlotType.MainHand];
-                else if (Loadout.OffHand == null)
-                    return EquipSlotLookup[ItemSlotType.OffHand];
-                else
-                    return EquipSlotLookup[ItemSlotType.MainHand];
-            case ItemSlotType.Pick:
-                return EquipSlotLookup[type];
-            case ItemSlotType.Axe:
-                return EquipSlotLookup[type];
+            case ItemSlotType.Weapon:
+                return EquipSlotLookup[ItemSlotType.Weapon];
             case ItemSlotType.Head:
-                return EquipSlotLookup[type];
+                return EquipSlotLookup[ItemSlotType.Head];
             case ItemSlotType.Chest:
-                return EquipSlotLookup[type];
+                return EquipSlotLookup[ItemSlotType.Chest];
             case ItemSlotType.Legs:
-                return EquipSlotLookup[type];
+                return EquipSlotLookup[ItemSlotType.Legs];
             default:
-                break;
+                return -1;
         }
-        return default;
     }
 
     #endregion
@@ -749,26 +646,7 @@ public class PlayerInventoryModule : NetworkBehaviour
         if (slotData.Type == ItemSlotType.Inventory)
             return true;
 
-        var allowed = item.ItemSlotType;
-
-        switch (slotData.Type)
-        {
-            case ItemSlotType.Axe:
-            case ItemSlotType.Pick:
-            case ItemSlotType.Head:
-            case ItemSlotType.Chest:
-            case ItemSlotType.Legs:
-                return allowed == slotData.Type;
-
-            case ItemSlotType.MainHand:
-                {
-                    return allowed == slotData.Type || allowed == ItemSlotType.AnyHand || allowed == ItemSlotType.TwoHanded;
-                }
-            case ItemSlotType.OffHand:
-
-            default:
-                return false;
-        }
+        return slotData.Type == item.ItemSlotType;
     }
     #endregion
 

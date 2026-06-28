@@ -389,37 +389,6 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
---- !u!1 &2016255719446720906
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1624208199709032190}
-  m_Layer: 3
-  m_Name: Off Hand Root
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1624208199709032190
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2016255719446720906}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.4, y: -0.5, z: 0.6}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3701229931077986517}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2954712837019205929
 GameObject:
   m_ObjectHideFlags: 0
@@ -452,6 +421,106 @@ Transform:
   - {fileID: 2876436436669771720}
   m_Father: {fileID: 8944923052903528616}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3475958390249765971
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6519756173967121914}
+  - component: {fileID: 5524123566296238463}
+  - component: {fileID: 6628949124343668330}
+  m_Layer: 3
+  m_Name: Fists
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6519756173967121914
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3475958390249765971}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 653061946970760539}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5524123566296238463
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3475958390249765971}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b0fdeaf8fe54b740823284f5b2203a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Fists
+  _componentIndexCache: 11
+  _addedNetworkObject: {fileID: 3544688354330196895}
+  _networkObjectCache: {fileID: 3544688354330196895}
+  HitDetection: {fileID: 6628949124343668330}
+  AnimationSwings:
+  - AttackData:
+      Start: {x: 0, y: 0, z: 0}
+      Mid: {x: 0, y: 0, z: 1}
+      End: {x: 0, y: 0, z: 0}
+      EaseType:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 34
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 34
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+    Clip: {fileID: 7400000, guid: cecb29da3aaa9cb46aebfb75dfabd435, type: 2}
+--- !u!114 &6628949124343668330
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3475958390249765971}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a359c35ac5d7f84db9decf6a03458e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MeleeHitDetection
+  _componentIndexCache: 12
+  _addedNetworkObject: {fileID: 3544688354330196895}
+  _networkObjectCache: {fileID: 3544688354330196895}
+  Length: 1
+  Radius: 1
+  HitLayer:
+    serializedVersion: 2
+    m_Bits: 648
+  ShowGizmos: 1
 --- !u!1 &3696720681994751973
 GameObject:
   m_ObjectHideFlags: 0
@@ -464,6 +533,7 @@ GameObject:
   - component: {fileID: 7466628139763656283}
   - component: {fileID: 766036806182533160}
   - component: {fileID: 3544688354330196895}
+  - component: {fileID: 1364280588342638064}
   - component: {fileID: -8966319286158825527}
   - component: {fileID: 7589131285299544667}
   - component: {fileID: 7004708982079632913}
@@ -472,7 +542,6 @@ GameObject:
   - component: {fileID: 4610964589504088332}
   - component: {fileID: 5856638283597887064}
   - component: {fileID: -3166358744567229087}
-  - component: {fileID: 1364280588342638064}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -583,21 +652,25 @@ MonoBehaviour:
     Scale: {x: 1, y: 1, z: 1}
     IsValid: 1
   <IsNested>k__BackingField: 0
-  WasActiveDuringEdit: 1
+  WasActiveDuringEdit: 0
   WasActiveDuringEdit_Set1: 1
   <ComponentIndex>k__BackingField: 0
   <PredictedSpawn>k__BackingField: {fileID: 0}
   <PredictedOwner>k__BackingField: {fileID: 0}
   NetworkBehaviours:
+  - {fileID: 1364280588342638064}
   - {fileID: -8966319286158825527}
   - {fileID: 7589131285299544667}
   - {fileID: 7004708982079632913}
   - {fileID: 8452158226212797364}
   - {fileID: 7845242055680241866}
   - {fileID: 4610964589504088332}
+  - {fileID: -3166358744567229087}
   - {fileID: 7053815835165317827}
   - {fileID: 1551990021496817962}
   - {fileID: 280250987964467475}
+  - {fileID: 5524123566296238463}
+  - {fileID: 6628949124343668330}
   InitializedParentNetworkBehaviour: {fileID: 0}
   InitializedNestedNetworkObjects: []
   RuntimeParentNetworkBehaviour: {fileID: 0}
@@ -608,7 +681,27 @@ MonoBehaviour:
   _initializeOrder: 0
   _preventDespawnOnDisconnect: 0
   _defaultDespawnType: 0
-  _initializedTimestamp: -8584190103811490076
+  _initializedTimestamp: -8584189553403494402
+--- !u!114 &1364280588342638064
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3696720681994751973}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40bcde17fa5e03f44b87f9963ac281b3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FishNet.Runtime::FishNet.Component.Prediction.NetworkCollision
+  _componentIndexCache: 0
+  _addedNetworkObject: {fileID: 3544688354330196895}
+  _networkObjectCache: {fileID: 3544688354330196895}
+  MaximumSimultaneousHits: 16
+  AdditionalSize: 0.1
+  Layers:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!114 &-8966319286158825527
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -621,7 +714,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0487d8e11eb1f1846ab7f9e92327fdb4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerOrderModule
-  _componentIndexCache: 0
+  _componentIndexCache: 1
   _addedNetworkObject: {fileID: 3544688354330196895}
   _networkObjectCache: {fileID: 3544688354330196895}
   Controller: {fileID: 7589131285299544667}
@@ -643,16 +736,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e2fc47f0cce7b5a48bee428315844acb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerControllerModule
-  _componentIndexCache: 1
+  _componentIndexCache: 2
   _addedNetworkObject: {fileID: 3544688354330196895}
   _networkObjectCache: {fileID: 3544688354330196895}
   CC: {fileID: 7466628139763656283}
   CameraParent: {fileID: 3701229931077986517}
   TPRoot: {fileID: 2954712837019205929}
-  RunSpeed: 8
+  RunSpeed: 7.5
   SprintSpeed: 11.5
   GroundAcceleration: 30
-  AirAcceleration: 1
+  AirAcceleration: 2
   Friction: 60
   Gravity: 20
   JumpHeight: 1.6
@@ -661,10 +754,10 @@ MonoBehaviour:
     m_Bits: 4294967295
   SphereCastRadius: 0.15
   SphereCastDownPosition: 0.95
-  PerfectJumpSpeedBonus: 2
+  PerfectJumpSpeedBonus: 1.5
   PerfectJumpMaxSpeed: 10
   PerfectJumpAcceleration: 10
-  PerfectJumpDeceleration: 2
+  PerfectJumpDeceleration: 0
   PerfectJumpThreshold: 0.15
   LookSensitivity: 0.5
   LookYLimit: 85
@@ -682,7 +775,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ee2463dbf3a31f542939c4bc86b2982e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerDragGhostModule
-  _componentIndexCache: 2
+  _componentIndexCache: 3
   _addedNetworkObject: {fileID: 3544688354330196895}
   _networkObjectCache: {fileID: 3544688354330196895}
   ClientGhost:
@@ -705,7 +798,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36662a8a364caaf43b0dd98230b962f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInventoryModule
-  _componentIndexCache: 3
+  _componentIndexCache: 4
   _addedNetworkObject: {fileID: 3544688354330196895}
   _networkObjectCache: {fileID: 3544688354330196895}
   InteractModule: {fileID: 5856638283597887064}
@@ -724,7 +817,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2de4a2f935700f64a804af0ae87b29ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCraftingModule
-  _componentIndexCache: 4
+  _componentIndexCache: 5
   _addedNetworkObject: {fileID: 3544688354330196895}
   _networkObjectCache: {fileID: 3544688354330196895}
   Inventory: {fileID: 8452158226212797364}
@@ -741,17 +834,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ee53c79967b18f42a4029aa8f07d833, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAttackModule
-  _componentIndexCache: 5
+  _componentIndexCache: 6
   _addedNetworkObject: {fileID: 3544688354330196895}
   _networkObjectCache: {fileID: 3544688354330196895}
   Controller: {fileID: 7589131285299544667}
-  MainHandAnimator: {fileID: 5861085980569630340}
-  FP_MainHandParent: {fileID: 653061946970760539}
-  FP_OffhandParent: {fileID: 3761938287590970256}
-  TP_MainHandParent: {fileID: 8682809256073907498}
-  TP_OffhandParent: {fileID: 4325613103550434920}
-  MainHandRoot: {fileID: 2366875478915436874}
-  OffHandRoot: {fileID: 1624208199709032190}
+  WeaponAnimator: {fileID: 6065935560877924038}
+  FP_WeaponParent: {fileID: 653061946970760539}
+  TP_WeaponParent: {fileID: 8682809256073907498}
+  MeleeHitDetectionRoot: {fileID: 2366875478915436874}
+  Fists: {fileID: 5524123566296238463}
 --- !u!114 &5856638283597887064
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -784,64 +875,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 794d07a340bbe514895c83e10e4fc8c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DamageableComponent
-  _componentIndexCache: 255
+  _componentIndexCache: 7
   _addedNetworkObject: {fileID: 3544688354330196895}
-  _networkObjectCache: {fileID: 0}
+  _networkObjectCache: {fileID: 3544688354330196895}
   StartingHealth: 100
   HealthBar: {fileID: 1528972469701969897}
   HealthBarPivot: {fileID: 3396258125207674517}
   HealthBarActiveDuration: 5
---- !u!114 &1364280588342638064
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3696720681994751973}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 40bcde17fa5e03f44b87f9963ac281b3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FishNet.Runtime::FishNet.Component.Prediction.NetworkCollision
-  _componentIndexCache: 255
-  _addedNetworkObject: {fileID: 3544688354330196895}
-  _networkObjectCache: {fileID: 0}
-  MaximumSimultaneousHits: 16
-  AdditionalSize: 0.1
-  Layers:
-    serializedVersion: 2
-    m_Bits: 4294967295
---- !u!1 &4249333709721706044
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3761938287590970256}
-  m_Layer: 3
-  m_Name: FP_OFH
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3761938287590970256
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4249333709721706044}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0.17364825, z: 0, w: 0.9848078}
-  m_LocalPosition: {x: 0.4, y: -0.5, z: 0.6}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3701229931077986517}
-  m_LocalEulerAnglesHint: {x: 0, y: -20, z: 0}
 --- !u!1 &4507296347797274222
 GameObject:
   m_ObjectHideFlags: 0
@@ -877,7 +917,6 @@ Transform:
   m_Children:
   - {fileID: 4029520644407108505}
   - {fileID: 8682809256073907498}
-  - {fileID: 4325613103550434920}
   - {fileID: 4765181906405798374}
   m_Father: {fileID: 7229273601801169840}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -950,7 +989,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 453481867b26f7c43b5bf38802a5f50e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FishNet.Runtime::FishNet.Component.Transforming.Beta.NetworkTickSmoother
-  _componentIndexCache: 6
+  _componentIndexCache: 8
   _addedNetworkObject: {fileID: 3544688354330196895}
   _networkObjectCache: {fileID: 3544688354330196895}
   _initializationSettings:
@@ -984,7 +1023,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 453481867b26f7c43b5bf38802a5f50e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FishNet.Runtime::FishNet.Component.Transforming.Beta.NetworkTickSmoother
-  _componentIndexCache: 7
+  _componentIndexCache: 9
   _addedNetworkObject: {fileID: 3544688354330196895}
   _networkObjectCache: {fileID: 3544688354330196895}
   _initializationSettings:
@@ -1016,7 +1055,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8682809256073907498}
   m_Layer: 3
-  m_Name: TP_MH
+  m_Name: TP_Weapon_Parent
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1030,44 +1069,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4936058015979205159}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.17364816, z: 0, w: 0.9848078}
-  m_LocalPosition: {x: -0.4, y: 0.3, z: 0.7}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.3, z: 0.7}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2876436436669771720}
-  m_LocalEulerAnglesHint: {x: 0, y: 20, z: 0}
---- !u!1 &6987222368780851618
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4325613103550434920}
-  m_Layer: 3
-  m_Name: TP_OFH
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4325613103550434920
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6987222368780851618}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0.17364825, z: 0, w: 0.9848078}
-  m_LocalPosition: {x: 0.4, y: 0.3, z: 0.7}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2876436436669771720}
-  m_LocalEulerAnglesHint: {x: 0, y: -20, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6993998291925470314
 GameObject:
   m_ObjectHideFlags: 0
@@ -1113,7 +1121,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 453481867b26f7c43b5bf38802a5f50e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FishNet.Runtime::FishNet.Component.Transforming.Beta.NetworkTickSmoother
-  _componentIndexCache: 8
+  _componentIndexCache: 10
   _addedNetworkObject: {fileID: 3544688354330196895}
   _networkObjectCache: {fileID: 3544688354330196895}
   _initializationSettings:
@@ -1144,9 +1152,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 653061946970760539}
-  - component: {fileID: 5861085980569630340}
+  - component: {fileID: 6065935560877924038}
   m_Layer: 3
-  m_Name: FP_MH
+  m_Name: FP_Weapon_Parent
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1160,14 +1168,15 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7918536402297037646}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.17364816, z: 0, w: 0.9848078}
-  m_LocalPosition: {x: -0.4, y: -0.5, z: 0.6}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.5, z: 0.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 6519756173967121914}
   m_Father: {fileID: 3701229931077986517}
-  m_LocalEulerAnglesHint: {x: 0, y: 20, z: 0}
---- !u!95 &5861085980569630340
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!95 &6065935560877924038
 Animator:
   serializedVersion: 7
   m_ObjectHideFlags: 0
@@ -1177,10 +1186,10 @@ Animator:
   m_GameObject: {fileID: 7918536402297037646}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 976471edc88d0bc4896663ebee617c40, type: 2}
+  m_Controller: {fileID: 9100000, guid: 3973790a58007414c95b108aa3f59587, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
-  m_ApplyRootMotion: 0
+  m_ApplyRootMotion: 1
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
@@ -1199,7 +1208,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2366875478915436874}
   m_Layer: 3
-  m_Name: Main Hand Root
+  m_Name: Melee Hit Detection Root
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1214,7 +1223,7 @@ Transform:
   m_GameObject: {fileID: 8565578967772689668}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.4, y: -0.5, z: 0.6}
+  m_LocalPosition: {x: 0, y: -0.5, z: 0.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1282,8 +1291,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 653061946970760539}
-  - {fileID: 3761938287590970256}
   - {fileID: 2366875478915436874}
-  - {fileID: 1624208199709032190}
   m_Father: {fileID: 3455406249023416943}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

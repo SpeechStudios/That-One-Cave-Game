@@ -1,7 +1,7 @@
 using FishNet.Object;
 using UnityEngine;
 
-public class OreNode : NetworkBehaviour
+public class OreNode : NetworkBehaviour, IDamageable
 {
     public Item Ore;
     public float MinHealthRange = 92;
@@ -22,31 +22,30 @@ public class OreNode : NetworkBehaviour
         }
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    public void Server_DamageOre_RPC(float damage)
+    public void TakeDamage(float damage, bool isServer)
     {
-        TakeDamage(damage);
-    }
-
-    [Server]
-    private void TakeDamage(float damage)
-    {
-        Health -= damage;
-        while (Health <= CurrentThreshold)
+        if (isServer)
         {
-            CurrentThreshold -= Threshold;
-            SpawnOre(Random.Range(1,4));
+            Health -= damage;
+            while (Health <= CurrentThreshold)
+            {
+                CurrentThreshold -= Threshold;
+                SpawnOre(Random.Range(1, 3));
+            }
+            if (Health <= 0)
+            {
+                SpawnOre(Random.Range(2, 5));
+                GetComponent<NetworkObject>().Despawn();
+            }
         }
-        if (Health <= 0)
+        else
         {
-            SpawnOre(Random.Range(3, 6));
-            GetComponent<NetworkObject>().Despawn();
+            //Client Visuals
         }
     }
     [Server]
     private void SpawnOre(int count)
     {
-        Debug.Log($"[SERVER] Spawned Objects: {count}");
         for (int i = 0; i < count; i++)
         {
             Vector3 spawnPos = transform.position + (Vector3)(Random.insideUnitCircle * 1.5f);

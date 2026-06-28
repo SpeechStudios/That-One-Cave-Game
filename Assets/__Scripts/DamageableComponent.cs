@@ -2,7 +2,7 @@ using FishNet.Object;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class DamageableComponent : NetworkBehaviour
+public class DamageableComponent : NetworkBehaviour, IDamageable
 {
     public float StartingHealth;
 
@@ -57,7 +57,6 @@ public class DamageableComponent : NetworkBehaviour
             if (ServerHealth <= 0)
             {
                 ServerHealth = 0;
-                Debug.Log("[SERVER] You Is Dead");
             }
         }
         else
@@ -66,12 +65,11 @@ public class DamageableComponent : NetworkBehaviour
             if(ClientHealth <= 0)
             {
                 ClientHealth = 0;
-                Debug.Log("You Is Supposed to be dead");
             }
+            if (HealthBar == null) return;
             UpdateHealthBar();
             HealthBarActiveTimer = HealthBarActiveDuration;
             HealthBar.SetActive(true);
-            Debug.Log("Healthbar active" + HealthBar.activeInHierarchy);
         }
     }
     public void HealDamage(float value, bool isServer)
@@ -94,11 +92,13 @@ public class DamageableComponent : NetworkBehaviour
     }
     private void UpdateHealthBar()
     {
+        if (HealthBar == null) return;
         float ratio = ClientHealth / ClientMaxHealth;
         HealthBarPivot.localScale = new Vector3(ratio, HealthBarPivot.localScale.y, HealthBarPivot.localScale.z);
     }
     void LateUpdate()
     {
+        if (HealthBar == null) return;
         if (!HealthBar.activeInHierarchy) return;
         float camY = MainCam.transform.eulerAngles.y;
         HealthBar.transform.rotation = Quaternion.Euler(0f, camY, 0f);

@@ -1,34 +1,34 @@
 using FishNet.Object;
 using UnityEngine;
 
-public class WoodNode : NetworkBehaviour
+public class WoodNode : NetworkBehaviour, IDamageable
 {
     internal bool IsBottomNode;
     internal TreeNode TreeParent;
     internal float Health;
 
-    [ServerRpc(RequireOwnership = false)]
-    public void Server_DamageOre_RPC(float damage)
-    {
-        TakeDamage(damage);
-    }
 
-    [Server]
-    private void TakeDamage(float damage)
+    public void TakeDamage(float damage, bool isServer)
     {
         if (IsBottomNode && TreeParent.WoodNodes.Count > 1) return;
-
-        Health -= damage;
-        if (Health <= 0)
+        if (isServer)
         {
-            TreeParent.BringWoodNodesDown(this);
+            Health -= damage;
+            if (Health <= 0)
+            {
+                TreeParent.BringWoodNodesDown(this);
 
-            if(IsBottomNode)
-                SpawnWood(Random.Range(8, 10));
-            else
-                SpawnWood(Random.Range(4, 6));
+                if (IsBottomNode)
+                    SpawnWood(Random.Range(3, 6));
+                else
+                    SpawnWood(Random.Range(1, 3));
 
-            GetComponent<NetworkObject>().Despawn();
+                GetComponent<NetworkObject>().Despawn();
+            }
+        }
+        else
+        {
+            //Client Visuals
         }
     }
 

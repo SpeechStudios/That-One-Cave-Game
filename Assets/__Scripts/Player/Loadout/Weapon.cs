@@ -3,17 +3,16 @@ using UnityEngine;
 
 public class Weapon : NetworkBehaviour
 {
-    public bool IsMainHand;
-    public bool IsTwoHanded;
+    internal Ability QAbility;
+    internal Ability EAbility;
 
     internal bool ClientCanAttack = true;
     internal bool ServerCanAttack = true;
 
     internal PlayerLoadoutModule Loadout;
 
-    public virtual void Initalize(PlayerLoadoutModule loadout, int[] materialArray, bool isMainHand)
+    public virtual void Initalize(PlayerLoadoutModule loadout, int[] materialArray)
     {
-        IsMainHand = isMainHand;
         Loadout = loadout;
         SetStats(materialArray);
     }

@@ -6,15 +6,10 @@ using TMPro;
 public enum ItemSlotType
 {
     Inventory = 0,
-    MainHand = 1,
-    OffHand = 2,
-    TwoHanded = 3,
-    AnyHand = 4,
-    Pick = 5,
-    Axe = 6,
-    Head = 7,
-    Chest = 8,
-    Legs = 9,
+    Weapon = 1,
+    Head = 2,
+    Chest = 3,
+    Legs = 4,
 }
 [System.Serializable]
 public struct ItemSlotData

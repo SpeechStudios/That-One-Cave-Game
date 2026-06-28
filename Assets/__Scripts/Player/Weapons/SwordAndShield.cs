@@ -3,19 +3,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class OneHandSword : Weapon
+public class SwordAndShield : Weapon
 {
-    [Header("Settings")]
     [SerializeField] private MeleeHitDetection HitDetection;
+    [SerializeField] private float HitDetectionXOffset;
+    [SerializeField] private List<SwingData> AnimationSwings;
+
     private float Damage;
     private float AttackSpeed;
     private float Resilliance;
-    [Space]
-    [SerializeField] private float SwingInterval;
-    [SerializeField] private float ReturnDuration = 0.2f;
-    [SerializeField] private AnimationCurve ReturnEase;
 
-    [SerializeField] private List<SwingData> AnimationSwings;
     private int ServerSwingIndex = 0;
     private int ClientSwingIndex = 0;
 
@@ -29,15 +26,16 @@ public class OneHandSword : Weapon
         HitDetection.ClientOnHit -= ClientHit;
         HitDetection.ServerOnHit -= ServerHit;
     }
-    public override void Initalize(PlayerLoadoutModule loadout, int[] materialArray, bool isMainHand)
+    public override void Initalize(PlayerLoadoutModule loadout, int[] materialArray)
     {
-        base.Initalize(loadout, materialArray, isMainHand);
+        base.Initalize(loadout, materialArray);
+        loadout.MeleeHitDetectionRoot.transform.localPosition = new Vector2(HitDetectionXOffset, loadout.MeleeHitDetectionRoot.transform.localPosition.y);
         HitDetection.Initalize(loadout);
-        Loadout.MainHandAnimator.SetBool("OneHandedSword", true);
+        Loadout.RebindAnimator("SwordAndShield");
     }
     public override void Deinitialize()
     {
-        Loadout.MainHandAnimator.SetBool("OneHandedSword", false);
+        Loadout.WeaponAnimator.SetBool("SwordAndShield", false);
     }
     public override void SetStats(int[] materialArray)
     {
@@ -61,6 +59,7 @@ public class OneHandSword : Weapon
                         AttackSpeed = 0.5f;
                         Damage = 0;
                         Resilliance = 0;
+                        QAbility = new SwordAndShield_Ability_Birch();
                         break;
                     case MaterialType.Oak:
                         AttackSpeed = 0.6f;
@@ -139,11 +138,11 @@ public class OneHandSword : Weapon
         ClientSwingIndex = (ClientSwingIndex + 1) % AnimationSwings.Count;
         SwingData swing = AnimationSwings[swingIndex];
 
-        Loadout.MainHandAnimator.speed = swing.Clip.length / AttackSpeed;
-        Loadout.MainHandAnimator.SetTrigger("MH_Attack");
-
-        HitDetection.EnableHitDetection(swing.AttackData, AttackSpeed, IsMainHand, isServer: false);
-        Loadout.StartWeaponCooldown(this, AttackSpeed + ReturnDuration, isServer: false);
+        Loadout.WeaponAnimator.speed = swing.Clip.length / AttackSpeed;
+        Loadout.WeaponAnimator.SetTrigger("Attack");
+        Debug.Log("Attacking: " + Loadout.WeaponAnimator.GetBool("SwordAndShield"));
+        HitDetection.EnableHitDetection(swing.AttackData, AttackSpeed, isServer: false);
+        Loadout.StartWeaponCooldown(this, AttackSpeed + 0.05f, isServer: false);
 
         Server_Attack_RPC();
     }
@@ -158,8 +157,8 @@ public class OneHandSword : Weapon
         ServerSwingIndex = (ServerSwingIndex + 1) % AnimationSwings.Count;
         SwingData swing = AnimationSwings[swingIndex];
 
-        HitDetection.EnableHitDetection(swing.AttackData, AttackSpeed, IsMainHand, isServer: true);
-        Loadout.StartWeaponCooldown(this, AttackSpeed, isServer: true);
+        HitDetection.EnableHitDetection(swing.AttackData, AttackSpeed, isServer: true);
+        Loadout.StartWeaponCooldown(this, AttackSpeed + 0.05f, isServer: true);
         Observer_Attack_RPC(swingIndex);
     }
 
@@ -175,12 +174,12 @@ public class OneHandSword : Weapon
    
     public void ClientHit(GameObject obj, Vector3 hitPos)
     {
-        var damageable = obj.GetComponent<DamageableComponent>();
+        var damageable = obj.GetComponent<IDamageable>();
         damageable.TakeDamage(Damage, false);
     }
     public void ServerHit(GameObject obj)
     {
-        var damageable = obj.GetComponent<DamageableComponent>();
+        var damageable = obj.GetComponent<IDamageable>();
         damageable.TakeDamage(Damage, true);
     }
 }

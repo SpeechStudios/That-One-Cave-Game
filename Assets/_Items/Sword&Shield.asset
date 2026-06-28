@@ -10,22 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fed75455a645c4f4fa2fc680ebf2deda, type: 3}
-  m_Name: Axe
+  m_Name: Sword&Shield
   m_EditorClassIdentifier: Assembly-CSharp::Item
-  ID: 4
-  Name: Axe
+  ID: 0
+  Name: One Handed Sword
   MaxStackSize: 1
-  Icon: {fileID: 21300000, guid: 267985651629a154ebd41f41b000f380, type: 3}
+  Icon: {fileID: 21300000, guid: 1924cd32ad105ac42a2761a64401d642, type: 3}
   WorldItemPrefab: {fileID: 0}
-  EquipPrefab: {fileID: 7555949746550905514, guid: 64126b3c6515efd45a20df47fb12f2c9, type: 3}
-  ItemSlotType: 6
-  ItemType: 5
-  Damage: 7
-  Accuracy: 0
+  EquipPrefab: {fileID: -10708954039162812, guid: 2e8e1c7f6179c2c498cd77a21ee9ff95, type: 3}
+  ItemSlotType: 1
+  ItemType: 1
+  Damage: 10
+  Accuracy: 10
   ProjectileSpeed: 0
   RecoveryTime: 0
   ChargeTime: 0
-  SwingSpeed: 1
+  SwingSpeed: 10
   RequiresAmmo: 0
   ResourceType: 0
   MaterialType: 0

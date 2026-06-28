@@ -59,7 +59,7 @@ public class MeleeHitDetection : NetworkBehaviour
         Loadout = loadout;
     }
 
-    public void EnableHitDetection(AttackData attack, float duration, bool isMainHand, bool isServer)
+    public void EnableHitDetection(AttackData attack, float duration, bool isServer)
     {
         int durationTicks = Mathf.CeilToInt(duration / (float)TimeManager.TickDelta);
 
@@ -67,14 +67,14 @@ public class MeleeHitDetection : NetworkBehaviour
         {
             if (!IsOwner || ClientHitDetectionActive) return;
             ClientCurrentAttack = attack;
-            ClientRootPos = isMainHand ? Loadout.MainHandRoot : Loadout.OffHandRoot;
+            ClientRootPos = Loadout.MeleeHitDetectionRoot;
             StartDetection(isServer: false, durationTicks);
         }
         else
         {
             if (ServerHitDetectionActive) return;
             ServerCurrentAttack = attack;
-            ServerRootPos = isMainHand ? Loadout.MainHandRoot : Loadout.OffHandRoot;
+            ServerRootPos = Loadout.MeleeHitDetectionRoot;
             ServerClientStartTick = TimeManager.GetPreciseTick(TickType.LastPacketTick);
             StartDetection(isServer: true, durationTicks);
         }
