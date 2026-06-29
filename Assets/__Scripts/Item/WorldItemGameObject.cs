@@ -10,7 +10,7 @@ using UnityEngine;
 [RequireComponent(typeof(NetworkObject))]
 [RequireComponent(typeof(NetworkObserver))]
 [RequireComponent(typeof(ItemVisuals))]
-public class WorldItemGameObject : PredictedSpawn
+public class WorldItemGameObject : NetworkBehaviour
 {
     private float PickUpDelayTime = 1f;
     public float MoveSpeed = 12f;
@@ -47,22 +47,27 @@ public class WorldItemGameObject : PredictedSpawn
 
     private bool CanPickUp => !HasPickupDelay || Time.time >= PickUpTimer + PickUpDelayTime;
 
-    public void Initialize(int itemId, int quantity, bool hasPickupDelay = false)
+    public void Initialize(int itemId, int quantity, int[] materialArray, bool hasPickupDelay = false)
     {
         Data.ID = itemId;
+        Data.Materials = materialArray;
         Data.Quantity = quantity;
         HasPickupDelay = hasPickupDelay;
     }
     public override void WritePayload(NetworkConnection connection, Writer writer)
     {
         writer.WriteInt32(Data.ID);
+        writer.WriteInt32(WorldItemID);
         writer.WriteInt32(Data.Quantity);
+        writer.WriteArray(Data.Materials);
         writer.WriteBoolean(HasPickupDelay);
     }
     public override void ReadPayload(NetworkConnection connection, Reader reader)
     {
         Data.ID = reader.ReadInt32();
+        WorldItemID = reader.ReadInt32();
         Data.Quantity = reader.ReadInt32();
+        reader.ReadArray(ref Data.Materials);
         HasPickupDelay = reader.ReadBoolean();
     }
     public override void OnStartServer()
@@ -70,14 +75,6 @@ public class WorldItemGameObject : PredictedSpawn
         base.OnStartServer();
         WorldItemID = ServerWorldItemStash.Instance.GetNextWorldItemID();
         ServerWorldItemStash.Instance.StashItem(Data, transform.position, WorldItemID);
-        Observer_SetClientData(Data.ID, Data.Quantity, WorldItemID);
-    }
-    [ObserversRpc]
-    public void Observer_SetClientData(int itemId, int quantity, int id)
-    {
-        Data.ID = itemId;
-        Data.Quantity = quantity;
-        WorldItemID = id;
     }
 
     private void Update()

@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &2458661740914389067
+--- !u!1 &8100282140334077657
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,52 +8,46 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4985188469373354075}
-  - component: {fileID: 6506138027641018618}
-  - component: {fileID: 2286778776447914778}
-  - component: {fileID: -8292682375620950938}
-  - component: {fileID: 270196603601275367}
-  - component: {fileID: -1673640226616285985}
-  - component: {fileID: -5335021504279380374}
-  - component: {fileID: 1427971128060797199}
-  - component: {fileID: -5243956050892847075}
-  m_Layer: 8
-  m_Name: Copper Ore
+  - component: {fileID: 4956260593384348885}
+  - component: {fileID: 3313260918572237144}
+  - component: {fileID: 5045522253371351456}
+  m_Layer: 0
+  m_Name: Bow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4985188469373354075
+--- !u!4 &4956260593384348885
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2458661740914389067}
+  m_GameObject: {fileID: 8100282140334077657}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -0.76923, y: 1.26507, z: 4.44579}
-  m_LocalScale: {x: 15, y: 15, z: 15}
+  m_LocalRotation: {x: -0.15756369, y: -0.084352255, z: -0.6536079, w: 0.7354286}
+  m_LocalPosition: {x: 0, y: 0.3, z: 0}
+  m_LocalScale: {x: 0.7, y: 0.7, z: 0.7}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
---- !u!33 &6506138027641018618
+  m_Father: {fileID: 8017824541245851162}
+  m_LocalEulerAnglesHint: {x: -20, y: 5, z: -84.14}
+--- !u!33 &3313260918572237144
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2458661740914389067}
-  m_Mesh: {fileID: 5461320835613783329, guid: be0acf2ea586eb14bb82685fa04ffb0e, type: 3}
---- !u!23 &2286778776447914778
+  m_GameObject: {fileID: 8100282140334077657}
+  m_Mesh: {fileID: 5396273660850839023, guid: b8a6dc6d039f844499fb768e973260f6, type: 3}
+--- !u!23 &5045522253371351456
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2458661740914389067}
+  m_GameObject: {fileID: 8100282140334077657}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -72,7 +66,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 8e012a2517c4689428e6f41baf81909f, type: 2}
+  - {fileID: 2100000, guid: 619e13e1cc7a1934baefac438543188f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -96,34 +90,48 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!135 &-8292682375620950938
-SphereCollider:
+--- !u!1 &8139291967821857824
+GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2458661740914389067}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.15
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &270196603601275367
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8017824541245851162}
+  - component: {fileID: -607580292008675632}
+  - component: {fileID: -8775914923217022990}
+  - component: {fileID: 9192783644527575407}
+  m_Layer: 0
+  m_Name: Bow
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8017824541245851162
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8139291967821857824}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 4956260593384348885}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &-607580292008675632
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2458661740914389067}
+  m_GameObject: {fileID: 8139291967821857824}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 26b716c41e9b56b4baafaf13a523ba2e, type: 3}
@@ -147,23 +155,22 @@ MonoBehaviour:
   _spectatorInterpolation: 2
   _enableTeleport: 0
   _teleportThreshold: 1
-  <PrefabId>k__BackingField: 2
+  <PrefabId>k__BackingField: 65535
   <SpawnableCollectionId>k__BackingField: 0
-  <AssetPathHash>k__BackingField: 5693324292420037084
+  <AssetPathHash>k__BackingField: 11012640586225537452
   SceneId: 0
   SerializedTransformProperties:
-    Position: {x: -0.76923, y: 1.26507, z: 4.44579}
-    Rotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
-    Scale: {x: 15, y: 15, z: 15}
-    IsValid: 1
+    Position: {x: 0, y: 0, z: 0}
+    Rotation: {x: 0, y: 0, z: 0, w: 0}
+    Scale: {x: 0, y: 0, z: 0}
+    IsValid: 0
   <IsNested>k__BackingField: 0
   WasActiveDuringEdit: 0
   WasActiveDuringEdit_Set1: 1
   <ComponentIndex>k__BackingField: 0
   <PredictedSpawn>k__BackingField: {fileID: 0}
   <PredictedOwner>k__BackingField: {fileID: 0}
-  NetworkBehaviours:
-  - {fileID: 1427971128060797199}
+  NetworkBehaviours: []
   InitializedParentNetworkBehaviour: {fileID: 0}
   InitializedNestedNetworkObjects: []
   RuntimeParentNetworkBehaviour: {fileID: 0}
@@ -174,14 +181,14 @@ MonoBehaviour:
   _initializeOrder: 0
   _preventDespawnOnDisconnect: 0
   _defaultDespawnType: 0
-  _initializedTimestamp: -8584188840681753667
---- !u!114 &-1673640226616285985
+  _initializedTimestamp: 0
+--- !u!114 &-8775914923217022990
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2458661740914389067}
+  m_GameObject: {fileID: 8139291967821857824}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c71fd7f855ec523429999fc4e14a1928, type: 3}
@@ -191,56 +198,18 @@ MonoBehaviour:
   _updateHostVisibility: 1
   _observerConditions:
   - {fileID: 11400000, guid: 5f33eb0e5b83b5546822cfe42a305657, type: 2}
---- !u!114 &-5335021504279380374
+--- !u!114 &9192783644527575407
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2458661740914389067}
+  m_GameObject: {fileID: 8139291967821857824}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2b597e1828355a4d994a69cbb11ef85, type: 3}
+  m_Script: {fileID: 11500000, guid: 17d7740a17f27a742b543beb943a9392, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: FishNet.Runtime::FishNet.Component.Ownership.PredictedSpawn
+  m_EditorClassIdentifier: Assembly-CSharp::Bow
   _componentIndexCache: 255
-  _addedNetworkObject: {fileID: 270196603601275367}
+  _addedNetworkObject: {fileID: -607580292008675632}
   _networkObjectCache: {fileID: 0}
-  _allowSpawning: 0
-  _allowDespawning: 1
---- !u!114 &1427971128060797199
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2458661740914389067}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 857495879b07c6845a3bf0ab74d6487e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Ore
-  _componentIndexCache: 0
-  _addedNetworkObject: {fileID: 270196603601275367}
-  _networkObjectCache: {fileID: 270196603601275367}
-  MoveSpeed: 12
-  PickupRadius: 1
-  WorldItemID: 0
---- !u!114 &-5243956050892847075
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2458661740914389067}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 44e9af67678f94a4187afc3c45e1c329, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ItemVisuals
-  ItemPickUp: {fileID: 1427971128060797199}
-  GroundMask:
-    serializedVersion: 2
-    m_Bits: 55
-  OreRenderer: {fileID: 2286778776447914778}
-  GlowColor: {r: 1, g: 0.6, b: 0.1, a: 1}

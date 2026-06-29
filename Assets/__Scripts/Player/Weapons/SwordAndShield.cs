@@ -140,7 +140,7 @@ public class SwordAndShield : Weapon
 
         Loadout.WeaponAnimator.speed = swing.Clip.length / AttackSpeed;
         Loadout.WeaponAnimator.SetTrigger("Attack");
-        Debug.Log("Attacking: " + Loadout.WeaponAnimator.GetBool("SwordAndShield"));
+
         HitDetection.EnableHitDetection(swing.AttackData, AttackSpeed, isServer: false);
         Loadout.StartWeaponCooldown(this, AttackSpeed + 0.05f, isServer: false);
 

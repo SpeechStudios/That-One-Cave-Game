@@ -12,6 +12,7 @@ public class PlayerLoadoutModule : NetworkBehaviour
     public Transform FP_WeaponParent;
     public Transform TP_WeaponParent;
     public Transform MeleeHitDetectionRoot;
+    public Transform BowFirePoint;
     public Weapon Fists;
 
     internal Weapon Weapon;
@@ -103,6 +104,13 @@ public class PlayerLoadoutModule : NetworkBehaviour
             }
             Fists.AttackRequest();
             return;
+        }
+
+        bool AttackReleased = Controller.PlayerInput.Player.Attack.WasReleasedThisFrame();
+        if (AttackReleased)
+        {
+            if (Weapon != null)
+                Weapon.ReleaseRequest();
         }
     }
     public void StartWeaponCooldown(Weapon weapon, float cooldown, bool isServer)

@@ -292,7 +292,7 @@ public class PlayerCraftingModule : NetworkBehaviour
             {
                 Vector3 dropPos = transform.position + transform.forward * 1f;
                 WorldItemGameObject worldObject = Instantiate(Registry.GetItem(returning.ID).WorldItemPrefab, dropPos, Quaternion.identity);
-                worldObject.Initialize(returning.ID, returning.Quantity, true);
+                worldObject.Initialize(returning.ID, returning.Quantity, returning.Materials, true);
                 Spawn(worldObject);
             }
         }

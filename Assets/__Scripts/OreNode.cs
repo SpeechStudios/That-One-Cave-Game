@@ -52,9 +52,9 @@ public class OreNode : NetworkBehaviour, IDamageable
             spawnPos.z = transform.position.z;
 
             NetworkObject oreInstance = Instantiate(Ore.WorldItemPrefab, spawnPos, Quaternion.identity);
-            oreInstance.GetComponent<WorldItemGameObject>().Initialize(Ore.ID, 1);
+            Debug.Log("Spawning At: " + spawnPos);
+            oreInstance.GetComponent<WorldItemGameObject>().Initialize(Ore.ID, 1, null);
             ServerManager.Spawn(oreInstance);
-
         }
     }
 }

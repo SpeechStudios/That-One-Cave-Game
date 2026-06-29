@@ -41,7 +41,7 @@ public class WoodNode : NetworkBehaviour, IDamageable
             spawnPos.z = transform.position.z;
 
             NetworkObject oreInstance = Instantiate(TreeParent.Wood.WorldItemPrefab, spawnPos, Quaternion.identity);
-            oreInstance.GetComponent<WorldItemGameObject>().Initialize(TreeParent.Wood.ID, 1);
+            oreInstance.GetComponent<WorldItemGameObject>().Initialize(TreeParent.Wood.ID, 1, null);
             ServerManager.Spawn(oreInstance);
 
 

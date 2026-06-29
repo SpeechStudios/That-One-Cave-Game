@@ -174,7 +174,7 @@ public class PlayerInventoryModule : NetworkBehaviour
 
         Vector3 dropPos = transform.position + transform.forward * 1f;
         WorldItemGameObject worldObject = Instantiate(Registry.GetItem(itemID).WorldItemPrefab, dropPos, Quaternion.identity);
-        worldObject.Initialize(itemID, quantity, true);
+        worldObject.Initialize(itemID, quantity, DragGhost.ClientGhost.Materials, true);
         Spawn(worldObject);
 
         LocalSyncSlots(response.Patches, false);
@@ -243,7 +243,7 @@ public class PlayerInventoryModule : NetworkBehaviour
 
                 Vector3 dropPos = transform.position + transform.forward * 1f;
                 WorldItemGameObject worldObject = Instantiate(Registry.GetItem(worldItem.Data.ID).WorldItemPrefab, dropPos, Quaternion.identity);
-                worldObject.Initialize(worldItem.Data.ID, amountNotPickedUp, true);
+                worldObject.Initialize(worldItem.Data.ID, amountNotPickedUp, worldItem.Data.Materials, true);
                 Spawn(worldObject);
             }
         }
@@ -572,8 +572,7 @@ public class PlayerInventoryModule : NetworkBehaviour
             WorldItem worldItem = ServerWorldItemStash.Instance.GetWorldItem(worldItemID);
             if (worldItem == null) return false;
             float distance = Vector3.Distance(transform.position, worldItem.WorldPos);
-            if (distance > 5) return false;
-
+            if (distance > 10) return false;
             if (worldItem.Data.ID != data.ID) return false;
             if (!PlayerHelperFunctions.NullSafeSequenceEqual(worldItem.Data.Materials, data.Materials)) return false;
             if (worldItem.Data.Quantity != data.Quantity) return false;

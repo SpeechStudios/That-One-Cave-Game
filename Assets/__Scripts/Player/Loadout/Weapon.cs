@@ -16,7 +16,9 @@ public class Weapon : NetworkBehaviour
         Loadout = loadout;
         SetStats(materialArray);
     }
-    public virtual void AttackRequest() { }
+    public virtual void AttackRequest() {  }
+    public virtual void ReleaseRequest() { }
+
     public virtual void Deinitialize() { }
     public virtual void SetStats(int[] materialArray) { }
 }

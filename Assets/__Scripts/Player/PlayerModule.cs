@@ -31,6 +31,7 @@ public class PlayerModule : NetworkBehaviour
     {
         Inventory.ServerInit();
         Damageable.ServerInit();
+        Loadout.Init();
     }
     public void ClientInit()
     {
