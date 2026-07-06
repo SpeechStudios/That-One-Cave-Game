@@ -534,6 +534,7 @@ GameObject:
   - component: {fileID: 766036806182533160}
   - component: {fileID: 3544688354330196895}
   - component: {fileID: 1364280588342638064}
+  - component: {fileID: -3166358744567229087}
   - component: {fileID: -8966319286158825527}
   - component: {fileID: 7589131285299544667}
   - component: {fileID: 7004708982079632913}
@@ -541,7 +542,6 @@ GameObject:
   - component: {fileID: 7845242055680241866}
   - component: {fileID: 4610964589504088332}
   - component: {fileID: 5856638283597887064}
-  - component: {fileID: -3166358744567229087}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -702,6 +702,25 @@ MonoBehaviour:
   Layers:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &-3166358744567229087
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3696720681994751973}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 794d07a340bbe514895c83e10e4fc8c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageableComponent
+  _componentIndexCache: 7
+  _addedNetworkObject: {fileID: 3544688354330196895}
+  _networkObjectCache: {fileID: 3544688354330196895}
+  StartingHealth: 100
+  HealthBar: {fileID: 1528972469701969897}
+  HealthBarPivot: {fileID: 3396258125207674517}
+  HealthBarActiveDuration: 5
 --- !u!114 &-8966319286158825527
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -718,6 +737,7 @@ MonoBehaviour:
   _addedNetworkObject: {fileID: 3544688354330196895}
   _networkObjectCache: {fileID: 3544688354330196895}
   Controller: {fileID: 7589131285299544667}
+  MoveEffects: {fileID: 0}
   Interact: {fileID: 5856638283597887064}
   DragGhost: {fileID: 7004708982079632913}
   Inventory: {fileID: 8452158226212797364}
@@ -865,25 +885,6 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1024
   IsInteracting: 0
---- !u!114 &-3166358744567229087
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3696720681994751973}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 794d07a340bbe514895c83e10e4fc8c4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DamageableComponent
-  _componentIndexCache: 7
-  _addedNetworkObject: {fileID: 3544688354330196895}
-  _networkObjectCache: {fileID: 3544688354330196895}
-  StartingHealth: 100
-  HealthBar: {fileID: 1528972469701969897}
-  HealthBarPivot: {fileID: 3396258125207674517}
-  HealthBarActiveDuration: 5
 --- !u!1 &4087405677824109817
 GameObject:
   m_ObjectHideFlags: 0

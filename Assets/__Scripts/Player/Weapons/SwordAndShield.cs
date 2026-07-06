@@ -44,7 +44,7 @@ public class SwordAndShield : Weapon
             AttackSpeed = 0.5f;
             Damage = 5;
             Resilliance = 0;
-            PrimaryAbility = new SwordAndShield_Ability_Birch();
+            PrimaryAbility = new SwordAndShield_OakHandle();
             return;
         }
         for (int i = 0; i < materialArray.Length; i++)
@@ -60,7 +60,7 @@ public class SwordAndShield : Weapon
                         AttackSpeed = 0.5f;
                         Damage = 0;
                         Resilliance = 0;
-                        PrimaryAbility = new SwordAndShield_Ability_Birch();
+                        PrimaryAbility = new SwordAndShield_OakHandle();
                         break;
                     case MaterialType.Oak:
                         AttackSpeed = 0.6f;

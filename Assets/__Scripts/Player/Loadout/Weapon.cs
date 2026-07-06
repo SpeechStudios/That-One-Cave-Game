@@ -42,9 +42,9 @@ public class Weapon : NetworkBehaviour
 
         lastUsedTick.Value = currentTick;
 
-        if (ability is MovementAbility movementAbility)
+        if (ability is MovementAbility)
         {
-            MovementController.BeginMovementOverride(movementAbility, isPrimary, currentTick);
+            MovementController.BeginMovementOverride(isPrimary, currentTick);
         }
         else
         {

@@ -119,6 +119,7 @@ public class PlayerLoadoutModule : NetworkBehaviour
     }
     private void SetAbilityInputs()
     {
+        if (Weapon == null) return;
         bool PrimaryAbility = Controller.PlayerInput.Player.PrimaryAbility.WasPressedThisFrame();
         if (PrimaryAbility)
         {

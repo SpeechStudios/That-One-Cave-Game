@@ -97,7 +97,7 @@ public class PlayerControllerModule : NetworkBehaviour
     public LayerMask GroundLayers;
     public float SphereCastRadius = 0.2f;
     public float SphereCastDownPosition = 0.9f;
-    private readonly Collider[] _groundCheckResults = new Collider[8];
+    private readonly Collider[] GroundCheckResults = new Collider[8];
 
     [Header("Perfect Jump")]
     public float PerfectJumpSpeedBonus = 2f;
@@ -139,7 +139,7 @@ public class PlayerControllerModule : NetworkBehaviour
     private bool ActiveIsPrimary;
     private uint ActiveAbilityStartTick;
 
-    private bool AbilityOverrideThisTick; // scoped to a single UpdatePosition call, not networked
+    private bool AbilityOverrideThisTick;
 
     [HideInInspector] public bool CanMove = false;
     [HideInInspector] public bool CanSprint = false;
@@ -160,7 +160,7 @@ public class PlayerControllerModule : NetworkBehaviour
         CanMove = true;
     }
 
-    public void BeginMovementOverride(MovementAbility ability, bool isPrimary, uint currentTick)
+    public void BeginMovementOverride(bool isPrimary, uint currentTick)
     {
         PendingAbilityOverride = true;
         PendingIsPrimary = isPrimary;
@@ -204,11 +204,10 @@ public class PlayerControllerModule : NetworkBehaviour
     private void Replicate(ReplicationData data, ReplicateState state = ReplicateState.Invalid, Channel channel = Channel.Unreliable)
     {
         UpdateRotation(data.LookYaw);
-        ResolveMovementAbility(ref data);
+        ResolveMovementAbility(ref data, state);
         if (!AbilityOverrideThisTick)
         {
             UpdatePosition(data.MoveInput, data.Jump, (float)TimeManager.TickDelta);
-            return;
         }
         AbilityOverrideThisTick = false;
 
@@ -217,10 +216,10 @@ public class PlayerControllerModule : NetworkBehaviour
         ActiveAbilityStartTick = data.ActiveAbilityStartTick;
     }
 
-    private void ResolveMovementAbility(ref ReplicationData data)
+    private void ResolveMovementAbility(ref ReplicationData data, ReplicateState state)
     {
         if (!data.AbilityOverrideActive) return;
-        if (LoadoutModule == null || LoadoutModule.Weapon == null)
+        if (LoadoutModule.Weapon == null)
         {
             data.AbilityOverrideActive = false;
             return;
@@ -231,15 +230,22 @@ public class PlayerControllerModule : NetworkBehaviour
         uint currentTick = data.GetTick();
         float tickDelta = (float)TimeManager.TickDelta;
         float elapsed = (currentTick - data.ActiveAbilityStartTick) * tickDelta;
+        bool isGenuineTick = state.ContainsTicked() && !state.ContainsReplayed();
 
         if (elapsed > ability.Duration)
         {
             data.AbilityOverrideActive = false;
+            if (isGenuineTick) ability.OnMovementComplete(this);
             return;
         }
 
-        ability.Execute(this, tickDelta, elapsed);
+        var result = ability.Execute(this, tickDelta, elapsed);
         AbilityOverrideThisTick = true;
+        if (result == MovementAbilityResult.Completed)
+        {
+            data.AbilityOverrideActive = false;
+            if (isGenuineTick) ability.OnMovementComplete(this);
+        }
     }
     public void RefreshGroundedState(Vector3 currentVelocity)
     {
@@ -373,7 +379,6 @@ public class PlayerControllerModule : NetworkBehaviour
         IsGrounded = !didJump && CheckGrounded();
         WasGrounded = isGrounded;
     }
-
     private Vector3 GetWishDirection(Vector2 moveInput)
     {
         Vector3 forward = transform.forward;//transform.TransformDirection(Vector3.forward);
@@ -436,11 +441,11 @@ public class PlayerControllerModule : NetworkBehaviour
     private bool CheckGrounded()
     {
         Vector3 spherePosition = transform.position + Vector3.down * SphereCastDownPosition;
-        var count = Physics.OverlapSphereNonAlloc(spherePosition, SphereCastRadius, _groundCheckResults, GroundLayers, QueryTriggerInteraction.Ignore);
+        var count = Physics.OverlapSphereNonAlloc(spherePosition, SphereCastRadius, GroundCheckResults, GroundLayers, QueryTriggerInteraction.Ignore);
 
         for (int i = 0; i < count; i++)
         {
-            Collider col = _groundCheckResults[i];
+            Collider col = GroundCheckResults[i];
             if (col == null) continue;
             if (col.transform == transform || col.transform.IsChildOf(transform)) continue;
             return true;
