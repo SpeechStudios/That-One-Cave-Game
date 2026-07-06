@@ -114,7 +114,7 @@ public partial class @Controls: IInputActionCollection2, IDisposable
                     ""name"": ""Attack"",
                     ""type"": ""Button"",
                     ""id"": ""6c2ab1b8-8984-453a-af3d-a3c78ae1679a"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -132,7 +132,7 @@ public partial class @Controls: IInputActionCollection2, IDisposable
                     ""name"": ""Crouch"",
                     ""type"": ""Button"",
                     ""id"": ""27c5f898-bc57-4ee1-8800-db469aca5fe3"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -141,7 +141,7 @@ public partial class @Controls: IInputActionCollection2, IDisposable
                     ""name"": ""Jump"",
                     ""type"": ""Button"",
                     ""id"": ""f1ba0d36-48eb-4cd5-b651-1c94a6531f70"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -150,7 +150,7 @@ public partial class @Controls: IInputActionCollection2, IDisposable
                     ""name"": ""Previous"",
                     ""type"": ""Button"",
                     ""id"": ""2776c80d-3c14-4091-8c56-d04ced07a2b0"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -195,6 +195,24 @@ public partial class @Controls: IInputActionCollection2, IDisposable
                     ""name"": ""Option3"",
                     ""type"": ""Button"",
                     ""id"": ""9deec7cc-5ce6-4668-9dbf-89801c2fd794"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""PrimaryAbility"",
+                    ""type"": ""Button"",
+                    ""id"": ""e1ce2d34-7a1d-4f84-806f-4197c69f289e"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""SecondaryAbility"",
+                    ""type"": ""Button"",
+                    ""id"": ""27213034-01a3-4b4f-9865-030f17aaba63"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
@@ -524,7 +542,7 @@ public partial class @Controls: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""1c04ea5f-b012-41d1-a6f7-02e963b52893"",
-                    ""path"": ""<Keyboard>/e"",
+                    ""path"": ""<Keyboard>/f"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
@@ -595,6 +613,28 @@ public partial class @Controls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
                     ""action"": ""Option3"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""8765add7-e451-4dc5-9edb-aabef7a585f4"",
+                    ""path"": ""<Keyboard>/q"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""PrimaryAbility"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""4b965442-be69-40a8-8b44-ef32cddb477f"",
+                    ""path"": ""<Keyboard>/e"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""SecondaryAbility"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1194,6 +1234,8 @@ public partial class @Controls: IInputActionCollection2, IDisposable
         m_Player_Option1 = m_Player.FindAction("Option1", throwIfNotFound: true);
         m_Player_Option2 = m_Player.FindAction("Option2", throwIfNotFound: true);
         m_Player_Option3 = m_Player.FindAction("Option3", throwIfNotFound: true);
+        m_Player_PrimaryAbility = m_Player.FindAction("PrimaryAbility", throwIfNotFound: true);
+        m_Player_SecondaryAbility = m_Player.FindAction("SecondaryAbility", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1299,6 +1341,8 @@ public partial class @Controls: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Option1;
     private readonly InputAction m_Player_Option2;
     private readonly InputAction m_Player_Option3;
+    private readonly InputAction m_Player_PrimaryAbility;
+    private readonly InputAction m_Player_SecondaryAbility;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -1358,6 +1402,14 @@ public partial class @Controls: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Player/Option3".
         /// </summary>
         public InputAction @Option3 => m_Wrapper.m_Player_Option3;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/PrimaryAbility".
+        /// </summary>
+        public InputAction @PrimaryAbility => m_Wrapper.m_Player_PrimaryAbility;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/SecondaryAbility".
+        /// </summary>
+        public InputAction @SecondaryAbility => m_Wrapper.m_Player_SecondaryAbility;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -1420,6 +1472,12 @@ public partial class @Controls: IInputActionCollection2, IDisposable
             @Option3.started += instance.OnOption3;
             @Option3.performed += instance.OnOption3;
             @Option3.canceled += instance.OnOption3;
+            @PrimaryAbility.started += instance.OnPrimaryAbility;
+            @PrimaryAbility.performed += instance.OnPrimaryAbility;
+            @PrimaryAbility.canceled += instance.OnPrimaryAbility;
+            @SecondaryAbility.started += instance.OnSecondaryAbility;
+            @SecondaryAbility.performed += instance.OnSecondaryAbility;
+            @SecondaryAbility.canceled += instance.OnSecondaryAbility;
         }
 
         /// <summary>
@@ -1467,6 +1525,12 @@ public partial class @Controls: IInputActionCollection2, IDisposable
             @Option3.started -= instance.OnOption3;
             @Option3.performed -= instance.OnOption3;
             @Option3.canceled -= instance.OnOption3;
+            @PrimaryAbility.started -= instance.OnPrimaryAbility;
+            @PrimaryAbility.performed -= instance.OnPrimaryAbility;
+            @PrimaryAbility.canceled -= instance.OnPrimaryAbility;
+            @SecondaryAbility.started -= instance.OnSecondaryAbility;
+            @SecondaryAbility.performed -= instance.OnSecondaryAbility;
+            @SecondaryAbility.canceled -= instance.OnSecondaryAbility;
         }
 
         /// <summary>
@@ -1851,6 +1915,20 @@ public partial class @Controls: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnOption3(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "PrimaryAbility" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnPrimaryAbility(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "SecondaryAbility" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnSecondaryAbility(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.

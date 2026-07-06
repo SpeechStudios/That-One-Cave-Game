@@ -10,23 +10,32 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(CharacterController))]
 public class PlayerControllerModule : NetworkBehaviour
 {
+    public PlayerLoadoutModule LoadoutModule;
     public struct ReplicationData : IReplicateData
     {
         public readonly Vector2 MoveInput;
         public readonly float LookYaw;
         public readonly bool Jump;
+
+        public bool AbilityOverrideActive;
+        public bool IsPrimaryAbility;
+        public uint ActiveAbilityStartTick;
+
         private uint Tick;
 
-        public ReplicationData(Vector2 moveInput, float lookYaw, bool jump)
+        public ReplicationData(Vector2 moveInput, float lookYaw, bool jump, bool abilityOverrideActive, bool isPrimaryAbility, uint activeAbilityStartTick)
         {
             MoveInput = moveInput;
             LookYaw = lookYaw;
             Jump = jump;
+            AbilityOverrideActive = abilityOverrideActive;
+            IsPrimaryAbility = isPrimaryAbility;
+            ActiveAbilityStartTick = activeAbilityStartTick;
             Tick = 0;
         }
         public readonly uint GetTick() => Tick;
         public void SetTick(uint value) => Tick = value;
-        public void Dispose(){}
+        public void Dispose() { }
     }
     public struct ReconciliationData : IReconcileData
     {
@@ -39,11 +48,17 @@ public class PlayerControllerModule : NetworkBehaviour
         public readonly float WishJumpTimer;
         public readonly float PerfectJumpAcceleration;
         public readonly float LookYaw;
+
+        public readonly bool AbilityOverrideActive;
+        public readonly bool IsPrimaryAbility;
+        public readonly uint ActiveAbilityStartTick;
+
         private uint Tick;
 
         public ReconciliationData(Vector3 position, Vector3 velocity,
             bool isGrounded, bool wasGrounded, bool hasJumpedOnce,
-            bool wishJump, float wishJumpTimer, float perfectJumpAccel, float lookYaw)
+            bool wishJump, float wishJumpTimer, float perfectJumpAccel, float lookYaw,
+            bool abilityOverrideActive, bool isPrimaryAbility, uint activeAbilityStartTick)
         {
             Position = position;
             Velocity = velocity;
@@ -54,6 +69,9 @@ public class PlayerControllerModule : NetworkBehaviour
             WishJump = wishJump;
             WishJumpTimer = wishJumpTimer;
             PerfectJumpAcceleration = perfectJumpAccel;
+            AbilityOverrideActive = abilityOverrideActive;
+            IsPrimaryAbility = isPrimaryAbility;
+            ActiveAbilityStartTick = activeAbilityStartTick;
             Tick = 0;
         }
         public readonly uint GetTick() => Tick;
@@ -62,7 +80,7 @@ public class PlayerControllerModule : NetworkBehaviour
     }
 
     [Header("Transform Components")]
-    [SerializeField] private CharacterController CC;
+    [SerializeField] internal CharacterController CC;
     [SerializeField] private Transform CameraParent;
     [SerializeField] private GameObject TPRoot;
 
@@ -113,6 +131,16 @@ public class PlayerControllerModule : NetworkBehaviour
     private float WishJumpTimer;
     private const float WishJumpTime = 0.2f;
 
+    private bool PendingAbilityOverride;
+    private bool PendingIsPrimary;
+    private uint PendingAbilityStartTick;
+
+    private bool AbilityOverrideActiveState;
+    private bool ActiveIsPrimary;
+    private uint ActiveAbilityStartTick;
+
+    private bool AbilityOverrideThisTick; // scoped to a single UpdatePosition call, not networked
+
     [HideInInspector] public bool CanMove = false;
     [HideInInspector] public bool CanSprint = false;
     public void Init()
@@ -131,6 +159,14 @@ public class PlayerControllerModule : NetworkBehaviour
         Cursor.visible = false;
         CanMove = true;
     }
+
+    public void BeginMovementOverride(MovementAbility ability, bool isPrimary, uint currentTick)
+    {
+        PendingAbilityOverride = true;
+        PendingIsPrimary = isPrimary;
+        PendingAbilityStartTick = currentTick;
+    }
+
     public override void OnStartNetwork()
     {
         TimeManager.OnTick += TimeManagerTickEventHandler;
@@ -143,11 +179,16 @@ public class PlayerControllerModule : NetworkBehaviour
     }
     private void TimeManagerTickEventHandler()
     {
-        if(IsOwner)
+        if (IsOwner)
         {
-            ReplicationData data = new(MoveInput, LookYaw, JumpInput);
+            bool overrideActive = PendingAbilityOverride || AbilityOverrideActiveState;
+            bool isPrimary = PendingAbilityOverride ? PendingIsPrimary : ActiveIsPrimary;
+            uint startTick = PendingAbilityOverride ? PendingAbilityStartTick : ActiveAbilityStartTick;
+
+            ReplicationData data = new(MoveInput, LookYaw, JumpInput, overrideActive, isPrimary, startTick);
             Replicate(data);
             JumpInput = false;
+            PendingAbilityOverride = false;
         }
         else
         {
@@ -163,11 +204,52 @@ public class PlayerControllerModule : NetworkBehaviour
     private void Replicate(ReplicationData data, ReplicateState state = ReplicateState.Invalid, Channel channel = Channel.Unreliable)
     {
         UpdateRotation(data.LookYaw);
-        UpdatePosition(data.MoveInput, data.Jump, (float)TimeManager.TickDelta);
+        ResolveMovementAbility(ref data);
+        if (!AbilityOverrideThisTick)
+        {
+            UpdatePosition(data.MoveInput, data.Jump, (float)TimeManager.TickDelta);
+            return;
+        }
+        AbilityOverrideThisTick = false;
+
+        AbilityOverrideActiveState = data.AbilityOverrideActive;
+        ActiveIsPrimary = data.IsPrimaryAbility;
+        ActiveAbilityStartTick = data.ActiveAbilityStartTick;
+    }
+
+    private void ResolveMovementAbility(ref ReplicationData data)
+    {
+        if (!data.AbilityOverrideActive) return;
+        if (LoadoutModule == null || LoadoutModule.Weapon == null)
+        {
+            data.AbilityOverrideActive = false;
+            return;
+        }
+
+        MovementAbility ability = data.IsPrimaryAbility ? (LoadoutModule.Weapon.PrimaryAbility as MovementAbility) : (LoadoutModule.Weapon.SecondaryAbility as MovementAbility);
+
+        uint currentTick = data.GetTick();
+        float tickDelta = (float)TimeManager.TickDelta;
+        float elapsed = (currentTick - data.ActiveAbilityStartTick) * tickDelta;
+
+        if (elapsed > ability.Duration)
+        {
+            data.AbilityOverrideActive = false;
+            return;
+        }
+
+        ability.Execute(this, tickDelta, elapsed);
+        AbilityOverrideThisTick = true;
+    }
+    public void RefreshGroundedState(Vector3 currentVelocity)
+    {
+        Velocity = currentVelocity;
+        IsGrounded = CheckGrounded();
+        WasGrounded = IsGrounded;
     }
     public override void CreateReconcile()
     {
-        ReconciliationData data = new(transform.position, Velocity, IsGrounded, WasGrounded, PerfectJumpComplete, WishJump, WishJumpTimer, PerfectJumpCurrentAcceleration, LookYaw);
+        ReconciliationData data = new(transform.position, Velocity, IsGrounded, WasGrounded, PerfectJumpComplete, WishJump, WishJumpTimer, PerfectJumpCurrentAcceleration, LookYaw, AbilityOverrideActiveState, ActiveIsPrimary, ActiveAbilityStartTick);
         Reconcile(data);
     }
     [Reconcile]
@@ -185,6 +267,10 @@ public class PlayerControllerModule : NetworkBehaviour
         WishJump = data.WishJump;
         WishJumpTimer = data.WishJumpTimer;
         PerfectJumpCurrentAcceleration = data.PerfectJumpAcceleration;
+
+        AbilityOverrideActiveState = data.AbilityOverrideActive;
+        ActiveIsPrimary = data.IsPrimaryAbility;
+        ActiveAbilityStartTick = data.ActiveAbilityStartTick;
     }
 
     private void Update()
@@ -228,6 +314,15 @@ public class PlayerControllerModule : NetworkBehaviour
     }
     private void UpdatePosition(Vector2 moveInput, bool jump, float dt)
     {
+        if (AbilityOverrideThisTick)
+        {
+            CC.Move(Velocity * dt);
+            IsGrounded = CheckGrounded();
+            WasGrounded = IsGrounded;
+            AbilityOverrideThisTick = false;
+            return;
+        }
+
         float wishSpeed = RunSpeed;
 
         SetWishJump(jump, ref WishJump, ref WishJumpTimer, WishJumpTime, dt);
@@ -266,7 +361,7 @@ public class PlayerControllerModule : NetworkBehaviour
         else if (justLanded && !WishJump)
             PerfectJumpComplete = false;
 
-        if(!isPerfectJump && isGrounded)
+        if (!isPerfectJump && isGrounded)
             PerfectJumpCurrentAcceleration = Mathf.Max(0f, PerfectJumpCurrentAcceleration - PerfectJumpSpeedBonus / PerfectJumpDeceleration);
 
         bool didJump = TryJump(ref vertY, ref WishJump, isGrounded);
@@ -342,7 +437,7 @@ public class PlayerControllerModule : NetworkBehaviour
     {
         Vector3 spherePosition = transform.position + Vector3.down * SphereCastDownPosition;
         var count = Physics.OverlapSphereNonAlloc(spherePosition, SphereCastRadius, _groundCheckResults, GroundLayers, QueryTriggerInteraction.Ignore);
-        
+
         for (int i = 0; i < count; i++)
         {
             Collider col = _groundCheckResults[i];
@@ -351,6 +446,6 @@ public class PlayerControllerModule : NetworkBehaviour
             return true;
         }
         return false;
-        
+
     }
 }

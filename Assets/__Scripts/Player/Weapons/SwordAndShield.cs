@@ -26,9 +26,9 @@ public class SwordAndShield : Weapon
         HitDetection.ClientOnHit -= ClientHit;
         HitDetection.ServerOnHit -= ServerHit;
     }
-    public override void Initalize(PlayerLoadoutModule loadout, int[] materialArray)
+    public override void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout, int[] materialArray)
     {
-        base.Initalize(loadout, materialArray);
+        base.Initalize(movement, loadout, materialArray);
         loadout.MeleeHitDetectionRoot.transform.localPosition = new Vector2(HitDetectionXOffset, loadout.MeleeHitDetectionRoot.transform.localPosition.y);
         HitDetection.Initalize(loadout);
         Loadout.RebindAnimator("SwordAndShield");
@@ -44,6 +44,7 @@ public class SwordAndShield : Weapon
             AttackSpeed = 0.5f;
             Damage = 5;
             Resilliance = 0;
+            PrimaryAbility = new SwordAndShield_Ability_Birch();
             return;
         }
         for (int i = 0; i < materialArray.Length; i++)
@@ -59,7 +60,7 @@ public class SwordAndShield : Weapon
                         AttackSpeed = 0.5f;
                         Damage = 0;
                         Resilliance = 0;
-                        QAbility = new SwordAndShield_Ability_Birch();
+                        PrimaryAbility = new SwordAndShield_Ability_Birch();
                         break;
                     case MaterialType.Oak:
                         AttackSpeed = 0.6f;

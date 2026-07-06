@@ -24,9 +24,9 @@ public class Fists : Weapon
         HitDetection.ClientOnHit -= ClientHit;
         HitDetection.ServerOnHit -= ServerHit;
     }
-    public override void Initalize(PlayerLoadoutModule loadout, int[] materialArray)
+    public override void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout, int[] materialArray)
     {
-        base.Initalize(loadout, materialArray);
+        base.Initalize(movement,loadout, materialArray);
         HitDetection.Initalize(loadout);
     }
     public override void AttackRequest()

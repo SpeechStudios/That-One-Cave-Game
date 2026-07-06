@@ -1,20 +1,22 @@
 using UnityEngine;
 
-
 public abstract class Ability
 {
     public abstract float Cooldown { get; }
-    private float _lastUsedTime;
 
-    public bool IsOnCooldown() => Time.time - _lastUsedTime < Cooldown;
-
-    public void Activate(GameObject user)
+    public bool IsOnCooldown(uint lastUsedTick, uint currentTick, float tickDelta)
     {
-        if (IsOnCooldown()) return;
-        _lastUsedTime = Time.time;
-        OnActivate(user);
+        if (lastUsedTick == 0) return false;
+        float elapsed = (currentTick - lastUsedTick) * tickDelta;
+        return elapsed < Cooldown;
     }
 
-    protected abstract void OnActivate(GameObject user);
-    public abstract void PlayEffect(GameObject user);
+    public abstract void Activate();
+}
+
+
+public abstract class MovementAbility : Ability
+{
+    public abstract float Duration { get; }
+    public abstract void Execute(PlayerControllerModule controller, float dt, float elapsed);
 }

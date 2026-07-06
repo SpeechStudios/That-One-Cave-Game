@@ -681,7 +681,7 @@ MonoBehaviour:
   _initializeOrder: 0
   _preventDespawnOnDisconnect: 0
   _defaultDespawnType: 0
-  _initializedTimestamp: -8584189553403494402
+  _initializedTimestamp: -8584185166980745359
 --- !u!114 &1364280588342638064
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -739,6 +739,7 @@ MonoBehaviour:
   _componentIndexCache: 2
   _addedNetworkObject: {fileID: 3544688354330196895}
   _networkObjectCache: {fileID: 3544688354330196895}
+  LoadoutModule: {fileID: 4610964589504088332}
   CC: {fileID: 7466628139763656283}
   CameraParent: {fileID: 3701229931077986517}
   TPRoot: {fileID: 2954712837019205929}
@@ -754,8 +755,8 @@ MonoBehaviour:
     m_Bits: 4294967295
   SphereCastRadius: 0.15
   SphereCastDownPosition: 0.95
-  PerfectJumpSpeedBonus: 1.5
-  PerfectJumpMaxSpeed: 10
+  PerfectJumpSpeedBonus: 0.5
+  PerfectJumpMaxSpeed: 9
   PerfectJumpAcceleration: 10
   PerfectJumpDeceleration: 0
   PerfectJumpThreshold: 0.15

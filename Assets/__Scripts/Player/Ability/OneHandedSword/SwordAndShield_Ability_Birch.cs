@@ -1,16 +1,29 @@
 using UnityEngine;
 
-public class SwordAndShield_Ability_Birch : Ability
+public class SwordAndShield_Ability_Birch : MovementAbility
 {
-    public override float Cooldown => 1.5f;
+    private const float DashSpeed = 18f;
+    private const float DashDuration = 0.25f;
+    private const float DashCooldown = 3f;
 
-    protected override void OnActivate(GameObject user)
-    {
-        // just the slash logic, cooldown handled by base
-    }
+    private Vector3 _dashDirection;
 
-    public override void PlayEffect(GameObject user)
+    public override float Duration => DashDuration;
+    public override float Cooldown => DashCooldown;
+
+    public override void Activate() { }
+
+    public override void Execute(PlayerControllerModule controller, float dt, float elapsed)
     {
-        // slash VFX
+        if (elapsed <= 0f)
+        {
+            Vector3 forward = controller.transform.forward;
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 0.0001f) forward = controller.transform.forward; // degenerate fallback
+            _dashDirection = forward.normalized;
+        }
+
+        controller.CC.Move(_dashDirection * DashSpeed * dt);
+        controller.RefreshGroundedState(_dashDirection * DashSpeed);
     }
 }

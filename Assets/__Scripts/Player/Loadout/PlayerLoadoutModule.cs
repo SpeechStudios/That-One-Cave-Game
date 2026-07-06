@@ -25,7 +25,7 @@ public class PlayerLoadoutModule : NetworkBehaviour
     public void Init()
     {
         Initalized = true;
-        Fists.Initalize(this, null);
+        Fists.Initalize(Controller, this, null);
     }
 
     [Server]
@@ -36,7 +36,7 @@ public class PlayerLoadoutModule : NetworkBehaviour
         Observer_Equip_RPC(itemPrefab, materialArray, type);
         ServerLoadout[type] = new EquippedSlot { Item = itemPrefab, IsEquipped = true };
         Weapon weapon = itemPrefab.GetComponent<Weapon>();
-        weapon.Initalize(this, materialArray);
+        weapon.Initalize(Controller, this, materialArray);
     }
     [Server]
     public void UnequipItem(ItemSlotType type, NetworkConnection conn)
@@ -70,7 +70,7 @@ public class PlayerLoadoutModule : NetworkBehaviour
                 return;
         }
 
-        weapon.Initalize(this, materialArray);
+        weapon.Initalize(Controller, this, materialArray);
         obj.transform.SetParent(parent, false);
         obj.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
     }
@@ -93,7 +93,11 @@ public class PlayerLoadoutModule : NetworkBehaviour
     void Update()
     {
         if (!Initalized) return;
-
+        SetAttackInputs();
+        SetAbilityInputs();
+    }
+    private void SetAttackInputs()
+    {
         bool Attack = Controller.PlayerInput.Player.Attack.IsPressed();
         if (Attack)
         {
@@ -111,6 +115,20 @@ public class PlayerLoadoutModule : NetworkBehaviour
         {
             if (Weapon != null)
                 Weapon.ReleaseRequest();
+        }
+    }
+    private void SetAbilityInputs()
+    {
+        bool PrimaryAbility = Controller.PlayerInput.Player.PrimaryAbility.WasPressedThisFrame();
+        if (PrimaryAbility)
+        {
+            Weapon.PrimaryAbilityRequest();
+        }
+
+        bool Secondary = Controller.PlayerInput.Player.SecondaryAbility.WasPressedThisFrame();
+        if (Secondary)
+        {
+            Weapon.SecondaryAbilityRequest();
         }
     }
     public void StartWeaponCooldown(Weapon weapon, float cooldown, bool isServer)

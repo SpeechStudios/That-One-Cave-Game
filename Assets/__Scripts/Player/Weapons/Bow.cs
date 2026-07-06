@@ -15,9 +15,9 @@ public class Bow : Weapon
     private bool IsCharging;
 
     private const float MAX_PASSED_TIME = 0.3f;
-    public override void Initalize(PlayerLoadoutModule loadout, int[] materialArray)
+    public override void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout, int[] materialArray)
     {
-        base.Initalize(loadout, materialArray);
+        base.Initalize(movement, loadout, materialArray);
         Loadout.RebindAnimator("Bow");
         PlayerCam = Camera.main;
     }
