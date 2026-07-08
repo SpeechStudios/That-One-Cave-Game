@@ -18,22 +18,17 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
         public readonly bool Jump;
 
         public Vector3 KnockbackVelocity;
-
-        public bool AbilityOverrideActive;
-        public bool IsPrimaryAbility;
-        public uint ActiveAbilityStartTick;
+        public AbilityState AbilityState;
 
         private uint Tick;
 
-        public ReplicationData(Vector2 moveInput, float lookYaw, bool jump, Vector3 knockbackVelocity, bool abilityOverrideActive, bool isPrimaryAbility, uint activeAbilityStartTick)
+        public ReplicationData(Vector2 moveInput, float lookYaw, bool jump, Vector3 knockbackVelocity, AbilityState state)
         {
             MoveInput = moveInput;
             LookYaw = lookYaw;
             Jump = jump;
             KnockbackVelocity = knockbackVelocity;
-            AbilityOverrideActive = abilityOverrideActive;
-            IsPrimaryAbility = isPrimaryAbility;
-            ActiveAbilityStartTick = activeAbilityStartTick;
+            AbilityState = state;
             Tick = 0;
         }
         public readonly uint GetTick() => Tick;
@@ -125,7 +120,9 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
     private float YawInput;
     private float PitchInput;
     private bool IsGrounded;
+
     private Vector3 KnockbackForce;
+    private float KnockbackDecay = 4f;
 
     private float LookYaw;
     private float LookPitch;
@@ -135,13 +132,8 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
     private float WishJumpTimer;
     private const float WishJumpTime = 0.2f;
 
-    private bool PendingAbilityOverride;
-    private bool PendingIsPrimary;
-    private uint PendingAbilityStartTick;
-
-    private bool AbilityOverrideActiveState;
-    private bool ActiveIsPrimary;
-    private uint ActiveAbilityStartTick;
+    private AbilityState PendingAbility;
+    private AbilityState ActiveAbility;
 
     private bool AbilityOverrideThisTick;
 
@@ -165,9 +157,7 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
     }
     public void BeginMovementOverride(bool isPrimary, uint currentTick)
     {
-        PendingAbilityOverride = true;
-        PendingIsPrimary = isPrimary;
-        PendingAbilityStartTick = currentTick;
+        PendingAbility = new AbilityState(true, isPrimary, currentTick);
     }
     public void ApplyKnockback(Vector3 velocity)
     {
@@ -196,14 +186,15 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
     {
         if (IsOwner)
         {
-            bool overrideActive = PendingAbilityOverride || AbilityOverrideActiveState;
-            bool isPrimary = PendingAbilityOverride ? PendingIsPrimary : ActiveIsPrimary;
-            uint startTick = PendingAbilityOverride ? PendingAbilityStartTick : ActiveAbilityStartTick;
+            if (PendingAbility.Active)
+            {
+                ActiveAbility = PendingAbility;
+                PendingAbility = default;
+            }
 
-            ReplicationData data = new(MoveInput, LookYaw, JumpInput, KnockbackForce, overrideActive, isPrimary, startTick);
+            ReplicationData data = new(MoveInput, LookYaw, JumpInput, KnockbackForce, ActiveAbility);
             Replicate(data);
             JumpInput = false;
-            PendingAbilityOverride = false;
         }
         else
         {
@@ -218,50 +209,19 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
     [Replicate]
     private void Replicate(ReplicationData data, ReplicateState state = ReplicateState.Invalid, Channel channel = Channel.Unreliable)
     {
+        float dt = (float)TimeManager.TickDelta;
         UpdateRotation(data.LookYaw);
-        ResolveMovementAbility(ref data, state);
+        ResolveMovementAbility(ref data, state, dt);
         if (!AbilityOverrideThisTick)
         {
-            UpdatePosition(data.MoveInput, data.KnockbackVelocity, data.Jump, (float)TimeManager.TickDelta);
+            UpdatePosition(data.MoveInput, data.KnockbackVelocity, data.Jump, dt);
         }
         AbilityOverrideThisTick = false;
 
-        AbilityOverrideActiveState = data.AbilityOverrideActive;
-        ActiveIsPrimary = data.IsPrimaryAbility;
-        ActiveAbilityStartTick = data.ActiveAbilityStartTick;
+        ActiveAbility = data.AbilityState;
     }
 
-    private void ResolveMovementAbility(ref ReplicationData data, ReplicateState state)
-    {
-        if (!data.AbilityOverrideActive) return;
-        if (LoadoutModule.Weapon == null)
-        {
-            data.AbilityOverrideActive = false;
-            return;
-        }
 
-        MovementAbility ability = data.IsPrimaryAbility ? (LoadoutModule.Weapon.PrimaryAbility as MovementAbility) : (LoadoutModule.Weapon.SecondaryAbility as MovementAbility);
-
-        uint currentTick = data.GetTick();
-        float tickDelta = (float)TimeManager.TickDelta;
-        float elapsed = (currentTick - data.ActiveAbilityStartTick) * tickDelta;
-        bool isGenuineTick = state.ContainsTicked() && !state.ContainsReplayed() && IsServerInitialized;
-
-        if (elapsed > ability.Duration)
-        {
-            data.AbilityOverrideActive = false;
-            if (isGenuineTick) ability.OnMovementComplete(this);
-            return;
-        }
-
-        var result = ability.Execute(this, tickDelta, elapsed);
-        AbilityOverrideThisTick = true;
-        if (result == MovementAbilityResult.Completed)
-        {
-            data.AbilityOverrideActive = false;
-            if (isGenuineTick) ability.OnMovementComplete(this);
-        }
-    }
     public void RefreshGroundedState(Vector3 currentVelocity)
     {
         Velocity = currentVelocity;
@@ -270,7 +230,7 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
     }
     public override void CreateReconcile()
     {
-        ReconciliationData data = new(transform.position, Velocity, IsGrounded, WasGrounded, PerfectJumpComplete, WishJump, WishJumpTimer, PerfectJumpCurrentAcceleration, LookYaw, AbilityOverrideActiveState, ActiveIsPrimary, ActiveAbilityStartTick);
+        ReconciliationData data = new(transform.position, Velocity, IsGrounded, WasGrounded, PerfectJumpComplete, WishJump, WishJumpTimer, PerfectJumpCurrentAcceleration, LookYaw, ActiveAbility.Active, ActiveAbility.IsPrimary, ActiveAbility.StartTick);
         Reconcile(data);
     }
     [Reconcile]
@@ -289,9 +249,7 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
         WishJumpTimer = data.WishJumpTimer;
         PerfectJumpCurrentAcceleration = data.PerfectJumpAcceleration;
 
-        AbilityOverrideActiveState = data.AbilityOverrideActive;
-        ActiveIsPrimary = data.IsPrimaryAbility;
-        ActiveAbilityStartTick = data.ActiveAbilityStartTick;
+        ActiveAbility = new AbilityState(data.AbilityOverrideActive, data.IsPrimaryAbility, data.ActiveAbilityStartTick);
     }
 
     private void Update()
@@ -329,6 +287,7 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
             JumpInput = true;
         }
     }
+
     private void UpdateRotation(float lookYaw)
     {
         transform.rotation = quaternion.RotateY(lookYaw);
@@ -383,16 +342,50 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
         {
             KnockbackForce = knockbackVelocity;
         }
-        KnockbackForce = Vector3.Lerp(KnockbackForce, Vector3.zero, 5f * dt);
+        KnockbackForce = Vector3.Lerp(KnockbackForce, Vector3.zero, KnockbackDecay * dt);
         CC.Move((Velocity + KnockbackForce) * dt);
 
 
         IsGrounded = !didJump && CheckGrounded();
         WasGrounded = isGrounded;
     }
-    private Vector3 GetWishDirection(Vector2 moveInput)
+    private void ResolveMovementAbility(ref ReplicationData data, ReplicateState state, float dt)
     {
-        Vector3 forward = transform.forward;//transform.TransformDirection(Vector3.forward);
+        if (!data.AbilityState.Active) return;
+        if (LoadoutModule.Weapon == null)
+        {
+            data.AbilityState = default;
+            return;
+        }
+
+        MovementAbility ability = data.AbilityState.IsPrimary ? (LoadoutModule.Weapon.PrimaryAbility as MovementAbility) : (LoadoutModule.Weapon.SecondaryAbility as MovementAbility);
+        uint currentTick = data.GetTick();
+        float elapsed = (currentTick - data.AbilityState.StartTick) * dt;
+        bool isServerTick = state.ContainsTicked() && !state.ContainsReplayed() && IsServerInitialized;
+        bool isClientTick = state.ContainsTicked() && !state.ContainsReplayed() && IsClientInitialized;
+
+        if (elapsed > ability.Duration)
+        {
+            data.AbilityState = default;
+            if (isServerTick) ability.ServerOnMovementComplete(this);
+            if (isClientTick) ability.ClientOnMovementComplete(this);
+            return;
+        }
+
+        MovementAbilityResult result = ability.ExecuteMove(this, data.MoveInput, ref data.AbilityState, dt, elapsed);
+        AbilityOverrideThisTick = true;
+        if(result == MovementAbilityResult.Completed)
+        {
+            data.AbilityState = default;
+            if (isServerTick) ability.ServerOnMovementComplete(this);
+            if (isClientTick) ability.ClientOnMovementComplete(this);
+        }
+    }
+
+    #region Movement Calculations
+    internal Vector3 GetWishDirection(Vector2 moveInput)
+    {
+        Vector3 forward = transform.forward;
         forward.y = 0f;
         if (forward.sqrMagnitude > 0.001f) forward.Normalize();
 
@@ -464,6 +457,7 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
         return false;
 
     }
+    #endregion
 
 
 }

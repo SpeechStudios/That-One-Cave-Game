@@ -16,7 +16,8 @@ public enum MovementAbilityResult { Continue, Completed }
 public abstract class MovementAbility : Ability
 {
     public abstract float Duration { get; }
-    public abstract MovementAbilityResult Execute(PlayerControllerModule controller, float dt, float elapsed);
-    public virtual void OnMovementComplete(PlayerControllerModule controller) { }
+    public abstract MovementAbilityResult ExecuteMove(PlayerControllerModule controller, Vector2 moveInput, ref AbilityState state ,float dt, float elapsed);
+    public virtual void ServerOnMovementComplete(PlayerControllerModule controller) { }
+    public virtual void ClientOnMovementComplete(PlayerControllerModule controller) { }
     public virtual void OnInterrupted(PlayerControllerModule controller) { }
 }

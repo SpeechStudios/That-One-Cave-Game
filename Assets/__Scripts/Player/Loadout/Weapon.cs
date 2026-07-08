@@ -40,8 +40,6 @@ public class Weapon : NetworkBehaviour
 
         if (ability.IsOnCooldown(lastUsedTick.Value, currentTick, tickDelta)) return;
 
-        lastUsedTick.Value = currentTick;
-
         if (ability is MovementAbility)
         {
             MovementController.BeginMovementOverride(isPrimary, currentTick);
@@ -50,6 +48,15 @@ public class Weapon : NetworkBehaviour
         {
             ability.Activate();
         }
+
+        ServerSetLastUsedTick(isPrimary, currentTick);
+    }
+
+    [ServerRpc]
+    private void ServerSetLastUsedTick(bool isPrimary, uint tick)
+    {
+        if (isPrimary) PrimaryLastUsedTick.Value = tick;
+        else SecondaryLastUsedTick.Value = tick;
     }
 
 }
