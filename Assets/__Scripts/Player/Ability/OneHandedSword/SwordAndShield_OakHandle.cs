@@ -6,6 +6,9 @@ public class SwordAndShield_OakHandle : MovementAbility
     private const float DashDuration = 0.25f;
     private const float DashCooldown = 3f;
 
+    private const float KnockbackForce = 50f;
+    private const float UpKnockbackForce = 20f;
+
     private LayerMask TargetLayers = LayerMask.GetMask("Player");
     private const float CheckRadius = 0.5f;
 
@@ -41,10 +44,14 @@ public class SwordAndShield_OakHandle : MovementAbility
         controller.RefreshGroundedState(DashDirection * DashSpeed);
         return MovementAbilityResult.Continue;
     }
-
     public override void OnMovementComplete(PlayerControllerModule controller)
     {
-        Debug.Log($"Dash completed. Hit target: {HitTarget?.name ?? "None"}");
+        if (HitTarget == null) return;
+        if (HitTarget.TryGetComponent<IMoveable>(out var moveable))
+        {
+            Vector3 knockback = (DashDirection * KnockbackForce) + (Vector3.up * UpKnockbackForce);
+            moveable.ApplyKnockback(knockback);
+        }
     }
     private GameObject CheckCollisionAhead(PlayerControllerModule controller, Vector3 direction, float distance)
     {
