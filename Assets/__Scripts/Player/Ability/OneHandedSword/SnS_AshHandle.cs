@@ -1,27 +1,20 @@
 using UnityEngine;
 
-public class SwordAndShield_OakHandle : MovementAbility
+public class SnS_AshHandle : MovementAbility
 {
-    private const float MaxDashSpeed = 20f;
-    private const float DashDuration = 1f;
-    private const float DashCooldown = 3f;
-    private float DashSpeed;
-    private float KnockbackDamage = 36f;
-
-    private const float KnockbackForce = 50f;
-    private const float UpKnockbackForce = 0f;
-
+    private const float MaxChargeSpeed = 20f;
+    private const float ChargeDuration = 1f;
+    private const float ChargeDamagePercentage = 136f;
 
     private LayerMask TargetLayers = LayerMask.GetMask("Player");
     private const float CheckRadius = 0.5f;
 
-    private Vector3 DashDirection;
+    private float ChargeSpeed;
+    private Vector3 ChargeDirection;
     private GameObject HitTarget;
 
-    public override float Duration => DashDuration;
-    public override float Cooldown => DashCooldown;
-
-    public override void Activate() {}
+    public override float Duration => ChargeDuration;
+    public override float Cooldown => 8f;
 
     public override MovementAbilityResult ExecuteMove(PlayerControllerModule controller, Vector2 moveInput, ref AbilityState state, float dt, float elapsed)
     {
@@ -29,21 +22,21 @@ public class SwordAndShield_OakHandle : MovementAbility
         forward.y = 0f;
         if (forward.sqrMagnitude < 0.0001f) forward = controller.transform.forward;
 
-        DashDirection = forward.normalized;
-        DashSpeed = Mathf.Lerp(MaxDashSpeed/2, MaxDashSpeed, elapsed / DashDuration);
+        ChargeDirection = forward.normalized;
+        ChargeSpeed = Mathf.Lerp(MaxChargeSpeed / 2, MaxChargeSpeed, elapsed / ChargeDuration);
 
-        state.MoveDirection = DashDirection;
-        state.MoveSpeed = DashSpeed;
+        state.MoveDirection = ChargeDirection;
+        state.MoveSpeed = ChargeSpeed;
 
-        float stepDistance = DashSpeed * dt;
-        GameObject hit = CheckCollisionAhead(controller, DashDirection, stepDistance);
+        float stepDistance = ChargeSpeed * dt;
+        GameObject hit = CheckCollisionAhead(controller, ChargeDirection, stepDistance);
         if (hit != null)
         {
             HitTarget = hit;
             return MovementAbilityResult.Completed;
         }
-        controller.CC.Move(DashSpeed * dt * DashDirection);
-        controller.RefreshGroundedState(DashDirection * DashSpeed);
+        controller.CC.Move(ChargeSpeed * dt * ChargeDirection);
+        controller.RefreshGroundedState(ChargeDirection * ChargeSpeed);
         return MovementAbilityResult.Continue;
     }
 
@@ -52,7 +45,7 @@ public class SwordAndShield_OakHandle : MovementAbility
         if (HitTarget == null) return;
         if (HitTarget.TryGetComponent<IDamageable>(out var damageable))
         {
-            damageable.TakeDamage(KnockbackDamage, true);
+            damageable.TakeDamage(Weapon.Damage * ChargeDamagePercentage, true);
         }
     }
     public override void ClientOnMovementComplete(PlayerControllerModule controller)
@@ -60,7 +53,7 @@ public class SwordAndShield_OakHandle : MovementAbility
         if (HitTarget == null) return;
         if (HitTarget.TryGetComponent<IDamageable>(out var damageable))
         {
-            damageable.TakeDamage(KnockbackDamage, false);
+            damageable.TakeDamage(Weapon.Damage * ChargeDamagePercentage, false);
         }
     }
     private GameObject CheckCollisionAhead(PlayerControllerModule controller, Vector3 direction, float distance)

@@ -5,10 +5,7 @@ using UnityEngine;
 public class Fists : Weapon
 {
     [Header("Settings")]
-    [SerializeField] private MeleeHitDetection HitDetection;
-    private float Damage = 4;
-    private float AttackSpeed = 0.6f;
-
+    [SerializeField] private SwingHitDetection HitDetection;
 
     [SerializeField] private List<SwingData> AnimationSwings;
     private int ServerSwingIndex = 0;

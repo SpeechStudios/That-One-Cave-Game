@@ -5,7 +5,6 @@ using UnityEngine;
 public class Bow : Weapon
 {
     private Camera PlayerCam;
-    private float Damage;
     private float ChargeSpeed;
     private float ReloadSpeed;
     private float ArrowVelocity;

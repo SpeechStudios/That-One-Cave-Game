@@ -358,7 +358,7 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
             return;
         }
 
-        MovementAbility ability = data.AbilityState.IsPrimary ? (LoadoutModule.Weapon.PrimaryAbility as MovementAbility) : (LoadoutModule.Weapon.SecondaryAbility as MovementAbility);
+        MovementAbility ability = data.AbilityState.IsPrimary ? (LoadoutModule.Weapon.PrimaryQAbility as MovementAbility) : (LoadoutModule.Weapon.SecondaryEAbility as MovementAbility);
         uint currentTick = data.GetTick();
         float elapsed = (currentTick - data.AbilityState.StartTick) * dt;
         bool isServerTick = state.ContainsTicked() && !state.ContainsReplayed() && IsServerInitialized;

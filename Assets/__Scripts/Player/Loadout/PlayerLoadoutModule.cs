@@ -13,6 +13,7 @@ public class PlayerLoadoutModule : NetworkBehaviour
     public Transform TP_WeaponParent;
     public Transform MeleeHitDetectionRoot;
     public Transform BowFirePoint;
+    public LayerMask HitLayers;
     public Weapon Fists;
 
     internal Weapon Weapon;

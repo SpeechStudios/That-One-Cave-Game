@@ -4,8 +4,11 @@ using UnityEngine;
 
 public class Weapon : NetworkBehaviour
 {
-    internal Ability PrimaryAbility;
-    internal Ability SecondaryAbility;
+    internal Ability PrimaryQAbility;
+    internal Ability SecondaryEAbility;
+
+    internal float Damage;
+    internal float AttackSpeed;
 
     private readonly SyncVar<uint> PrimaryLastUsedTick = new(0u);
     private readonly SyncVar<uint> SecondaryLastUsedTick = new(0u);
@@ -27,8 +30,8 @@ public class Weapon : NetworkBehaviour
     public virtual void AttackRequest() { }
     public virtual void ReleaseRequest() { }
 
-    public void PrimaryAbilityRequest() => RequestActivateAbility(PrimaryAbility, PrimaryLastUsedTick, isPrimary: true);
-    public void SecondaryAbilityRequest() => RequestActivateAbility(SecondaryAbility, SecondaryLastUsedTick, isPrimary: false);
+    public void PrimaryAbilityRequest() => RequestActivateAbility(PrimaryQAbility, PrimaryLastUsedTick, isPrimary: true);
+    public void SecondaryAbilityRequest() => RequestActivateAbility(SecondaryEAbility, SecondaryLastUsedTick, isPrimary: false);
 
     private void RequestActivateAbility(Ability ability, SyncVar<uint> lastUsedTick, bool isPrimary)
     {
@@ -37,26 +40,56 @@ public class Weapon : NetworkBehaviour
 
         uint currentTick = TimeManager.LocalTick;
         float tickDelta = (float)TimeManager.TickDelta;
+        bool isMovementAbility = ability is MovementAbility;
 
         if (ability.IsOnCooldown(lastUsedTick.Value, currentTick, tickDelta)) return;
 
-        if (ability is MovementAbility)
+        if (isMovementAbility)
         {
             MovementController.BeginMovementOverride(isPrimary, currentTick);
         }
         else
         {
-            ability.Activate();
+            ability.ClientActivate(currentTick);
         }
 
-        ServerSetLastUsedTick(isPrimary, currentTick);
+        ServerActivate(isPrimary, currentTick, isMovementAbility);
     }
 
     [ServerRpc]
-    private void ServerSetLastUsedTick(bool isPrimary, uint tick)
+    private void ServerActivate(bool isPrimary, uint tick, bool isMovementAbility)
     {
-        if (isPrimary) PrimaryLastUsedTick.Value = tick;
-        else SecondaryLastUsedTick.Value = tick;
+        if (isPrimary)
+        {
+            PrimaryLastUsedTick.Value = tick;
+            if (!isMovementAbility)
+            {
+                PrimaryQAbility.ServerActivate(tick);
+                ObserverActivate(true, tick);
+            } 
+        }
+        else
+        {
+            SecondaryLastUsedTick.Value = tick;
+            if (!isMovementAbility)
+            {
+                SecondaryEAbility.ServerActivate(tick);
+                ObserverActivate(false, tick);
+            }
+        }
     }
-
+    [ObserversRpc]
+    private void ObserverActivate(bool isPrimary, uint tick)
+    {
+        /*
+        if(isPrimary)
+        {
+            PrimaryQAbility.ObserverActivate(tick);
+        }
+        else
+        {
+            SecondaryEAbility.ObserverActivate(tick);
+        }
+        */
+    }
 }

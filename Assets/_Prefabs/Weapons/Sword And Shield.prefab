@@ -166,7 +166,8 @@ GameObject:
   - component: {fileID: -10708954039162812}
   - component: {fileID: -396703920364613857}
   - component: {fileID: 3927305091859071162}
-  - component: {fileID: 6966606007357806024}
+  - component: {fileID: 827482681854472615}
+  - component: {fileID: 2186440337431217251}
   m_Layer: 0
   m_Name: Sword And Shield
   m_TagString: Untagged
@@ -231,14 +232,14 @@ MonoBehaviour:
     Scale: {x: 1, y: 1, z: 1}
     IsValid: 1
   <IsNested>k__BackingField: 0
-  WasActiveDuringEdit: 1
+  WasActiveDuringEdit: 0
   WasActiveDuringEdit_Set1: 1
   <ComponentIndex>k__BackingField: 0
   <PredictedSpawn>k__BackingField: {fileID: 0}
   <PredictedOwner>k__BackingField: {fileID: 0}
   NetworkBehaviours:
   - {fileID: 3927305091859071162}
-  - {fileID: 6966606007357806024}
+  - {fileID: 0}
   InitializedParentNetworkBehaviour: {fileID: 0}
   InitializedNestedNetworkObjects: []
   RuntimeParentNetworkBehaviour: {fileID: 0}
@@ -281,7 +282,8 @@ MonoBehaviour:
   _componentIndexCache: 0
   _addedNetworkObject: {fileID: -10708954039162812}
   _networkObjectCache: {fileID: -10708954039162812}
-  HitDetection: {fileID: 6966606007357806024}
+  SwingHitDetection: {fileID: 827482681854472615}
+  ShapeHitDetection: {fileID: 2186440337431217251}
   HitDetectionXOffset: -0.45
   AnimationSwings:
   - AttackData:
@@ -313,7 +315,7 @@ MonoBehaviour:
         m_PostInfinity: 2
         m_RotationOrder: 4
     Clip: {fileID: 7400000, guid: 0bd8881ad369cc8419449bf316b97b2e, type: 2}
---- !u!114 &6966606007357806024
+--- !u!114 &827482681854472615
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -322,18 +324,30 @@ MonoBehaviour:
   m_GameObject: {fileID: 2948793502094758285}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7a359c35ac5d7f84db9decf6a03458e6, type: 3}
+  m_Script: {fileID: 11500000, guid: e1b900e89edd0144493ba52f1d9a650e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MeleeHitDetection
-  _componentIndexCache: 1
+  m_EditorClassIdentifier: Assembly-CSharp::SwingHitDetection
+  _componentIndexCache: 255
   _addedNetworkObject: {fileID: -10708954039162812}
-  _networkObjectCache: {fileID: -10708954039162812}
-  Length: 1.5
+  _networkObjectCache: {fileID: 0}
+  Length: 2
   Radius: 0.4
-  HitLayer:
-    serializedVersion: 2
-    m_Bits: 648
-  ShowGizmos: 1
+  ShowGizmos: 0
+--- !u!114 &2186440337431217251
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2948793502094758285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b059e87152234746a4ad84d37f9ea35, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShapeHitDetection
+  _componentIndexCache: 255
+  _addedNetworkObject: {fileID: -10708954039162812}
+  _networkObjectCache: {fileID: 0}
 --- !u!1 &6345270525604990282
 GameObject:
   m_ObjectHideFlags: 0

@@ -431,7 +431,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6519756173967121914}
   - component: {fileID: 5524123566296238463}
-  - component: {fileID: 6628949124343668330}
+  - component: {fileID: 8340236802588030677}
   m_Layer: 3
   m_Name: Fists
   m_TagString: Untagged
@@ -469,7 +469,7 @@ MonoBehaviour:
   _componentIndexCache: 11
   _addedNetworkObject: {fileID: 3544688354330196895}
   _networkObjectCache: {fileID: 3544688354330196895}
-  HitDetection: {fileID: 6628949124343668330}
+  HitDetection: {fileID: 8340236802588030677}
   AnimationSwings:
   - AttackData:
       Start: {x: 0, y: 0, z: 0}
@@ -500,7 +500,7 @@ MonoBehaviour:
         m_PostInfinity: 2
         m_RotationOrder: 4
     Clip: {fileID: 7400000, guid: cecb29da3aaa9cb46aebfb75dfabd435, type: 2}
---- !u!114 &6628949124343668330
+--- !u!114 &8340236802588030677
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -509,18 +509,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 3475958390249765971}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7a359c35ac5d7f84db9decf6a03458e6, type: 3}
+  m_Script: {fileID: 11500000, guid: e1b900e89edd0144493ba52f1d9a650e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MeleeHitDetection
-  _componentIndexCache: 12
+  m_EditorClassIdentifier: Assembly-CSharp::SwingHitDetection
+  _componentIndexCache: 255
   _addedNetworkObject: {fileID: 3544688354330196895}
-  _networkObjectCache: {fileID: 3544688354330196895}
+  _networkObjectCache: {fileID: 0}
   Length: 1
-  Radius: 1
-  HitLayer:
-    serializedVersion: 2
-    m_Bits: 648
-  ShowGizmos: 1
+  Radius: 0.3
+  ShowGizmos: 0
 --- !u!1 &3696720681994751973
 GameObject:
   m_ObjectHideFlags: 0
@@ -670,7 +667,7 @@ MonoBehaviour:
   - {fileID: 1551990021496817962}
   - {fileID: 280250987964467475}
   - {fileID: 5524123566296238463}
-  - {fileID: 6628949124343668330}
+  - {fileID: 0}
   InitializedParentNetworkBehaviour: {fileID: 0}
   InitializedNestedNetworkObjects: []
   RuntimeParentNetworkBehaviour: {fileID: 0}
@@ -737,7 +734,6 @@ MonoBehaviour:
   _addedNetworkObject: {fileID: 3544688354330196895}
   _networkObjectCache: {fileID: 3544688354330196895}
   Controller: {fileID: 7589131285299544667}
-  MoveEffects: {fileID: 0}
   Interact: {fileID: 5856638283597887064}
   DragGhost: {fileID: 7004708982079632913}
   Inventory: {fileID: 8452158226212797364}
@@ -864,6 +860,9 @@ MonoBehaviour:
   TP_WeaponParent: {fileID: 8682809256073907498}
   MeleeHitDetectionRoot: {fileID: 2366875478915436874}
   BowFirePoint: {fileID: 872293200541483376}
+  HitLayers:
+    serializedVersion: 2
+    m_Bits: 8
   Fists: {fileID: 5524123566296238463}
 --- !u!114 &5856638283597887064
 MonoBehaviour:

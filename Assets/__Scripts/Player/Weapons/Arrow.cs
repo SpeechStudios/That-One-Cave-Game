@@ -6,7 +6,7 @@ public class Arrow : MonoBehaviour
     public MeshRenderer MyRend;
     public Transform ColliderPosition;
     public float ColliderRadius;
-    public LayerMask HitLayer;
+
 
     private Transform Root;
     private Vector3 Velocity;
@@ -16,6 +16,7 @@ public class Arrow : MonoBehaviour
     private bool IsServer;
     private bool Initialized;
     private bool Hit;
+    private LayerMask HitLayers;
 
     private const float CATCH_UP_RATE = 0.08f;
 
@@ -29,7 +30,8 @@ public class Arrow : MonoBehaviour
         IsServer = isServer;
         Initialized = true;
         Root = root;
-        if(isServer)
+        HitLayers = root.GetComponent<PlayerLoadoutModule>().HitLayers;
+        if (isServer)
             MyRend.enabled = false;
         else
             MyRend.enabled = true;
@@ -66,7 +68,7 @@ public class Arrow : MonoBehaviour
 
         // Cast along the movement vector to catch fast tunnelling
         if (!Hit && Physics.SphereCast(transform.position, ColliderRadius, movement.normalized,
-            out RaycastHit hit, movement.magnitude, HitLayer))
+            out RaycastHit hit, movement.magnitude, HitLayers))
         {
             CheckHit(hit.collider, hit.point);
         }

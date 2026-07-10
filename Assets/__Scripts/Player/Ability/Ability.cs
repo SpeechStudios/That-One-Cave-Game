@@ -2,6 +2,8 @@ using UnityEngine;
 
 public abstract class Ability
 {
+    protected Weapon Weapon { get; private set; }
+    public virtual void Initialize(Weapon weapon) { Weapon = weapon; }
     public abstract float Cooldown { get; }
     public bool IsOnCooldown(uint lastUsedTick, uint currentTick, float tickDelta)
     {
@@ -9,7 +11,9 @@ public abstract class Ability
         float elapsed = (currentTick - lastUsedTick) * tickDelta;
         return elapsed < Cooldown;
     }
-    public abstract void Activate();
+    public virtual void ClientActivate(uint tick) { }
+    public virtual void ServerActivate(uint tick) { }
+    public virtual void ObserverActivate(uint tick) { }
 }
 
 public enum MovementAbilityResult { Continue, Completed }

@@ -5,12 +5,11 @@ using UnityEngine;
 
 public class SwordAndShield : Weapon
 {
-    [SerializeField] private MeleeHitDetection HitDetection;
+    [SerializeField] internal SwingHitDetection SwingHitDetection;
+    [SerializeField] internal ShapeHitDetection ShapeHitDetection;
     [SerializeField] private float HitDetectionXOffset;
     [SerializeField] private List<SwingData> AnimationSwings;
 
-    private float Damage;
-    private float AttackSpeed;
     private float Resilliance;
 
     private int ServerSwingIndex = 0;
@@ -18,19 +17,20 @@ public class SwordAndShield : Weapon
 
     public void OnEnable()
     {
-        HitDetection.ClientOnHit += ClientHit;
-        HitDetection.ServerOnHit += ServerHit;
+        SwingHitDetection.ClientOnHit += ClientHit;
+        SwingHitDetection.ServerOnHit += ServerHit;
     }
     public void OnDisable()
     {
-        HitDetection.ClientOnHit -= ClientHit;
-        HitDetection.ServerOnHit -= ServerHit;
+        SwingHitDetection.ClientOnHit -= ClientHit;
+        SwingHitDetection.ServerOnHit -= ServerHit;
     }
     public override void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout, int[] materialArray)
     {
         base.Initalize(movement, loadout, materialArray);
         loadout.MeleeHitDetectionRoot.transform.localPosition = new Vector2(HitDetectionXOffset, loadout.MeleeHitDetectionRoot.transform.localPosition.y);
-        HitDetection.Initalize(loadout);
+        SwingHitDetection.Initalize(loadout);
+        ShapeHitDetection.Initalize(loadout);
         Loadout.RebindAnimator("SwordAndShield");
     }
     public override void Deinitialize()
@@ -44,7 +44,10 @@ public class SwordAndShield : Weapon
             AttackSpeed = 0.5f;
             Damage = 5;
             Resilliance = 0;
-            PrimaryAbility = new SwordAndShield_OakHandle();
+            PrimaryQAbility = new SnS_AshHandle();
+            PrimaryQAbility.Initialize(this);
+            SecondaryEAbility = new SnS_BirchHandle();
+            SecondaryEAbility.Initialize(this);
             return;
         }
         for (int i = 0; i < materialArray.Length; i++)
@@ -60,7 +63,6 @@ public class SwordAndShield : Weapon
                         AttackSpeed = 0.5f;
                         Damage = 0;
                         Resilliance = 0;
-                        PrimaryAbility = new SwordAndShield_OakHandle();
                         break;
                     case MaterialType.Oak:
                         AttackSpeed = 0.6f;
@@ -142,7 +144,7 @@ public class SwordAndShield : Weapon
         Loadout.WeaponAnimator.speed = swing.Clip.length / AttackSpeed;
         Loadout.WeaponAnimator.SetTrigger("Attack");
 
-        HitDetection.EnableHitDetection(swing.AttackData, AttackSpeed, isServer: false);
+        SwingHitDetection.EnableHitDetection(swing.AttackData,AttackSpeed,isServer: false);
         Loadout.StartWeaponCooldown(this, AttackSpeed + 0.05f, isServer: false);
 
         Server_Attack_RPC();
@@ -158,7 +160,7 @@ public class SwordAndShield : Weapon
         ServerSwingIndex = (ServerSwingIndex + 1) % AnimationSwings.Count;
         SwingData swing = AnimationSwings[swingIndex];
 
-        HitDetection.EnableHitDetection(swing.AttackData, AttackSpeed, isServer: true);
+        SwingHitDetection.EnableHitDetection(swing.AttackData, AttackSpeed, isServer: true);
         Loadout.StartWeaponCooldown(this, AttackSpeed + 0.05f, isServer: true);
         Observer_Attack_RPC(swingIndex);
     }
@@ -166,10 +168,6 @@ public class SwordAndShield : Weapon
     [ObserversRpc(ExcludeOwner = true)]
     private void Observer_Attack_RPC(int swingIndex)
     {
-        //TransformLerp swing = AnimationSwings[swingIndex];
-
-        //if (SwingCoroutine != null) StopCoroutine(SwingCoroutine);
-        //SwingCoroutine = StartCoroutine(PerformSwing(swing));
     }
 
    

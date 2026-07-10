@@ -5,11 +5,10 @@ using UnityEngine;
 using System;
 using FishNet.Component.ColliderRollback;
 
-public class MeleeHitDetection : NetworkBehaviour
+public class SwingHitDetection : NetworkBehaviour
 {
     [Min(1f)] public float Length = 1f;
     [Min(0f)] public float Radius;
-    public LayerMask HitLayer;
     public bool ShowGizmos;
 
     private readonly int DetectionIntervalTicks = 2;
@@ -200,8 +199,8 @@ public class MeleeHitDetection : NetworkBehaviour
         bool isSphere = Mathf.Approximately(Length, 1f);
 
         int hitCount = isSphere
-            ? Physics.OverlapSphereNonAlloc(p1, Radius, overlapBuffer, HitLayer)
-            : Physics.OverlapCapsuleNonAlloc(p1, p2, Radius, overlapBuffer, HitLayer);
+            ? Physics.OverlapSphereNonAlloc(p1, Radius, overlapBuffer, Loadout.HitLayers)
+            : Physics.OverlapCapsuleNonAlloc(p1, p2, Radius, overlapBuffer, Loadout.HitLayers);
 
         RecordGizmoSnapshot(p1, isSphere, Length, Radius, overlapBuffer, hitObjects, hitCount);
 
