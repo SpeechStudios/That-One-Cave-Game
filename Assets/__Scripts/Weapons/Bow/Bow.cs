@@ -42,16 +42,26 @@ public class Bow : Weapon
         for (int i = 0; i < materialArray.Length; i++)
         {
             MaterialType type = (MaterialType)materialArray[i];
+            ReloadSpeed = 0.25f;
 
             if (i == 0) // Limb
             {
                 switch (type)
                 {
                     case MaterialType.Birch:
+                        ChargeSpeed = 1f;
+                        Damage = 10;
+                        PrimaryQAbility = AbilityFactory.Create<Bow_BirchLimb>(this);
                         break;
                     case MaterialType.Oak:
+                        ChargeSpeed = 1.2f;
+                        Damage = 15;
+                        PrimaryQAbility = AbilityFactory.Create<Bow_OakLimb>(this);
                         break;
                     case MaterialType.Ash:
+                        ChargeSpeed = 0.8f;
+                        Damage = 18;
+                        PrimaryQAbility = AbilityFactory.Create<Bow_AshLimb>(this);
                         break;
                     case MaterialType.Phantom:
                         break;
@@ -68,10 +78,20 @@ public class Bow : Weapon
                 switch (type)
                 {
                     case MaterialType.Birch:
+                        ArrowVelocity = 40f;
+                        SecondaryEAbility = AbilityFactory.Create<Bow_BirchHandle>(this);
                         break;
                     case MaterialType.Oak:
+                        Damage += 1;
+                        ArrowVelocity = 50f;
+                        SecondaryEAbility = AbilityFactory.Create<Bow_OakHandle>(this);
                         break;
                     case MaterialType.Ash:
+                        Damage += 2;
+                        ChargeSpeed -= 0.1f;
+                        ReloadSpeed -= 0.05f;
+                        ArrowVelocity = 60f;
+                        SecondaryEAbility = AbilityFactory.Create<Bow_AshHandle>(this);
                         break;
                     case MaterialType.Phantom:
                         break;

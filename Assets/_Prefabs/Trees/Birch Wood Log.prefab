@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 8501057653522331630}
   - component: {fileID: 8295140615765285714}
   m_Layer: 9
-  m_Name: Wood Node
+  m_Name: Birch Wood Log
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -69,7 +69,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 91aecd44f3a97034482f03b59908a268, type: 2}
+  - {fileID: 2100000, guid: 642e27951c480f045b809ded5ee07b42, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -112,10 +112,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.5000001
+  m_Radius: 0.5
   m_Height: 2
   m_Direction: 1
-  m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &8501057653522331630
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -163,7 +163,7 @@ MonoBehaviour:
   _teleportThreshold: 1
   <PrefabId>k__BackingField: 65535
   <SpawnableCollectionId>k__BackingField: 0
-  <AssetPathHash>k__BackingField: 8869419112788558836
+  <AssetPathHash>k__BackingField: 18267974455069747080
   SceneId: 0
   SerializedTransformProperties:
     Position: {x: 0, y: 0.5, z: 0}

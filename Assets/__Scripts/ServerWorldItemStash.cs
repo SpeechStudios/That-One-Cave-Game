@@ -11,6 +11,7 @@ public class WorldItem
 public class ServerWorldItemStash : NetworkBehaviour
 {
     public static ServerWorldItemStash Instance;
+    public WorldItemGameObject WorldItemPrefab;
     public Dictionary<int, WorldItem> Stash = new();
 
     public int CurrentItemIndex;

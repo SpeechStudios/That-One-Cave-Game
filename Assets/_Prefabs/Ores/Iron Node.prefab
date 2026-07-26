@@ -125,7 +125,7 @@ MonoBehaviour:
   _teleportThreshold: 1
   <PrefabId>k__BackingField: 5
   <SpawnableCollectionId>k__BackingField: 0
-  <AssetPathHash>k__BackingField: 11474726438513251764
+  <AssetPathHash>k__BackingField: 1725120344623736606
   SceneId: 0
   SerializedTransformProperties:
     Position: {x: -8.751, y: 0.637, z: 16.30012}
@@ -188,6 +188,7 @@ MonoBehaviour:
   _addedNetworkObject: {fileID: 5906438544469562288}
   _networkObjectCache: {fileID: 5906438544469562288}
   Ore: {fileID: 11400000, guid: 976c13cb4f57ecc409016a7379bcb10e, type: 2}
-  MinHealthRange: 92
-  MaxHealthRange: 156
-  Threshold: 18
+  MiningLevelRequirements: 0
+  NodeHealth: 20
+  MinOreAmount: 6
+  MaxOreAmount: 8

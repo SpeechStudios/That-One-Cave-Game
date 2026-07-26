@@ -9,7 +9,7 @@ public class CraftingManager : MonoBehaviour
     public static CraftingManager Instance { get; private set; }
 
     public GameObject CraftingCanvas;
-    public Button RecipePrefab;
+    public RecipeButton RecipePrefab;
     public Transform RecipePrefabParent;
     public List<CraftingSlot> Slots;
     public CraftingOutcomeSlot Outcome;
@@ -34,9 +34,10 @@ public class CraftingManager : MonoBehaviour
         });
         foreach (var recipe in Registry.Instance.CraftingRecipeList)
         {
-            Button button = Instantiate(RecipePrefab, RecipePrefabParent);
-            button.onClick.AddListener(() => SetupSlots(recipe.ID));
-            button.onClick.AddListener(() => TargetCrafting.SelectRecipe(recipe.ID));
+            RecipeButton rb = Instantiate(RecipePrefab, RecipePrefabParent);
+            rb.Text.text = Registry.GetCraftingRecipe(recipe.ID).ItemName;
+            rb.Button.onClick.AddListener(() => SetupSlots(recipe.ID));
+            rb.Button.onClick.AddListener(() => TargetCrafting.SelectRecipe(recipe.ID));
         }
     }
 

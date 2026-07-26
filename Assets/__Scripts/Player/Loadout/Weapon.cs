@@ -24,6 +24,7 @@ public class Weapon : NetworkBehaviour
     {
         MovementController = movement;
         Loadout = loadout;
+        Debug.Log(materialArray);  
         SetStats(materialArray);
     }
     public virtual void Deinitialize() { }

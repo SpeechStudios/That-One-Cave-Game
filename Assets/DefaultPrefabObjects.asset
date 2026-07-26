@@ -13,15 +13,17 @@ MonoBehaviour:
   m_Name: DefaultPrefabObjects
   m_EditorClassIdentifier: FishNet.Runtime::FishNet.Managing.Object.DefaultPrefabObjects
   _prefabs:
-  - {fileID: 3544688354330196895, guid: 0fcea3f4ba40eb54ea16a87502839e31, type: 3}
-  - {fileID: -10708954039162812, guid: 2e8e1c7f6179c2c498cd77a21ee9ff95, type: 3}
-  - {fileID: 270196603601275367, guid: f016f42aa72629644beb8ee9bcecb5b8, type: 3}
-  - {fileID: 7184740929047983387, guid: 12278bed97bb42a448c11037b27b166a, type: 3}
-  - {fileID: 2961364648602576167, guid: 04edd677a7c5d18429aed0968095a8c4, type: 3}
-  - {fileID: 8295140615765285714, guid: dd3bfcb7a9dec95439800e04b3ecf261, type: 3}
-  - {fileID: -607580292008675632, guid: 2f6e8de3d65a8c0479673b30ed52e902, type: 3}
   - {fileID: 5906438544469562288, guid: 675a1f8e9782bd5419a1c5eec6e04ccb, type: 3}
-  - {fileID: 7573034261917423889, guid: b01469161b803c24e98a7847d012a7ca, type: 3}
+  - {fileID: 3544688354330196895, guid: 0fcea3f4ba40eb54ea16a87502839e31, type: 3}
+  - {fileID: 4298886754809003941, guid: 9b578e5406cc00a469c16b0c9f0bfac0, type: 3}
+  - {fileID: -10708954039162812, guid: 2e8e1c7f6179c2c498cd77a21ee9ff95, type: 3}
+  - {fileID: 3226527702439532016, guid: 60a08f0b8abfc444eabb878f056a756a, type: 3}
+  - {fileID: 492955551634065251, guid: 7f7df03d93aca3e44a683d1287fd8e29, type: 3}
+  - {fileID: 3352699140393421527, guid: 80566324b2d1ac34db39a03e010edc69, type: 3}
+  - {fileID: 2961364648602576167, guid: 04edd677a7c5d18429aed0968095a8c4, type: 3}
+  - {fileID: 8295140615765285714, guid: ab7da0ad41256de40974dc58b9d9843d, type: 3}
+  - {fileID: -607580292008675632, guid: 2f6e8de3d65a8c0479673b30ed52e902, type: 3}
   - {fileID: 2510687094153561741, guid: 5ae15d575682e0c4b9fadaa869e3adf8, type: 3}
+  - {fileID: 8295140615765285714, guid: 6d2b47c20ccf44a45935301850f51db7, type: 3}
   - {fileID: 1228184664906839743, guid: 98abbe212cbab99429aa9891c6da4087, type: 3}
-  - {fileID: 5651440496304773470, guid: 96749c6115d287845b2aeaa25fb77518, type: 3}
+  - {fileID: 8295140615765285714, guid: dd3bfcb7a9dec95439800e04b3ecf261, type: 3}

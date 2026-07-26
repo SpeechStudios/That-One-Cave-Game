@@ -166,7 +166,7 @@ public class PlayerInventoryModule : NetworkBehaviour
         if (!response.Accepted) return;
 
         Vector3 dropPos = transform.position + transform.forward * 1f;
-        WorldItemGameObject worldObject = Instantiate(Registry.GetItem(itemID).WorldItemPrefab, dropPos, Quaternion.identity);
+        WorldItemGameObject worldObject = Instantiate(ServerWorldItemStash.Instance.WorldItemPrefab, dropPos, Quaternion.identity);
         worldObject.Initialize(itemID, quantity, DragGhost.ClientGhost.Materials, true);
         Spawn(worldObject);
 
@@ -235,7 +235,7 @@ public class PlayerInventoryModule : NetworkBehaviour
                 };
 
                 Vector3 dropPos = transform.position + transform.forward * 1f;
-                WorldItemGameObject worldObject = Instantiate(Registry.GetItem(worldItem.Data.ID).WorldItemPrefab, dropPos, Quaternion.identity);
+                WorldItemGameObject worldObject = Instantiate(ServerWorldItemStash.Instance.WorldItemPrefab, dropPos, Quaternion.identity);
                 worldObject.Initialize(worldItem.Data.ID, amountNotPickedUp, worldItem.Data.Materials, true);
                 Spawn(worldObject);
             }
@@ -444,7 +444,7 @@ public class PlayerInventoryModule : NetworkBehaviour
             if (toItem != null)
                 Loadout.UnequipItem(slots[to].Type, conn);
 
-            Loadout.EquipItem(tryGhostItem,  slots[to].Type, slots[to].Data.Materials, conn);
+            Loadout.EquipItem(tryGhostItem,  slots[to].Type, ghost.Materials, conn);
         }
 
         if (PlayerHelperFunctions.StackingValid(ghost, slots[to].Data, ghostItem.MaxStackSize))

@@ -30,7 +30,6 @@ public class ItemEditor : Editor
         itemIdentity.Name = EditorGUILayout.TextField("Name", itemIdentity.Name);
         itemIdentity.MaxStackSize = EditorGUILayout.IntField("Max Stack Size", itemIdentity.MaxStackSize);
         itemIdentity.Icon = (Sprite)EditorGUILayout.ObjectField("Icon", itemIdentity.Icon, typeof(Sprite), false);
-        itemIdentity.WorldItemPrefab = (WorldItemGameObject)EditorGUILayout.ObjectField("World Item", itemIdentity.WorldItemPrefab, typeof(WorldItemGameObject), false);
         itemIdentity.ItemSlotType = (ItemSlotType)EditorGUILayout.EnumPopup("Item Slot", itemIdentity.ItemSlotType);
         itemIdentity.ItemType = (ItemType)EditorGUILayout.EnumPopup("Item Type", itemIdentity.ItemType);
     }

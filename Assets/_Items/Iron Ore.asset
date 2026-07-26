@@ -12,11 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fed75455a645c4f4fa2fc680ebf2deda, type: 3}
   m_Name: Iron Ore
   m_EditorClassIdentifier: Assembly-CSharp::Item
-  ID: 3
+  ID: 8
   Name: Iron Ore
   MaxStackSize: 64
-  Icon: {fileID: 21300000, guid: 2390187bdbc9f8a40891e7f608076856, type: 3}
-  WorldItemPrefab: {fileID: 1786881801916889309, guid: 96749c6115d287845b2aeaa25fb77518, type: 3}
+  Icon: {fileID: 21300000, guid: 3b220a990bacd424fac9a5d8b08907da, type: 3}
   EquipPrefab: {fileID: 0}
   ItemSlotType: 0
   ItemType: 0

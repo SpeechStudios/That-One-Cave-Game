@@ -35,9 +35,9 @@ public class OreNode : NetworkBehaviour
             Vector3 spawnPos = transform.position + (Vector3)(Random.insideUnitCircle * 1.5f);
             spawnPos.z = transform.position.z;
 
-            NetworkObject oreInstance = Instantiate(Ore.WorldItemPrefab, spawnPos, Quaternion.identity);
-            oreInstance.GetComponent<WorldItemGameObject>().Initialize(Ore.ID, 1, null);
-            ServerManager.Spawn(oreInstance);
+            NetworkObject worldItem = Instantiate(ServerWorldItemStash.Instance.WorldItemPrefab, spawnPos, Quaternion.identity);
+            worldItem.GetComponent<WorldItemGameObject>().Initialize(Ore.ID, 1, null);
+            ServerManager.Spawn(worldItem);
         }
     }
 }

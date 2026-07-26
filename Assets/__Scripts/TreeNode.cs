@@ -6,9 +6,14 @@ public class TreeNode : NetworkBehaviour
 {
     public Item Wood;
     public NetworkObject NodePrefab;
-    public int MinNodes = 3;
+    public int ChoppingLevelRequirement = 0;
+    public int MinNodes = 4;
     public int MaxNodes = 7;
-    public int NodeHealth = 36;
+    public int MinSpawnAmount = 3;
+    public int MaxSpawnAmount = 7;
+    public int MinBotSpawnAmount = 5;
+    public int MaxBotSpawnAmount = 11;
+    public int NodeHealth = 20;
     public List<WoodNode> WoodNodes = new();
     void Start()
     {
@@ -30,19 +35,23 @@ public class TreeNode : NetworkBehaviour
 
             woodNode.TreeParent = this;
             woodNode.Health = NodeHealth;
+            woodNode.Setup(MinSpawnAmount, MaxSpawnAmount, MinBotSpawnAmount, MaxBotSpawnAmount);
             WoodNodes.Add(woodNode);
         }
     }
     public void BringWoodNodesDown(WoodNode node)
     {
-        int index = WoodNodes.IndexOf(node);
-        WoodNodes.Remove(node);
+        if (!WoodNodes.Remove(node))
+            return;
 
-        for (int i = index; i < WoodNodes.Count; i++)
+        for (int i = 0; i < WoodNodes.Count; i++)
         {
-            Vector3 targetPosition = WoodNodes[i].transform.position + Vector3.down;
+            WoodNode wn = WoodNodes[i];
 
-            LeanTween.move(WoodNodes[i].gameObject,targetPosition, 0.5f).setEase(LeanTweenType.easeInOutCubic);
+            LeanTween.cancel(wn.gameObject);
+
+            Vector3 targetPosition = transform.position + new Vector3(0, 0.5f, 0) + Vector3.up * i;
+            LeanTween.move(wn.gameObject, targetPosition, 0.5f).setEase(LeanTweenType.easeInOutCubic);
         }
     }
 }

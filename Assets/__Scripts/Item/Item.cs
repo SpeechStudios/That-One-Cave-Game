@@ -19,7 +19,6 @@ public class Item : ScriptableObject
     public string Name;
     public int MaxStackSize;
     public Sprite Icon;
-    public WorldItemGameObject WorldItemPrefab;
     public NetworkObject EquipPrefab;
     public ItemSlotType ItemSlotType;
     public ItemType ItemType;

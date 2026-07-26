@@ -211,18 +211,24 @@ public class PlayerLoadoutModule : NetworkBehaviour
     {
         if(Controller.PlayerInput.Player.Option1.WasPressedThisFrame())
         {
+            if (Weapon == null) return;
+
             ShowCurrentWeapon(false);
             CurrentItemIndex = 0;
             ShowCurrentWeapon(true);
         }
         if (Controller.PlayerInput.Player.Option2.WasPressedThisFrame())
         {
+            if (Pickaxe == null) return;
+
             ShowCurrentWeapon(false);
             CurrentItemIndex = 1;
             ShowCurrentWeapon(true);
         }
         if (Controller.PlayerInput.Player.Option3.WasPressedThisFrame())
         {
+            if (Axe == null) return;
+
             ShowCurrentWeapon(false);
             CurrentItemIndex = 2;
             ShowCurrentWeapon(true);

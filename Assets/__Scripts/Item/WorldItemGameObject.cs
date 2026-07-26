@@ -15,6 +15,7 @@ public class WorldItemGameObject : NetworkBehaviour
     private float PickUpDelayTime = 1f;
     public float MoveSpeed = 12f;
     public float PickupRadius = 1f;
+    public ItemVisuals ItemVisuals;
 
     private ItemSlotData Data;
     [HideInInspector] public int WorldItemID;
@@ -27,6 +28,9 @@ public class WorldItemGameObject : NetworkBehaviour
     private float PickUpTimer;
     private float NextLockOnTime;
 
+    [SerializeField] private float RotationSpeed = 5f;
+    private Transform LocalPlayerTransform;
+
     public override void OnStartNetwork()
     {
         base.OnStartNetwork();
@@ -36,12 +40,10 @@ public class WorldItemGameObject : NetworkBehaviour
     }
     private void OnEnable()
     {
-        var itemVisuals = GetComponent<ItemVisuals>();
-
         if (!HasPickupDelay)
-            itemVisuals.StartJumpToGroundCoroutine();
+            ItemVisuals.StartJumpToGroundCoroutine();
         else
-            itemVisuals.StartMoveToGround();
+            ItemVisuals.StartMoveToGround();
     }
 
 
@@ -69,6 +71,7 @@ public class WorldItemGameObject : NetworkBehaviour
         Data.Quantity = reader.ReadInt32();
         reader.ReadArray(ref Data.Materials);
         HasPickupDelay = reader.ReadBoolean();
+        ItemVisuals.Rend.sprite = Registry.GetItem(Data.ID).Icon;
     }
     public override void OnStartServer()
     {
@@ -79,13 +82,25 @@ public class WorldItemGameObject : NetworkBehaviour
 
     private void Update()
     {
-        if (!Moving || TargetPlayer == null) return;
+        if (Moving && TargetPlayer != null)
+        {
+            Transform target = TargetPlayer.transform;
+            Vector3 targetPos = target.position + new Vector3(0, 0.5f, 0);
 
-        Transform target = TargetPlayer.transform;
-        transform.position = Vector3.MoveTowards(transform.position, target.position + new Vector3(0, 0.5f, 0), MoveSpeed * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, targetPos, MoveSpeed * Time.deltaTime);
+            RotateTowards(targetPos, RotationSpeed);
 
-        if (Vector3.Distance(transform.position, target.position) <= PickupRadius)
-            CollectItem();
+            if (Vector3.Distance(transform.position, target.position) <= PickupRadius)
+                CollectItem();
+
+            return;
+        }
+
+        if (LocalPlayerTransform == null)
+            LocalPlayerTransform = FindLocalPlayer();
+
+        if (LocalPlayerTransform != null)
+            RotateTowards(LocalPlayerTransform.position, RotationSpeed);
     }
 
     private void OnTriggerStay(Collider other)
@@ -135,5 +150,23 @@ public class WorldItemGameObject : NetworkBehaviour
     private void OnDestroy()
     {
         SyncTargetPlayer.OnChange -= OnTargetChanged;
+    }
+    private void RotateTowards(Vector3 targetPos, float speed)
+    {
+        Vector3 direction = targetPos - transform.position;
+        direction.y = 0f; 
+        if (direction.sqrMagnitude < 0.0001f) return;
+
+        Quaternion lookRotation = Quaternion.LookRotation(direction.normalized);
+        transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, speed * Time.deltaTime);
+    }
+    private Transform FindLocalPlayer()
+    {
+        foreach (NetworkObject nob in FishNet.InstanceFinder.ClientManager.Connection.Objects)
+        {
+            if (nob.IsOwner)
+                return nob.transform;
+        }
+        return null;
     }
 }

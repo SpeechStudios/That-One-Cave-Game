@@ -12,11 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fed75455a645c4f4fa2fc680ebf2deda, type: 3}
   m_Name: Coal
   m_EditorClassIdentifier: Assembly-CSharp::Item
-  ID: 0
+  ID: 4
   Name: Coal
   MaxStackSize: 64
-  Icon: {fileID: 0}
-  WorldItemPrefab: {fileID: 0}
+  Icon: {fileID: 21300000, guid: 308977d98f732dc40a1c8c07751e5169, type: 3}
   EquipPrefab: {fileID: 0}
   ItemSlotType: 0
   ItemType: 0

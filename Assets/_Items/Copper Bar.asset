@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fed75455a645c4f4fa2fc680ebf2deda, type: 3}
   m_Name: Copper Bar
   m_EditorClassIdentifier: Assembly-CSharp::Item
-  ID: 0
+  ID: 5
   Name: Bronze Bar
   MaxStackSize: 64
-  Icon: {fileID: 21300000, guid: 5634fd86e7544b5408caa6727e9d94e8, type: 3}
-  Prefab: {fileID: 0}
+  Icon: {fileID: 21300000, guid: 3b127774c7456df4a8464f1465c99559, type: 3}
+  EquipPrefab: {fileID: 0}
   ItemSlotType: 0
   ItemType: 0
   Damage: 0
