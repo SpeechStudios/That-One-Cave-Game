@@ -8,7 +8,7 @@ public class SmeltingManager : MonoBehaviour
     public GameObject SmeltingCanvas;
     public List<ForgeUI> Forges;
 
-    [HideInInspector] public Smelter TargetSmelter;
+    [HideInInspector] public PlayerSmeltingModule TargetSmelting;
 
     public void Init()
     {
@@ -19,24 +19,15 @@ public class SmeltingManager : MonoBehaviour
         {
             Forges[i].SetupSlots(i);
         }
-    } 
-    public void Open(Smelter smelter)
-    {
-        TargetSmelter = smelter;
-        TargetSmelter.OnSmeltingSlotsChanged += HandleSmeltingSlotsChanged;
-        TargetSmelter.OnSmeltingValidated += CheckResetTimer;
-        TargetSmelter.OnSmeltingComplete += SyncForgeTimers;
-        SyncForgeItems();
-        SmeltingCanvas.SetActive(true);
     }
-    public void Close()
+    public void Bind(PlayerSmeltingModule targetSmelting)
     {
-        TargetSmelter.OnSmeltingSlotsChanged -= HandleSmeltingSlotsChanged;
-        TargetSmelter.OnSmeltingValidated -= CheckResetTimer;
-        TargetSmelter.OnSmeltingComplete -= SyncForgeTimers;
-        TargetSmelter = null;
-        SmeltingCanvas.SetActive(false);
+        TargetSmelting = targetSmelting;
+        TargetSmelting.OnSmeltingSlotsChanged += HandleSmeltingSlotsChanged;
+        TargetSmelting.OnSmeltingValidated += CheckResetTimer;
+        TargetSmelting.OnSmeltingComplete += SyncForgeTimers;
     }
+
     private void Update()
     {
         if (SmeltingCanvas.activeInHierarchy)
@@ -44,7 +35,7 @@ public class SmeltingManager : MonoBehaviour
     }
     public void SyncForgeTimers()
     {
-        var ClientForges = TargetSmelter.ClientForges;
+        var ClientForges = TargetSmelting.ClientForges;
         for (int i = 0; i < ClientForges.Count; i++)
         {
             SmeltingForgeData data = ClientForges[i];
@@ -54,18 +45,18 @@ public class SmeltingManager : MonoBehaviour
     }
     public void SyncForgeItems()
     {
-        var ClientForges = TargetSmelter.ClientForges;
+        var ClientForges = TargetSmelting.ClientForges;
         for (int i = 0; i < ClientForges.Count; i++)
         {
             ForgeUI ui = Forges[i];
-            ui.UpdateUI(TargetSmelter.ClientSlots, i);
+            ui.UpdateUI(TargetSmelting.ClientSlots, i);
         }
     }
     public void CheckResetTimer(bool isValid)
     {
         if (isValid) return;
 
-        var ClientForges = TargetSmelter.ClientForges;
+        var ClientForges = TargetSmelting.ClientForges;
         for (int i = 0; i < ClientForges.Count; i++)
         {
             SmeltingForgeData data = ClientForges[i];

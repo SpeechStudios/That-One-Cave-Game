@@ -10,6 +10,8 @@ public enum ItemSlotType
     Head = 2,
     Chest = 3,
     Legs = 4,
+    Pickaxe = 5,
+    Axe = 6,
 }
 [System.Serializable]
 public struct ItemSlotData
@@ -17,6 +19,7 @@ public struct ItemSlotData
     public int ID;
     public int Quantity;
     public int[] Materials;
+    public int[] ReinforcedMaterials;
 
     public void Clear()
     {
@@ -71,16 +74,18 @@ public class InventorySlot : ItemSlot
     }
     public override void ShiftRightMouseClicked()
     {
-        if (SmeltingManager.Instance.SmeltingCanvas.activeInHierarchy)
+        if (TabManager.Instance.CurrentTab == Tab.Smelting)
         {
-            SmeltingManager.Instance.TargetSmelter.InstantFill(SlotIndex);
+            SmeltingManager.Instance.TargetSmelting.InstantFill(SlotIndex);
         }
-        else if (CraftingManager.Instance.CraftingCanvas.activeInHierarchy)
+        if (TabManager.Instance.CurrentTab == Tab.Crafting)
         {
             CraftingManager.Instance.TargetCrafting.InstantFill(SlotIndex);
         }
-        
-        Manager.TargetInventory.InstantEquip(SlotIndex);
+        if (TabManager.Instance.CurrentTab == Tab.Player)
+        {
+            Manager.TargetInventory.InstantEquip(SlotIndex);
+        }
     }
 
 }

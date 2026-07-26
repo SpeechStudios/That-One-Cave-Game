@@ -7,13 +7,11 @@ using UnityEngine.UI;
 public class CraftingSlot : ItemSlot, IPointerDownHandler
 {
     public TextMeshProUGUI RequiredMaterialText;
-    private CraftingComponent Component;
     [HideInInspector] public bool RequirementMet;
     private int SlotIndex;
 
     public void Setup(CraftingComponent component, int slotIndex)
     {
-        Component = component;
         RequiredMaterialText.text = $"{component.ResourceType} ({component.RequiredQuantity})";
         SlotIndex = slotIndex;
     }

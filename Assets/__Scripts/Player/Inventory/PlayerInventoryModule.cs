@@ -32,12 +32,11 @@ public class LocalResponse
 
 public class PlayerInventoryModule : NetworkBehaviour
 {
-    public PlayerInteractModule InteractModule;
     public PlayerDragGhostModule DragGhost;
     public PlayerLoadoutModule Loadout;
 
     public InputActionReference ToggleInventoryButton;
-    private bool IsInventoryOpen;
+    internal bool InventoryOpen;
 
     [Space]
 
@@ -119,38 +118,32 @@ public class PlayerInventoryModule : NetworkBehaviour
 
     private void OnToggleInventory(InputAction.CallbackContext context)
     {
-        if (IsInventoryOpen)
+        if (InventoryOpen)
             Close();
         else
             Open();
-
-        if (InteractModule.IsInteracting)
-        {
-            InteractModule.CloseInteraction();
-            return;
-        }
     }
 
     public void Open()
     {
-        if (IsInventoryOpen) return;
-        IsInventoryOpen = true;
+        if (InventoryOpen) return;
+        InventoryOpen = true;
         InventoryManager.Instance.InventoryCanvas.SetActive(true);
         DragGhostManager.Instance.ReturnToSender();
         UpdateCursorState();
     }
     public void Close()
     {
-        if (!IsInventoryOpen) return;
-        IsInventoryOpen = false;
+        if (!InventoryOpen) return;
+        InventoryOpen = false;
         InventoryManager.Instance.InventoryCanvas.SetActive(false);
         DragGhostManager.Instance.ReturnToSender();
         UpdateCursorState();
     }
     private void UpdateCursorState()
     {
-        Cursor.visible = IsInventoryOpen;
-        Cursor.lockState = IsInventoryOpen ? CursorLockMode.None : CursorLockMode.Locked;
+        Cursor.visible = InventoryOpen;
+        Cursor.lockState = InventoryOpen ? CursorLockMode.None : CursorLockMode.Locked;
     }
     #endregion
 
@@ -483,7 +476,7 @@ public class PlayerInventoryModule : NetworkBehaviour
             return InvalidateInstantEquip(ref patches, slots, from, isClient);
         }
 
-        int EquipSlot = GetEquipSlot(item.ItemSlotType);
+        int EquipSlot = EquipSlotLookup[item.ItemSlotType];
         if(EquipSlot == -1)
             return InvalidateInstantEquip(ref patches, slots, from, isClient);
 
@@ -529,23 +522,6 @@ public class PlayerInventoryModule : NetworkBehaviour
             return true;
 
         return false;
-    }
-
-    public int GetEquipSlot(ItemSlotType type)
-    {
-        switch (type)
-        {
-            case ItemSlotType.Weapon:
-                return EquipSlotLookup[ItemSlotType.Weapon];
-            case ItemSlotType.Head:
-                return EquipSlotLookup[ItemSlotType.Head];
-            case ItemSlotType.Chest:
-                return EquipSlotLookup[ItemSlotType.Chest];
-            case ItemSlotType.Legs:
-                return EquipSlotLookup[ItemSlotType.Legs];
-            default:
-                return -1;
-        }
     }
 
     #endregion

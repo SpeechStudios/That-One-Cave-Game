@@ -19,16 +19,18 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
 
         public Vector3 KnockbackVelocity;
         public AbilityState AbilityState;
+        public float ImmobilizeTimer;
 
         private uint Tick;
 
-        public ReplicationData(Vector2 moveInput, float lookYaw, bool jump, Vector3 knockbackVelocity, AbilityState state)
+        public ReplicationData(Vector2 moveInput, float lookYaw, bool jump, Vector3 knockbackVelocity, AbilityState state, float immobilizeTimer)
         {
             MoveInput = moveInput;
             LookYaw = lookYaw;
             Jump = jump;
             KnockbackVelocity = knockbackVelocity;
             AbilityState = state;
+            ImmobilizeTimer = immobilizeTimer;
             Tick = 0;
         }
         public readonly uint GetTick() => Tick;
@@ -51,12 +53,15 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
         public readonly bool IsPrimaryAbility;
         public readonly uint ActiveAbilityStartTick;
 
+        public readonly float ImmobilizeTimer;
+
         private uint Tick;
 
         public ReconciliationData(Vector3 position, Vector3 velocity,
             bool isGrounded, bool wasGrounded, bool hasJumpedOnce,
             bool wishJump, float wishJumpTimer, float perfectJumpAccel, float lookYaw,
-            bool abilityOverrideActive, bool isPrimaryAbility, uint activeAbilityStartTick)
+            bool abilityOverrideActive, bool isPrimaryAbility, uint activeAbilityStartTick,
+            float immobilizeTimer)
         {
             Position = position;
             Velocity = velocity;
@@ -70,6 +75,7 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
             AbilityOverrideActive = abilityOverrideActive;
             IsPrimaryAbility = isPrimaryAbility;
             ActiveAbilityStartTick = activeAbilityStartTick;
+            ImmobilizeTimer = immobilizeTimer;
             Tick = 0;
         }
         public readonly uint GetTick() => Tick;
@@ -96,6 +102,7 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
     public float SphereCastRadius = 0.2f;
     public float SphereCastDownPosition = 0.9f;
     private readonly Collider[] GroundCheckResults = new Collider[8];
+    public event System.Action OnLanded;
 
     [Header("Perfect Jump")]
     public float PerfectJumpSpeedBonus = 2f;
@@ -123,6 +130,8 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
 
     private Vector3 KnockbackForce;
     private float KnockbackDecay = 4f;
+
+    private float ImmobilizeTimer = 0f;
 
     private float LookYaw;
     private float LookPitch;
@@ -161,7 +170,6 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
     }
     public void ApplyKnockback(Vector3 velocity)
     {
-        //Server Check
         KnockbackForce = velocity;
     }
     public void ApplySlow(float multiplier, float duration)
@@ -170,7 +178,7 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
     }
     public void ApplyImmobilize(float duration)
     {
-        throw new System.NotImplementedException();
+        ImmobilizeTimer = Mathf.Max(ImmobilizeTimer, duration);
     }
     public override void OnStartNetwork()
     {
@@ -192,7 +200,7 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
                 PendingAbility = default;
             }
 
-            ReplicationData data = new(MoveInput, LookYaw, JumpInput, KnockbackForce, ActiveAbility);
+            ReplicationData data = new(MoveInput, LookYaw, JumpInput, KnockbackForce, ActiveAbility, ImmobilizeTimer);
             Replicate(data);
             JumpInput = false;
         }
@@ -210,13 +218,20 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
     private void Replicate(ReplicationData data, ReplicateState state = ReplicateState.Invalid, Channel channel = Channel.Unreliable)
     {
         float dt = (float)TimeManager.TickDelta;
+
+        bool isImmobilized = ImmobilizeTimer > 0f;
+
         UpdateRotation(data.LookYaw);
         ResolveMovementAbility(ref data, state, dt);
         if (!AbilityOverrideThisTick)
         {
-            UpdatePosition(data.MoveInput, data.KnockbackVelocity, data.Jump, dt);
+            Vector2 moveInput = isImmobilized ? Vector2.zero : data.MoveInput;
+            bool jump = isImmobilized ? false : data.Jump;
+            UpdatePosition(moveInput, data.KnockbackVelocity, jump, dt);
         }
         AbilityOverrideThisTick = false;
+
+        ImmobilizeTimer = Mathf.Max(0f, ImmobilizeTimer - dt);
 
         ActiveAbility = data.AbilityState;
     }
@@ -230,7 +245,7 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
     }
     public override void CreateReconcile()
     {
-        ReconciliationData data = new(transform.position, Velocity, IsGrounded, WasGrounded, PerfectJumpComplete, WishJump, WishJumpTimer, PerfectJumpCurrentAcceleration, LookYaw, ActiveAbility.Active, ActiveAbility.IsPrimary, ActiveAbility.StartTick);
+        ReconciliationData data = new(transform.position, Velocity, IsGrounded, WasGrounded, PerfectJumpComplete, WishJump, WishJumpTimer, PerfectJumpCurrentAcceleration, LookYaw, ActiveAbility.Active, ActiveAbility.IsPrimary, ActiveAbility.StartTick, ImmobilizeTimer);
         Reconcile(data);
     }
     [Reconcile]
@@ -250,6 +265,7 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
         PerfectJumpCurrentAcceleration = data.PerfectJumpAcceleration;
 
         ActiveAbility = new AbilityState(data.AbilityOverrideActive, data.IsPrimaryAbility, data.ActiveAbilityStartTick);
+        ImmobilizeTimer = data.ImmobilizeTimer;
     }
 
     private void Update()
@@ -300,6 +316,10 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
 
         bool isGrounded = IsGrounded;
         bool justLanded = isGrounded && !WasGrounded;
+        if (justLanded)
+        {
+            OnLanded?.Invoke();
+        }
 
         Vector3 wishDir = GetWishDirection(moveInput);
         Vector3 horizontal = new(Velocity.x, 0f, Velocity.z);
@@ -338,7 +358,7 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
         bool didJump = TryJump(ref vertY, ref WishJump, isGrounded);
 
         Velocity = new Vector3(horizontal.x, vertY, horizontal.z);
-        if(knockbackVelocity.magnitude > 0)
+        if (knockbackVelocity.magnitude > 0)
         {
             KnockbackForce = knockbackVelocity;
         }
@@ -374,7 +394,7 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
 
         MovementAbilityResult result = ability.ExecuteMove(this, data.MoveInput, ref data.AbilityState, dt, elapsed);
         AbilityOverrideThisTick = true;
-        if(result == MovementAbilityResult.Completed)
+        if (result == MovementAbilityResult.Completed)
         {
             data.AbilityState = default;
             if (isServerTick) ability.ServerOnMovementComplete(this);
@@ -442,7 +462,7 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
         }
         return false;
     }
-    private bool CheckGrounded()
+    public bool CheckGrounded()
     {
         Vector3 spherePosition = transform.position + Vector3.down * SphereCastDownPosition;
         var count = Physics.OverlapSphereNonAlloc(spherePosition, SphereCastRadius, GroundCheckResults, GroundLayers, QueryTriggerInteraction.Ignore);

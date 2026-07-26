@@ -23,6 +23,8 @@ public class CraftingManager : MonoBehaviour
     }
     public void Bind(PlayerCraftingModule targetCrafting)
     {
+        Debug.Log("Binding");
+
         TargetCrafting = targetCrafting;
         TargetCrafting.OnCraftingSlotsChanged += HandleCraftingChanged;
         TargetCrafting.OnRecipeReady += ready => Outcome.OnRecipeComplete(ready, new ItemSlotData 

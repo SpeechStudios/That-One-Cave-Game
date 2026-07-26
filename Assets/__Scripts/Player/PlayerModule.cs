@@ -4,10 +4,10 @@ using UnityEngine;
 public class PlayerModule : NetworkBehaviour
 {
     public PlayerControllerModule Controller;
-    public PlayerInteractModule Interact;
     public PlayerDragGhostModule DragGhost;
     public PlayerInventoryModule Inventory;
     public PlayerCraftingModule Crafting;
+    public PlayerSmeltingModule Smelting;
     public PlayerLoadoutModule Loadout;
     public DamageableComponent Damageable;
     public override void OnStartServer()
@@ -43,16 +43,16 @@ public class PlayerModule : NetworkBehaviour
         }
         Damageable.HealthBar.SetActive(false);
         Controller.enabled = true;
-        Interact.enabled = true;
         DragGhost.enabled = true;
         Inventory.enabled = true;
         Crafting.enabled = true;
+        Smelting.enabled = true;
         Loadout.enabled = true;
 
         Controller.Init();
-        Interact.Init();
         DragGhost.Init();
         Inventory.ClientInit();
+        Smelting.Init();
         Crafting.Init();
         Loadout.Init();
 

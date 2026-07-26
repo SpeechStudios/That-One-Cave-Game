@@ -1,105 +1,136 @@
 using FishNet.Object;
+using FishNet.Object.Synchronizing;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class DamageableComponent : NetworkBehaviour, IDamageable
 {
     public float StartingHealth;
 
-    internal float ServerHealth;
-    internal float ServerMaxHealth;
-
-    internal float ClientHealth;
-    internal float ClientMaxHealth;
-
     [Header("UI")]
     public GameObject HealthBar;
     public Transform HealthBarPivot;
     public float HealthBarActiveDuration;
-
     private float HealthBarActiveTimer;
-
     private Camera MainCam;
+
+    private readonly HealthState ServerState = new();
+
+    private readonly SyncVar<float> SyncedHealth = new();
+    private readonly SyncVar<float> SyncedMaxHealth = new();
+
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+        base.TimeManager.OnTick += TimeManager_OnTick;
+    }
+    public override void OnStopServer()
+    {
+        base.OnStopServer();
+        base.TimeManager.OnTick -= TimeManager_OnTick;
+    }
+    private void Awake()
+    {
+        SyncedHealth.OnChange += OnSyncedHealthChanged;
+    }
     public void ServerInit()
     {
-        ServerMaxHealth = StartingHealth;
-        ServerHealth = ServerMaxHealth;
+        ServerState.Init(StartingHealth);
+        PushServerStateToSync();
     }
     public void ClientInit()
     {
-        ClientMaxHealth = StartingHealth;
-        ClientHealth = ClientMaxHealth;
         MainCam = Camera.main;
     }
-    public void IncreaseMaxHealth(float Health, bool isServer)
+    private void TimeManager_OnTick()
+    {
+        float tickDelta = (float)base.TimeManager.TickDelta;
+        float before = ServerState.Health;
+        ServerState.TickDots(tickDelta);
+        if (ServerState.Health != before)
+            PushServerStateToSync();
+    }
+    private void PushServerStateToSync()
+    {
+        SyncedHealth.Value = ServerState.Health;
+        SyncedMaxHealth.Value = ServerState.MaxHealth;
+    }
+
+
+    public void TakeDamageOverTime(DamageOverTimeProperties properties, bool isServer)
     {
         if (isServer)
         {
-            if (ServerHealth == ServerMaxHealth)
-                ServerHealth += Health;
-
-            ServerMaxHealth += Health;
-        }
-        else
-        {
-            if (ClientHealth == ClientMaxHealth)
-                ClientHealth += Health;
-
-            ClientMaxHealth += Health;
-            UpdateHealthBar();
+            ServerState.ApplyDot(properties);
         }
     }
+
     public void TakeDamage(float damage, bool isServer)
     {
-        if(isServer)
+        if (isServer)
         {
-            ServerHealth -= damage;
-            if (ServerHealth <= 0)
-            {
-                ServerHealth = 0;
-            }
+            ServerState.TakeDamage(damage);
+            PushServerStateToSync();
         }
         else
         {
-            ClientHealth -= damage;
-            if(ClientHealth <= 0)
-            {
-                ClientHealth = 0;
-            }
-            if (HealthBar == null) return;
-            UpdateHealthBar();
-            HealthBarActiveTimer = HealthBarActiveDuration;
-            HealthBar.SetActive(true);
+            //Client Instant Feedback
+            ShowHealthBarOnClientHit();
         }
     }
-    public void HealDamage(float value, bool isServer)
+    public void GainHealth(float value, bool isServer)
     {
         if (isServer)
         {
-            ServerHealth += value;
-            if (ServerHealth > ServerMaxHealth)
-                ServerHealth = ServerMaxHealth;
+            ServerState.GainHealth(value);
+            PushServerStateToSync();
         }
         else
         {
-            ClientHealth += value;
-            if (ClientHealth > ClientMaxHealth)
-                ClientHealth = ClientMaxHealth;
-
-            UpdateHealthBar();
-            HealthBarActiveTimer = HealthBarActiveDuration;
+            ShowHealthBarOnClientHit();
         }
+    }
+
+    public void GainArmor(float armor, float capacity, string source, bool isServer)
+    {
+    }
+    public void IncreaseMaxHealth(float health, bool isServer)
+    {
+        if (isServer)
+        {
+            ServerState.IncreaseMaxHealth(health);
+            PushServerStateToSync();
+        }
+    }
+
+    private void OnSyncedHealthChanged(float prev, float next, bool asServer)
+    {
+        if (!base.IsClientInitialized)
+            return;
+
+        UpdateHealthBar();
+        if (next < prev)
+            ShowHealthBarOnClientHit();
+    }
+    private void ShowHealthBarOnClientHit()
+    {
+        if (HealthBar == null) return;
+        UpdateHealthBar();
+        HealthBarActiveTimer = HealthBarActiveDuration;
+        HealthBar.SetActive(true);
     }
     private void UpdateHealthBar()
     {
         if (HealthBar == null) return;
-        float ratio = ClientHealth / ClientMaxHealth;
+        float max = SyncedMaxHealth.Value;
+        float ratio = max > 0 ? SyncedHealth.Value / max : 0f;
         HealthBarPivot.localScale = new Vector3(ratio, HealthBarPivot.localScale.y, HealthBarPivot.localScale.z);
     }
+
     void LateUpdate()
     {
         if (HealthBar == null) return;
         if (!HealthBar.activeInHierarchy) return;
+
         float camY = MainCam.transform.eulerAngles.y;
         HealthBar.transform.rotation = Quaternion.Euler(0f, camY, 0f);
 

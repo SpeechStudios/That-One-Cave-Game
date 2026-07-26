@@ -6,13 +6,12 @@ using UnityEngine.InputSystem;
 
 public class CraftingOutcomeSlot : ItemSlot, IPointerDownHandler
 {
-    public CraftingManager Manager;
     public void OnRecipeComplete(bool isReady, ItemSlotData itemData)
     {
         if (isReady)
         {
             SlotData = itemData;
-            SlotData.Materials = Manager.TargetCrafting.ClientSlots.Select(slot => (int)Registry.GetItem(slot.Data.ID).MaterialType).ToArray();
+            SlotData.Materials = CraftingManager.Instance.TargetCrafting.ClientSlots.Select(slot => (int)Registry.GetItem(slot.Data.ID).MaterialType).ToArray();
             UpdateUI();
         }
         else

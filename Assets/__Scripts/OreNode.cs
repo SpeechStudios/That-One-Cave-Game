@@ -1,40 +1,24 @@
 using FishNet.Object;
 using UnityEngine;
 
-public class OreNode : NetworkBehaviour, IDamageable
+public class OreNode : NetworkBehaviour
 {
     public Item Ore;
-    public float MinHealthRange = 92;
-    public float MaxHealthRange = 156;
-    public float Threshold = 18f;
+    public float MiningLevelRequirements = 0;
+    public float NodeHealth = 20;
+    public int MinOreAmount = 6;
+    public int MaxOreAmount = 8;
 
-
-    private float CurrentThreshold;
-    private float Health;
-    private float MaxHealth;
-    void Start()
-    {
-        if(IsServerStarted)
-        {
-            MaxHealth = Random.Range(MinHealthRange, MaxHealthRange);
-            Health = MaxHealth;
-            CurrentThreshold = MaxHealth - Threshold;
-        }
-    }
 
     public void TakeDamage(float damage, bool isServer)
     {
         if (isServer)
         {
-            Health -= damage;
-            while (Health <= CurrentThreshold)
+            NodeHealth -= damage;
+            Debug.Log($"Taking {damage} Damage, Remaining Health = {NodeHealth}");
+            if (NodeHealth <= 0)
             {
-                CurrentThreshold -= Threshold;
-                SpawnOre(Random.Range(1, 3));
-            }
-            if (Health <= 0)
-            {
-                SpawnOre(Random.Range(2, 5));
+                SpawnOre(Random.Range(MinOreAmount, MaxOreAmount + 1));
                 GetComponent<NetworkObject>().Despawn();
             }
         }
@@ -52,7 +36,6 @@ public class OreNode : NetworkBehaviour, IDamageable
             spawnPos.z = transform.position.z;
 
             NetworkObject oreInstance = Instantiate(Ore.WorldItemPrefab, spawnPos, Quaternion.identity);
-            Debug.Log("Spawning At: " + spawnPos);
             oreInstance.GetComponent<WorldItemGameObject>().Initialize(Ore.ID, 1, null);
             ServerManager.Spawn(oreInstance);
         }

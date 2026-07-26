@@ -9,12 +9,13 @@ public class Weapon : NetworkBehaviour
 
     internal float Damage;
     internal float AttackSpeed;
+    internal float AttackTolerance = 0.05f;
 
     private readonly SyncVar<uint> PrimaryLastUsedTick = new(0u);
     private readonly SyncVar<uint> SecondaryLastUsedTick = new(0u);
 
+    internal float LastAttackTime;
     internal bool ClientCanAttack = true;
-    internal bool ServerCanAttack = true;
 
     internal PlayerLoadoutModule Loadout;
     private PlayerControllerModule MovementController;

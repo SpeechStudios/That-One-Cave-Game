@@ -8,6 +8,8 @@ using UnityEngine;
 public class PlayerLoadoutModule : NetworkBehaviour
 {
     public PlayerControllerModule Controller;
+    public PlayerInventoryModule Inventory;
+
     public Animator WeaponAnimator;
     public Transform FP_WeaponParent;
     public Transform TP_WeaponParent;
@@ -17,10 +19,13 @@ public class PlayerLoadoutModule : NetworkBehaviour
     public Weapon Fists;
 
     internal Weapon Weapon;
+    internal Weapon Pickaxe;
+    internal Weapon Axe;
     private Armor Head;
     private Armor Chest;
     private Armor Legs;
 
+    private int CurrentItemIndex; //0 Weapon, // 1 Pickaxe, //2 Axe
     private bool Initalized;
     private Dictionary<ItemSlotType, EquippedSlot> ServerLoadout = new();
     public void Init()
@@ -36,14 +41,20 @@ public class PlayerLoadoutModule : NetworkBehaviour
         InstanceFinder.ServerManager.Spawn(itemPrefab, conn);
         Observer_Equip_RPC(itemPrefab, materialArray, type);
         ServerLoadout[type] = new EquippedSlot { Item = itemPrefab, IsEquipped = true };
-        Weapon weapon = itemPrefab.GetComponent<Weapon>();
-        weapon.Initalize(Controller, this, materialArray);
+        if (type == ItemSlotType.Weapon || type == ItemSlotType.Pickaxe || type == ItemSlotType.Axe)
+        {
+            Weapon weapon = itemPrefab.GetComponent<Weapon>();
+            weapon.Initalize(Controller, this, materialArray);
+        }
     }
     [Server]
     public void UnequipItem(ItemSlotType type, NetworkConnection conn)
     {
         NetworkObject itemPrefab = ServerLoadout[type].Item;
-        itemPrefab.GetComponent<Weapon>().Deinitialize();
+        if (type == ItemSlotType.Weapon || type == ItemSlotType.Pickaxe || type == ItemSlotType.Axe)
+        {
+            itemPrefab.GetComponent<Weapon>().Deinitialize();
+        }
         itemPrefab.Despawn();
         Observer_UnEquip_RPC(type);
         ServerLoadout[type] = null;
@@ -58,23 +69,52 @@ public class PlayerLoadoutModule : NetworkBehaviour
         if (isLocalOwner)
             SetLayerRecursively(obj.gameObject, LayerMask.NameToLayer("LocalTools"));
 
-        Weapon weapon = obj.GetComponent<Weapon>();
         Transform parent;
+        bool isFirst = Weapon == null && Pickaxe == null && Axe == null;
 
         switch (slotType)
         {
             case ItemSlotType.Weapon:
-                Weapon = weapon;
+                Weapon = obj.GetComponent<Weapon>();
                 parent = isLocalOwner ? FP_WeaponParent : TP_WeaponParent;
+                Weapon.Initalize(Controller, this, materialArray);
+                break;
+            case ItemSlotType.Pickaxe:
+                Pickaxe = obj.GetComponent<Weapon>();
+                parent = isLocalOwner ? FP_WeaponParent : TP_WeaponParent;
+                Pickaxe.Initalize(Controller, this, materialArray);
+                break;
+            case ItemSlotType.Axe:
+                Axe = obj.GetComponent<Weapon>();
+                parent = isLocalOwner ? FP_WeaponParent : TP_WeaponParent;
+                Axe.Initalize(Controller, this, materialArray);
                 break;
             default:
                 return;
         }
-
-        weapon.Initalize(Controller, this, materialArray);
+        if(!isFirst)
+        {
+            if (CurrentItemIndex == 0 && slotType != ItemSlotType.Weapon)
+                obj.gameObject.SetActive(false);
+            if (CurrentItemIndex == 1 && slotType != ItemSlotType.Pickaxe)
+                obj.gameObject.SetActive(false);
+            if (CurrentItemIndex == 2 && slotType != ItemSlotType.Axe)
+                obj.gameObject.SetActive(false);
+        }
+        else
+        {
+            if (slotType == ItemSlotType.Weapon)
+                CurrentItemIndex = 0;
+            if (slotType == ItemSlotType.Pickaxe)
+                CurrentItemIndex = 1;
+            if (slotType == ItemSlotType.Axe)
+                CurrentItemIndex = 2;
+        }
+        
         obj.transform.SetParent(parent, false);
         obj.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
     }
+
     [ObserversRpc]
     private void Observer_UnEquip_RPC(ItemSlotType slotType)
     {
@@ -86,6 +126,14 @@ public class PlayerLoadoutModule : NetworkBehaviour
                 Weapon.Deinitialize();
                 Weapon = null;
                 break;
+            case ItemSlotType.Axe:
+                Axe.Deinitialize();
+                Axe = null;
+                break;
+            case ItemSlotType.Pickaxe:
+                Pickaxe.Deinitialize();
+                Pickaxe = null;
+                break;
             default:
                 return;
         }
@@ -94,28 +142,54 @@ public class PlayerLoadoutModule : NetworkBehaviour
     void Update()
     {
         if (!Initalized) return;
+        if (Inventory.InventoryOpen) return;
+
         SetAttackInputs();
         SetAbilityInputs();
+        SetWeaponChangeInputs();
     }
     private void SetAttackInputs()
     {
         bool Attack = Controller.PlayerInput.Player.Attack.IsPressed();
+
         if (Attack)
         {
-            if (Weapon != null)
+            if (CurrentItemIndex == 0)
             {
-                Weapon.AttackRequest();
+                if (Weapon != null)
+                {
+                    Weapon.AttackRequest();
+                    return;
+                }
+                Fists.AttackRequest();
                 return;
             }
-            Fists.AttackRequest();
-            return;
+            if(CurrentItemIndex == 1)
+            {
+                if (Pickaxe != null)
+                {
+                    Pickaxe.AttackRequest();
+                    return;
+                }
+            }
+            if (CurrentItemIndex == 2)
+            {
+                if (Axe != null)
+                {
+                    Axe.AttackRequest();
+                    return;
+                }
+            }
         }
 
         bool AttackReleased = Controller.PlayerInput.Player.Attack.WasReleasedThisFrame();
         if (AttackReleased)
         {
-            if (Weapon != null)
-                Weapon.ReleaseRequest();
+            if (CurrentItemIndex == 0)
+            {
+                if (Weapon != null)
+                    Weapon.ReleaseRequest();
+            }
         }
     }
     private void SetAbilityInputs()
@@ -133,6 +207,36 @@ public class PlayerLoadoutModule : NetworkBehaviour
             Weapon.SecondaryAbilityRequest();
         }
     }
+    private void SetWeaponChangeInputs()
+    {
+        if(Controller.PlayerInput.Player.Option1.WasPressedThisFrame())
+        {
+            ShowCurrentWeapon(false);
+            CurrentItemIndex = 0;
+            ShowCurrentWeapon(true);
+        }
+        if (Controller.PlayerInput.Player.Option2.WasPressedThisFrame())
+        {
+            ShowCurrentWeapon(false);
+            CurrentItemIndex = 1;
+            ShowCurrentWeapon(true);
+        }
+        if (Controller.PlayerInput.Player.Option3.WasPressedThisFrame())
+        {
+            ShowCurrentWeapon(false);
+            CurrentItemIndex = 2;
+            ShowCurrentWeapon(true);
+        }
+    }
+    private void ShowCurrentWeapon(bool enable)
+    {
+        if (CurrentItemIndex == 0)
+            Weapon.gameObject.SetActive(enable);
+        if (CurrentItemIndex == 1)
+            Pickaxe.gameObject.SetActive(enable);
+        if (CurrentItemIndex == 2)
+            Axe.gameObject.SetActive(enable);
+    }
     public void StartWeaponCooldown(Weapon weapon, float cooldown, bool isServer)
     {
         StartCoroutine(AttackCooldownCoroutine(weapon, cooldown, isServer));
@@ -140,9 +244,7 @@ public class PlayerLoadoutModule : NetworkBehaviour
     private IEnumerator AttackCooldownCoroutine(Weapon weapon, float cooldown, bool isServer)
     {
         yield return new WaitForSecondsRealtime(cooldown);
-        if (isServer)
-            weapon.ServerCanAttack = true;
-        else
+        if (!isServer)
         {
             weapon.ClientCanAttack = true;
             WeaponAnimator.speed = 1;

@@ -1,7 +1,7 @@
 using FishNet.Object;
 using UnityEngine;
 
-public class WoodNode : NetworkBehaviour, IDamageable
+public class WoodNode : NetworkBehaviour
 {
     internal bool IsBottomNode;
     internal TreeNode TreeParent;

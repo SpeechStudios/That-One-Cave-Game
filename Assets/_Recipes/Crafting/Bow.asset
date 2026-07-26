@@ -12,11 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c34690da6da3ab44e8dd7c6ef6046ad4, type: 3}
   m_Name: Bow
   m_EditorClassIdentifier: Assembly-CSharp::CraftingRecipe
-  ID: 0
+  ID: 1
+  ItemName: Longbow
   Components:
-  - ResourceType: 3
-    RequiredQuantity: 1
-  - ResourceType: 1
-    RequiredQuantity: 1
-  CraftedOutcome: {fileID: 11400000, guid: f9dbb13172a85b845ae8b16acb139b6d, type: 2}
+  - ResourceType: 2
+    RequiredQuantity: 12
+    Name: Limb
+  - ResourceType: 2
+    RequiredQuantity: 6
+    Name: Handle
+  CraftedOutcome: {fileID: 11400000, guid: 18e7d5b1c2cc83b4d90f777520350aec, type: 2}
   CraftedOutcomeQuantity: 1

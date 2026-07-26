@@ -482,9 +482,10 @@ public class PlayerCraftingModule : NetworkBehaviour
 
         if (!InstantGrabValid(inventorySlots, slots, grabbedSlot, slotIndex))
         {
+            Debug.Log("Invalid Instant Grab");
             return InvalidateInstantGrab(ref patches, slots, inventorySlots, slotIndex, isClient);
-        }    
-
+        }
+        Debug.Log("Attemping Instant Grab");
         Item item = Registry.GetItem(grabbedSlot.ID);
 
         // Stack Slots
@@ -617,7 +618,8 @@ public class PlayerCraftingModule : NetworkBehaviour
                 if (PlayerHelperFunctions.SlotValid(slots, patch.Index))
                     slots[patch.Index].Data = patch.Data;
 
-                CheckRecipeReady(slots);
+                if (!isServer)
+                    CheckRecipeReady(slots);
             }
             if(patch.Type == SlotType.Inventory)
             {
@@ -641,7 +643,6 @@ public class PlayerCraftingModule : NetworkBehaviour
             if (item.ResourceType != slot.Component.ResourceType) { OnRecipeReady?.Invoke(false); return; }
             if (slot.Data.Quantity < slot.Component.RequiredQuantity) { OnRecipeReady?.Invoke(false); return; }
         }
-
         OnRecipeReady?.Invoke(true);
     }
     #endregion
@@ -728,7 +729,7 @@ public class PlayerCraftingModule : NetworkBehaviour
     {
         if (!PlayerHelperFunctions.SlotValid(slots, slotIndex)) return false;
         if (!Registry.TryGetItem(itemslot.ID, out _)) return false;
-        if (!inventorySlots.Any(s => s.Type == ItemSlotType.Inventory && s.Data.ID < 0)) return false;
+        if (!inventorySlots.Any(s => s.Type == ItemSlotType.Inventory && s.Data.ID == 0)) return false;
         return true;
     }
 

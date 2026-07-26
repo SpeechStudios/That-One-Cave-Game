@@ -50,12 +50,14 @@ public struct CraftingComponent
 {
     public ResourceType ResourceType;
     public int RequiredQuantity;
+    public string Name;
 }
 
 [CreateAssetMenu(fileName = "CraftingRecipe", menuName = "New Crafting Recipe")]
 public class CraftingRecipe : ScriptableObject
 {
     [HideInInspector] public int ID;
+    public string ItemName;
     public List<CraftingComponent> Components;
     public Item CraftedOutcome;
     public int CraftedOutcomeQuantity = 1;

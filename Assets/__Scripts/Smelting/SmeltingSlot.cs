@@ -24,18 +24,18 @@ public class SmeltingSlot : ItemSlot
     }
     public override void SlotToGhost()
     {
-        SmeltingManager.Instance.TargetSmelter.SlotToGhost(ForgeIndex, SlotIndex, SlotData.Quantity);
+        SmeltingManager.Instance.TargetSmelting.SlotToGhost(ForgeIndex, SlotIndex, SlotData.Quantity);
     }
     public override void GhostToSlot()
     {
-        SmeltingManager.Instance.TargetSmelter.GhostToSlot(ForgeIndex, SlotIndex);
+        SmeltingManager.Instance.TargetSmelting.GhostToSlot(ForgeIndex, SlotIndex);
     }
     public override void RightMouseUp()
     {
-        SmeltingManager.Instance.TargetSmelter.SlotToGhost(ForgeIndex, SlotIndex, Quantity);
+        SmeltingManager.Instance.TargetSmelting.SlotToGhost(ForgeIndex, SlotIndex, Quantity);
     }
     public override void ShiftRightMouseClicked()
     {
-        SmeltingManager.Instance.TargetSmelter.InstantGrab(ForgeIndex, SlotIndex);
+        SmeltingManager.Instance.TargetSmelting.InstantGrab(ForgeIndex, SlotIndex);
     }
 }
