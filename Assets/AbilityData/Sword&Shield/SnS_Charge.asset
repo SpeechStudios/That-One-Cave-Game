@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e753e0067e99df244b3a598c147dfe10, type: 3}
+  m_Name: SnS_Charge
+  m_EditorClassIdentifier: Assembly-CSharp::SnS_AshHandleData
+  AbilityName: Furious Charge
+  AbilityIcon: {fileID: 0}
+  Cooldown: 4
+  BlockAttacks: 1
+  BlockOtherAbilities: 0
+  MaxChargeSpeed: 20
+  ChargeDamagePercentage: 1.36
+  CheckRadius: 2

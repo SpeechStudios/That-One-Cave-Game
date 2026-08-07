@@ -9,12 +9,12 @@ public class SnS_MithrilBladeData : AbilityData
     public float DamageInterval = 1f;
     public float DamageDuration = 5f;
     public int MaxStacks = 5;
+    public override Ability CreateAbility() => new SnS_MithrilBlade();
 }
 public class SnS_MithrilBlade : Ability
 {
     private SwordAndShield SwordAndShield;
     private SnS_MithrilBladeData MithrilBladeData;
-    public override System.Type DataType => typeof(SnS_MithrilBladeData);
 
     public override void Initialize(Weapon owner, AbilityData data)
     {
@@ -44,10 +44,10 @@ public class SnS_MithrilBlade : Ability
     {
         if (target.TryGetComponent<IDamageable>(out var damageable))
         {
-            damageable.TakeDamage(SwordAndShield.Damage * MithrilBladeData.DamagePercentage, false);
+            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * MithrilBladeData.DamagePercentage, false);
             DamageOverTimeProperties properties = new()
             {
-                Damage = SwordAndShield.Damage * MithrilBladeData.DamagePercentage,
+                Damage = SwordAndShield.Stats.GetDamage() * MithrilBladeData.DamagePercentage,
                 Interval = MithrilBladeData.DamageInterval,
                 Duration = MithrilBladeData.DamageDuration,
                 EffectId = MithrilBladeData.AbilityName,
@@ -62,10 +62,10 @@ public class SnS_MithrilBlade : Ability
     {
         if (target.TryGetComponent<IDamageable>(out var damageable))
         {
-            damageable.TakeDamage(SwordAndShield.Damage * MithrilBladeData.DamagePercentage, true);
+            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * MithrilBladeData.DamagePercentage, true);
             DamageOverTimeProperties properties = new()
             {
-                Damage = SwordAndShield.Damage * MithrilBladeData.DamagePercentage,
+                Damage = SwordAndShield.Stats.GetDamage() * MithrilBladeData.DamagePercentage,
                 Interval = MithrilBladeData.DamageInterval,
                 Duration = MithrilBladeData.DamageDuration,
                 EffectId = MithrilBladeData.AbilityName,

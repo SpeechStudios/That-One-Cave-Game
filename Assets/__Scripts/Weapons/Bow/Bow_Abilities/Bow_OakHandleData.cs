@@ -4,15 +4,14 @@ using UnityEngine;
 public class Bow_OakHandleData : AbilityData
 {
     public float ImmobilizeDuration = 3f;
-    public float UpwardForce = 2f;
     public float DamageMultiplier = 0.3f;
+    public override Ability CreateAbility() => new Bow_OakHandle();
 }
 
 public class Bow_OakHandle : Ability
 {
     private Bow Bow;
     private Bow_OakHandleData OakHandleData;
-    public override System.Type DataType => typeof(Bow_OakHandleData);
     public override void Initialize(Weapon weapon, AbilityData data)
     {
         base.Initialize(weapon, data);
@@ -21,23 +20,21 @@ public class Bow_OakHandle : Ability
     }
     public override void ClientActivate(uint tick)
     {
-        Bow.QueueEffect(new ImmobilizeEffect(OakHandleData.ImmobilizeDuration, OakHandleData.UpwardForce, OakHandleData.DamageMultiplier), isServer: false);
+        Bow.QueueEffect(new ImmobilizeEffect(OakHandleData.ImmobilizeDuration, OakHandleData.DamageMultiplier), isServer: false);
     }
     public override void ServerActivate(uint tick)
     {
-        Bow.QueueEffect(new ImmobilizeEffect(OakHandleData.ImmobilizeDuration, OakHandleData.UpwardForce, OakHandleData.DamageMultiplier), isServer: true);
+        Bow.QueueEffect(new ImmobilizeEffect(OakHandleData.ImmobilizeDuration, OakHandleData.DamageMultiplier), isServer: true);
     }
 }
 public class ImmobilizeEffect : IArrowEffect
 {
     private readonly float ImmobilizeDuration;
-    private readonly float UpwardForce;
     private readonly float DamageMultiplier;
 
-    public ImmobilizeEffect(float immobilizeDuration, float upwardForce, float damageMultiplier)
+    public ImmobilizeEffect(float immobilizeDuration, float damageMultiplier)
     {
         ImmobilizeDuration = immobilizeDuration;
-        UpwardForce = upwardForce;
         DamageMultiplier = damageMultiplier;
     }
 
@@ -53,7 +50,7 @@ public class ImmobilizeEffect : IArrowEffect
         }
         if (hitEntity.TryGetComponent<IDamageable>(out var damageable))
         {
-            damageable.TakeDamage(source.Damage * DamageMultiplier, isServer);
+            damageable.TakeDamage(source.Stats.GetDamage() * DamageMultiplier, isServer);
         }
 
         if (hitEntity.TryGetComponent<IMoveable>(out var moveable))

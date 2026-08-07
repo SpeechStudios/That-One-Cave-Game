@@ -8,7 +8,8 @@ public class Bow_OakLimbData : AbilityData
     public float XSpreadAngle = 30f;
     public float YSpreadAngle = 10f;
     public float FireDelay = 1f;
-    public float RandomSpreadJitter = 3f; // extra random angle (degrees) added per axis
+    public float RandomSpreadJitter = 3f;
+    public override Ability CreateAbility() => new Bow_OakLimb();
 }
 
 public class Bow_OakLimb : Ability
@@ -16,7 +17,6 @@ public class Bow_OakLimb : Ability
     private const float MAX_PASSED_TIME = 0.3f;
     private Bow Bow;
     private Bow_OakLimbData OakLimbData;
-    public override System.Type DataType => typeof(Bow_OakLimbData);
 
     public override void Initialize(Weapon weapon, AbilityData data)
     {
@@ -36,6 +36,7 @@ public class Bow_OakLimb : Ability
         yield return new WaitForSeconds(OakLimbData.FireDelay);
         uint fireTick = Bow.TimeManager.LocalTick;
         FireVolley(fireTick, passedTime: 0f, isServer: false);
+        CompleteAbility();
     }
 
     public override void ServerActivate(uint tick)
@@ -52,6 +53,7 @@ public class Bow_OakLimb : Ability
             yield return new WaitForSeconds(delayRemaining);
         uint fireTick = Bow.TimeManager.LocalTick;
         FireVolley(fireTick, arrowPassedTime, isServer: true);
+        CompleteAbility();
     }
 
     private void FireVolley(uint tick, float passedTime, bool isServer)
@@ -61,17 +63,18 @@ public class Bow_OakLimb : Ability
         {
             for (int i = 0; i < arrowsPerRow; i++)
             {
-                Vector3 dir = GetSpreadDirection(row, i, arrowsPerRow);
+                Vector3 dir = GetSpreadDirection(row, i, arrowsPerRow, isServer);
                 FireArrow(dir, tick, passedTime, isServer);
             }
         }
     }
 
-    private Vector3 GetSpreadDirection(int row, int indexInRow, int arrowsPerRow)
+    private Vector3 GetSpreadDirection(int row, int indexInRow, int arrowsPerRow, bool isServer)
     {
-        Vector3 baseDir = Bow.Loadout.BowFirePoint.forward;
-        Vector3 up = Bow.Loadout.BowFirePoint.up;
-        Vector3 right = Bow.Loadout.BowFirePoint.right;
+        Transform firePoint =isServer ? Bow.Loadout.FPCam.ServerFirePoint : Bow.Loadout.FPCam.ClientFirePoint;
+        Vector3 baseDir = firePoint.forward;
+        Vector3 up = firePoint.up;
+        Vector3 right = firePoint.right;
 
         float horizontalT = arrowsPerRow > 1 ? (float)indexInRow / (arrowsPerRow - 1) : 0.5f;
         float horizontalAngle = Mathf.Lerp(-OakLimbData.XSpreadAngle * 0.5f, OakLimbData.XSpreadAngle * 0.5f, horizontalT);
@@ -87,13 +90,13 @@ public class Bow_OakLimb : Ability
 
     private void FireArrow(Vector3 aimDir, uint shotTick, float passedTime, bool isServer)
     {
-        Vector3 spawnPos = Bow.Loadout.BowFirePoint.position;
+        Vector3 spawnPos = isServer? Bow.Loadout.FPCam.ServerFirePoint.position : Bow.Loadout.FPCam.ClientFirePoint.position;
         float velocity = Bow.ArrowVelocity;
-        float damage = Bow.Damage * OakLimbData.DamageMultiplier;
+        float damage = Bow.Stats.GetDamage() * OakLimbData.DamageMultiplier;
         if (isServer)
         {
             Bow.SpawnNormalArrow(spawnPos, aimDir, damage, velocity, passedTime, isServer: true);
-            Bow.ObserversFireRpc(spawnPos, aimDir, damage, velocity, shotTick);
+            Bow.ObserversFireRpc(damage, velocity, shotTick);
         }
         else
         {

@@ -3,7 +3,6 @@ using FishNet.Connection;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using System.Linq;
 
 public class SmeltingSlotData : ISlotContainer
@@ -36,11 +35,11 @@ public class PlayerSmeltingModule : NetworkBehaviour
 
     public void Init()
     {
-        SmeltingManager.Instance.Bind(this);
+        PlayerUIManager.Instance.UI_Smelting.Bind(this);
     }
     public void Start()
     {
-        int forgeCount = SmeltingManager.Instance.Forges.Count;
+        int forgeCount = PlayerUIManager.Instance.UI_Smelting.Forges.Count;
         for (int i = 0; i < forgeCount; i++)
         {
             ClientForges.Add(new SmeltingForgeData());

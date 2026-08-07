@@ -1,10 +1,14 @@
 using FishNet.Object;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
 public class SwordAndShield : Weapon
 {
+    public int TestingHandle;
+    public int TestingBlade;
+
+    private SnSData Data;
     [SerializeField] internal SwingHitDetection SwingHitDetection;
     [SerializeField] internal ShapeHitDetection ShapeHitDetection;
     [SerializeField] private float HitDetectionXOffset;
@@ -25,117 +29,93 @@ public class SwordAndShield : Weapon
         SwingHitDetection.ClientOnHit -= ClientHit;
         SwingHitDetection.ServerOnHit -= ServerHit;
     }
-    public override void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout, int[] materialArray)
+    public override void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout, PlayerStatsModule stats, int[] materialArray)
     {
-        base.Initalize(movement, loadout, materialArray);
-        loadout.MeleeHitDetectionRoot.transform.localPosition = new Vector2(HitDetectionXOffset, loadout.MeleeHitDetectionRoot.transform.localPosition.y);
+        Data = WeaponData as SnSData;
+        base.Initalize(movement, loadout, stats, materialArray);
+        loadout.FPCam.MeleeHitPoint.transform.localPosition = new Vector2(HitDetectionXOffset, loadout.FPCam.MeleeHitPoint.transform.localPosition.y);
         SwingHitDetection.Initalize(loadout);
         ShapeHitDetection.Initalize(loadout, Loadout.HitLayers);
-        Loadout.RebindAnimator("SwordAndShield");
-    }
-    public override void Deinitialize()
-    {
-        Loadout.WeaponAnimator.SetBool("SwordAndShield", false);
-    }
-    public override void SetStats(int[] materialArray)
-    {
-        if (materialArray == null)
-        {
-            AttackSpeed = 0.5f;
-            Damage = 5;
-            Resilliance = 0;
-            PrimaryQAbility = AbilityFactory.Create<SnS_OakHandle>(this);
-            SecondaryEAbility = AbilityFactory.Create<SnS_MithrilBlade>(this);
-            return;
-        }
-        for (int i = 0; i < materialArray.Length; i++)
-        {
-            MaterialType type = (MaterialType)materialArray[i];
 
-            if (i == 0)
+    }
+    public override void GainStats()
+    {
+        //Testing
+        if (MaterialArray == null)
+        {
+            var handle = Data.HandleStats[TestingHandle];
+            var blade = Data.BladeStats[TestingBlade];
+
+            TotalWeaponDamage = handle.Damage;
+            TotalWeaponAttackSpeed = handle.AttackSpeed;
+
+            Resilliance = handle.Resiliance;
+            PrimaryQAbility = handle.PrimaryQAbility.CreateAbility();
+            PrimaryQAbility.Initialize(this, handle.PrimaryQAbility);
+
+            TotalWeaponDamage += blade.Damage;
+
+            Resilliance += blade.Resiliance;
+            SecondaryEAbility = blade.SecondaryEAbility.CreateAbility();
+            SecondaryEAbility.Initialize(this, blade.SecondaryEAbility);
+        }
+        else
+        {
+            for (int i = 0; i < MaterialArray.Length; i++)
             {
-                switch (type)
+                MaterialType type = (MaterialType)MaterialArray[i];
+
+                if (i == 0)
                 {
-                    case MaterialType.Birch:
-                        AttackSpeed = 0.5f;
-                        Damage = 0;
-                        Resilliance = 0;
-                        PrimaryQAbility = AbilityFactory.Create<SnS_BirchHandle>(this);
-                        break;
-                    case MaterialType.Oak:
-                        AttackSpeed = 0.6f;
-                        Damage = 2;
-                        Resilliance = 1;
-                        PrimaryQAbility = AbilityFactory.Create<SnS_OakHandle>(this);
-                        break;
-                    case MaterialType.Ash:
-                        AttackSpeed = 0.4f;
-                        Damage = 0;
-                        Resilliance = 2;
-                        PrimaryQAbility = AbilityFactory.Create<SnS_AshHandle>(this);
-                        break;
-                    case MaterialType.Phantom:
-                        AttackSpeed = 0.3f;
-                        Damage = 4;
-                        Resilliance = 3;
-                        break;
-                    case MaterialType.Mantium:
-                        AttackSpeed = 0.4f;
-                        Damage = 6;
-                        Resilliance = 4;
-                        break;
-                    case MaterialType.Swift:
-                        AttackSpeed = 0.2f;
-                        Damage = 2;
-                        Resilliance = 2;
-                        break;
-                    default:
-                        break;
+                    foreach (var handle in Data.HandleStats)
+                    {
+                        if (handle.MaterialType == type)
+                        {
+                            TotalWeaponDamage = handle.Damage;
+                            TotalWeaponAttackSpeed = handle.AttackSpeed;
+
+                            Resilliance = handle.Resiliance;
+                            PrimaryQAbility = handle.PrimaryQAbility.CreateAbility();
+                            PrimaryQAbility.Initialize(this, handle.PrimaryQAbility);
+                        }
+                    }
                 }
-            }
-            if (i == 1)
-            {
-                switch (type)
+                if (i == 1)
                 {
-                    case MaterialType.Bronze:
-                        Damage += 5;
-                        SecondaryEAbility = AbilityFactory.Create<SnS_BronzeBlade>(this);
-                        break;
-                    case MaterialType.Steel:
-                        Damage += 9;
-                        Resilliance -= 1;
-                        SecondaryEAbility = AbilityFactory.Create<SnS_SteelBlade>(this);
-                        break;
-                    case MaterialType.Mithril:
-                        Damage += 16;
-                        Resilliance -= 2;
-                        SecondaryEAbility = AbilityFactory.Create<SnS_MithrilBlade>(this);
-                        break;
-                    case MaterialType.Solsteel:
-                        Damage += 23;
-                        Resilliance -= 3;
-                        break;
-                    case MaterialType.Brimsteel:
-                        Damage += 27;
-                        Resilliance -= 4;
-                        break;
-                    case MaterialType.Swiftsteel:
-                        Damage += 16;
-                        Resilliance -= 1;
-                        break;
-                    default:
-                        break;
+                    foreach (var blade in Data.BladeStats)
+                    {
+                        if (blade.MaterialType == type)
+                        {
+                            TotalWeaponDamage += blade.Damage;
+
+                            Resilliance += blade.Resiliance;
+                            SecondaryEAbility = blade.SecondaryEAbility.CreateAbility();
+                            SecondaryEAbility.Initialize(this, blade.SecondaryEAbility);
+                        }
+                    }
                 }
             }
         }
         if (Resilliance < 0)
         {
-            AttackSpeed += -Resilliance * 0.1f;
+            TotalWeaponAttackSpeed -= Resilliance * 0.1f;
         }
+        Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed);
+    }
+    public override void RemoveStats()
+    {
+        TotalWeaponDamage = 0;
+        TotalWeaponAttackSpeed = 0;
+        Resilliance = 0;
+        SecondaryEAbility.Deinitialize();
+        PrimaryQAbility.Deinitialize();
+        SecondaryEAbility = null;
+        PrimaryQAbility = null;
+        Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed);
     }
     public override void AttackRequest()
     {
-        if (!ClientCanAttack)
+        if (!ClientCanAttack || ClientBlockAttacks)
             return;
         ClientCanAttack = false;
 
@@ -143,19 +123,19 @@ public class SwordAndShield : Weapon
         ClientSwingIndex = (ClientSwingIndex + 1) % AnimationSwings.Count;
         SwingData Swing = AnimationSwings[SwingIndex];
 
-        Loadout.WeaponAnimator.speed = Swing.Clip.length / AttackSpeed;
+        Loadout.WeaponAnimator.speed = Swing.Clip.length / Stats.GetAttackSpeed();
         Loadout.WeaponAnimator.SetTrigger("Attack");
 
-        SwingHitDetection.EnableHitDetection(Swing.AttackData, AttackSpeed, isServer: false);
-        Loadout.StartWeaponCooldown(this, AttackSpeed + 0.05f, isServer: false);
+        SwingHitDetection.EnableHitDetection(Swing.AttackData, Stats.GetAttackSpeed(), isServer: false);
+        Loadout.StartWeaponCooldown(this, Stats.GetAttackSpeed() + AttackTolerance, isServer: false);
 
         Server_Attack_RPC();
     }
     [ServerRpc]
     public void Server_Attack_RPC()
     {
-        float Now = (float)base.TimeManager.Tick * (float)base.TimeManager.TickDelta;
-        if (Now - LastAttackTime < AttackSpeed - AttackTolerance)
+        float Now = TimeManager.Tick * (float)TimeManager.TickDelta;
+        if (Now - LastAttackTime < Stats.GetAttackSpeed() - AttackTolerance || ServerBlockAttacks)
             return;
         LastAttackTime = Now;
 
@@ -163,8 +143,8 @@ public class SwordAndShield : Weapon
         ServerSwingIndex = (ServerSwingIndex + 1) % AnimationSwings.Count;
         SwingData Swing = AnimationSwings[SwingIndex];
 
-        SwingHitDetection.EnableHitDetection(Swing.AttackData, AttackSpeed, isServer: true);
-        Loadout.StartWeaponCooldown(this, AttackSpeed + 0.05f, isServer: true);
+        SwingHitDetection.EnableHitDetection(Swing.AttackData, Stats.GetAttackSpeed(), isServer: true);
+        Loadout.StartWeaponCooldown(this, Stats.GetAttackSpeed() + AttackTolerance, isServer: true);
         Observer_Attack_RPC(SwingIndex);
     }
 
@@ -176,11 +156,11 @@ public class SwordAndShield : Weapon
     public void ClientHit(GameObject obj, Vector3 hitPos)
     {
         var Damageable = obj.GetComponent<IDamageable>();
-        Damageable.TakeDamage(Damage, false);
+        Damageable.TakeDamage(Stats.GetDamage(), false);
     }
     public void ServerHit(GameObject obj)
     {
         var Damageable = obj.GetComponent<IDamageable>();
-        Damageable.TakeDamage(Damage, true);
+        Damageable.TakeDamage(Stats.GetDamage(), true);
     }
 }

@@ -66,14 +66,14 @@ public class SwingHitDetection : NetworkBehaviour
         {
             if (!IsOwner || ClientHitDetectionActive) return;
             ClientCurrentAttack = attack;
-            ClientRootPos = Loadout.MeleeHitDetectionRoot;
+            ClientRootPos = Loadout.FPCam.MeleeHitPoint;
             StartDetection(isServer: false, durationTicks);
         }
         else
         {
             if (ServerHitDetectionActive) return;
             ServerCurrentAttack = attack;
-            ServerRootPos = Loadout.MeleeHitDetectionRoot;
+            ServerRootPos = Loadout.FPCam.MeleeHitPoint;
             ServerClientStartTick = TimeManager.GetPreciseTick(TickType.LastPacketTick);
             StartDetection(isServer: true, durationTicks);
         }
@@ -201,8 +201,9 @@ public class SwingHitDetection : NetworkBehaviour
         int hitCount = isSphere
             ? Physics.OverlapSphereNonAlloc(p1, Radius, overlapBuffer, Loadout.HitLayers)
             : Physics.OverlapCapsuleNonAlloc(p1, p2, Radius, overlapBuffer, Loadout.HitLayers);
-
+#if UNITY_EDITOR
         RecordGizmoSnapshot(p1, isSphere, Length, Radius, overlapBuffer, hitObjects, hitCount);
+#endif
 
         for (int i = 0; i < hitCount; i++)
             TryRegisterHit(overlapBuffer[i], hitObjects, isServer);
@@ -251,6 +252,7 @@ public class SwingHitDetection : NetworkBehaviour
         return true;
     }
 
+#if UNITY_EDITOR
     // Gizmos
     private void RecordGizmoSnapshot(Vector3 p1, bool isSphere, float length, float radius,
         Collider[] overlapBuffer, HashSet<GameObject> hitObjects, int hitCount)
@@ -320,4 +322,5 @@ public class SwingHitDetection : NetworkBehaviour
         Gizmos.DrawLine(p1 + perp2 * radius, p2 + perp2 * radius);
         Gizmos.DrawLine(p1 - perp2 * radius, p2 - perp2 * radius);
     }
+#endif
 }

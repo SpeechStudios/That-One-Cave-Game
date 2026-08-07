@@ -1,94 +1,74 @@
 using FishNet.Object;
 using UnityEngine;
 
+
 public class Axe : Weapon
 {
+    private AxeData Data;
     public float HitDelay = 0.2f;
     public float HitRadius = 1.5f;
     public float HitDistance = 1f;
     public LayerMask HitLayers;
+    private int Resiliance;
+    private int ChoppingLevel;
     [SerializeField] internal ShapeHitDetection ShapeHitDetection;
 
 
-    public override void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout, int[] materialArray)
+    public override void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout,PlayerStatsModule stats, int[] materialArray)
     {
-        base.Initalize(movement, loadout, materialArray);
+        Data = WeaponData as AxeData;
+        base.Initalize(movement, loadout,stats, materialArray);
         ShapeHitDetection.Initalize(loadout, HitLayers);
-        Loadout.RebindAnimator("Axe");
     }
-    public override void SetStats(int[] materialArray)
+    public override void GainStats()
     {
-        if (materialArray == null)
+        if (MaterialArray == null)
         {
-            AttackSpeed = 1f;
-            Damage = 5;
+            TotalWeaponAttackSpeed = 1f;
+            TotalWeaponDamage = 5;
+            Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed);
             return;
         }
-        for (int i = 0; i < materialArray.Length; i++)
+        for (int i = 0; i < MaterialArray.Length; i++)
         {
-            MaterialType type = (MaterialType)materialArray[i];
+            MaterialType type = (MaterialType)MaterialArray[i];
+            if (i == 0) // Handle
+            {
+                foreach (var handle in Data.HandleStats)
+                {
+                    if (handle.MaterialType == type)
+                    {
+                        TotalWeaponAttackSpeed = handle.AttackSpeed;
+                        TotalWeaponDamage += handle.Damage;
+                        Resiliance = handle.Resiliance;
+                    }
+                }
+            }
+            if (i == 1) // Head
+            {
+                foreach (var head in Data.HeadStats)
+                {
+                    if (head.MaterialType == type)
+                    {
+                        TotalWeaponDamage += head.Damage;
+                        Resiliance += head.Resiliance;
+                        ChoppingLevel = head.ChoppingLevel;
+                    }
+                }
+            }
 
-            if (i == 0)
-            {
-                switch (type)
-                {
-                    case MaterialType.Birch:
-                        AttackSpeed = 0.5f;
-                        Damage = 0;
-                        break;
-                    case MaterialType.Oak:
-                        AttackSpeed = 0.6f;
-                        Damage = 2;
-                        break;
-                    case MaterialType.Ash:
-                        AttackSpeed = 0.4f;
-                        Damage = 0;
-                        break;
-                    case MaterialType.Phantom:
-                        AttackSpeed = 0.3f;
-                        Damage = 4;
-                        break;
-                    case MaterialType.Mantium:
-                        AttackSpeed = 0.4f;
-                        Damage = 6;
-                        break;
-                    case MaterialType.Swift:
-                        AttackSpeed = 0.2f;
-                        Damage = 2;
-                        break;
-                    default:
-                        break;
-                }
-            }
-            if (i == 1)
-            {
-                switch (type)
-                {
-                    case MaterialType.Bronze:
-                        Damage += 5;
-                        break;
-                    case MaterialType.Steel:
-                        Damage += 9;
-                        SecondaryEAbility = AbilityFactory.Create<SnS_SteelBlade>(this);
-                        break;
-                    case MaterialType.Mithril:
-                        Damage += 16;
-                        SecondaryEAbility = AbilityFactory.Create<SnS_MithrilBlade>(this);
-                        break;
-                    case MaterialType.Solsteel:
-                        Damage += 23;
-                        break;
-                    case MaterialType.Brimsteel:
-                        Damage += 27;
-                        break;
-                    case MaterialType.Swiftsteel:
-                        Damage += 16;
-                        break;
-                    default:
-                        break;
-                }
-            }
         }
+        if (Resiliance < 0)
+        {
+            TotalWeaponAttackSpeed -= TotalWeaponAttackSpeed / 2 * Resiliance;
+        }
+        Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed);
+    }
+    public override void RemoveStats()
+    {
+        TotalWeaponDamage = 0;
+        TotalWeaponAttackSpeed = 0;
+        Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed);
     }
     public override void AttackRequest()
     {
@@ -96,26 +76,26 @@ public class Axe : Weapon
             return;
         ClientCanAttack = false;
 
-        Loadout.WeaponAnimator.speed = 1 / AttackSpeed;
+        Loadout.WeaponAnimator.speed = 1 / Stats.GetAttackSpeed();
         Loadout.WeaponAnimator.SetTrigger("Attack");
 
         Vector3 Origin = transform.position + transform.forward * HitDistance;
         ShapeHitDetection.TriggerSphere(Origin, HitDelay, HitRadius, isServer: false, clientCallback: (Obj, Point) => ClientHit(Obj, Point));
-        Loadout.StartWeaponCooldown(this, AttackSpeed + 0.05f, isServer: false);
+        Loadout.StartWeaponCooldown(this, Stats.GetAttackSpeed() + 0.05f, isServer: false);
 
         Server_Attack_RPC();
     }
     [ServerRpc]
     public void Server_Attack_RPC()
     {
-        float Now = (float)base.TimeManager.Tick * (float)base.TimeManager.TickDelta;
-        if (Now - LastAttackTime < AttackSpeed - AttackTolerance)
+        float Now = TimeManager.Tick * (float)TimeManager.TickDelta;
+        if (Now - LastAttackTime < Stats.GetAttackSpeed() - AttackTolerance)
             return;
         LastAttackTime = Now;
 
         Vector3 Origin = transform.position + transform.forward * HitDistance;
         ShapeHitDetection.TriggerSphere(Origin, HitDelay, HitRadius, isServer: true, serverCallback: (Obj) => ServerHit(Obj));
-        Loadout.StartWeaponCooldown(this, AttackSpeed + 0.05f, isServer: true);
+        Loadout.StartWeaponCooldown(this, Stats.GetAttackSpeed() + 0.05f, isServer: true);
 
         Observer_Attack_RPC();
     }
@@ -128,11 +108,13 @@ public class Axe : Weapon
     public void ClientHit(GameObject obj, Vector3 hitPos)
     {
         var Damageable = obj.GetComponent<WoodNode>();
-        Damageable.TakeDamage(Damage, false);
+        Debug.Log("Client Hit Found");
+        Damageable.TakeDamage(Stats.GetDamage(), ChoppingLevel, false);
     }
     public void ServerHit(GameObject obj)
     {
         var Damageable = obj.GetComponent<WoodNode>();
-        Damageable.TakeDamage(Damage, true);
+        Debug.Log("Server Hit Found");
+        Damageable.TakeDamage(Stats.GetDamage(), ChoppingLevel, true);
     }
 }

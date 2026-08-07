@@ -4974,4 +4974,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Arrow
   MyRend: {fileID: 2030867417408868087}
   ColliderPosition: {fileID: 6419936088200628237}
-  ColliderRadius: 0.2
+  ColliderRadius: 0.1

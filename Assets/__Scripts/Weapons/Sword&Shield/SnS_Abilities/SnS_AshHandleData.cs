@@ -6,6 +6,7 @@ public class SnS_AshHandleData : AbilityData
     public float MaxChargeSpeed = 20f;
     public float ChargeDamagePercentage = 1.36f;
     public float CheckRadius = 2f;
+    public override Ability CreateAbility() => new SnS_AshHandle();
 }
 public class SnS_AshHandle : MovementAbility
 {
@@ -13,7 +14,6 @@ public class SnS_AshHandle : MovementAbility
     private Vector3 ChargeDirection;
     private GameObject HitTarget;
     private SnS_AshHandleData AshHandleData;
-    public override System.Type DataType => typeof(SnS_AshHandleData);
 
     public override float Duration => 1f;
 
@@ -48,18 +48,20 @@ public class SnS_AshHandle : MovementAbility
 
     public override void ServerOnMovementComplete(PlayerControllerModule controller)
     {
+        CompleteAbility();
         if (HitTarget == null) return;
         if (HitTarget.TryGetComponent<IDamageable>(out var damageable))
         {
-            damageable.TakeDamage(Weapon.Damage * AshHandleData.ChargeDamagePercentage, true);
+            damageable.TakeDamage(Weapon.Stats.GetDamage() * AshHandleData.ChargeDamagePercentage, true);
         }
     }
     public override void ClientOnMovementComplete(PlayerControllerModule controller)
     {
+        CompleteAbility();
         if (HitTarget == null) return;
         if (HitTarget.TryGetComponent<IDamageable>(out var damageable))
         {
-            damageable.TakeDamage(Weapon.Damage * AshHandleData.ChargeDamagePercentage, false);
+            damageable.TakeDamage(Weapon.Stats.GetDamage() * AshHandleData.ChargeDamagePercentage, false);
         }
     }
     private GameObject CheckCollisionAhead(PlayerControllerModule controller, Vector3 direction, float distance)

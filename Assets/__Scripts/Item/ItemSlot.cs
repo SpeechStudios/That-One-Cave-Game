@@ -1,4 +1,5 @@
 using TMPro;
+using Unity.IO.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -27,7 +28,12 @@ public class ItemSlot : MonoBehaviour, IPointerUpHandler, IPointerDownHandler, I
 
     private readonly float Acceleration = 10f;
     private readonly float MaxSpeed = 10f;
+    internal PlayerUIManager PlayerUI;
 
+    public virtual void Start()
+    {
+        PlayerUI = PlayerUIManager.Instance;
+    }
     public virtual void UpdateUI(int quantity = -1)
     {
         int quantityUI = quantity < 0 ? SlotData.Quantity : quantity;
@@ -56,11 +62,12 @@ public class ItemSlot : MonoBehaviour, IPointerUpHandler, IPointerDownHandler, I
     }
     public virtual void OnPointerDown(PointerEventData e)
     {
-        if (DragGhostManager.Instance.Incrementing) return;
+        Debug.Log(PlayerUI.UI_DragGhost.name);
+        if (PlayerUI.UI_DragGhost.Incrementing) return;
 
         if (e.button == PointerEventData.InputButton.Left)
         {
-            if (DragGhostManager.Instance.TargetGhost.ClientGhost.HasItem())
+            if (PlayerUI.UI_DragGhost.TargetGhost.ClientGhost.HasItem())
             {
                 GhostToSlot();
             }
@@ -80,7 +87,7 @@ public class ItemSlot : MonoBehaviour, IPointerUpHandler, IPointerDownHandler, I
                 if (!SlotData.HasItem()) return;
                 Increment();
                 Incrementing = true;
-                DragGhostManager.Instance.Incrementing = true;
+                PlayerUI.UI_DragGhost.Incrementing = true;
             }
         }
     }
@@ -94,7 +101,7 @@ public class ItemSlot : MonoBehaviour, IPointerUpHandler, IPointerDownHandler, I
             CurrentSpeed = 0f;
             Accumulator = 0f;
             Quantity = 0;
-            DragGhostManager.Instance.Incrementing = false;
+            PlayerUI.UI_DragGhost.Incrementing = false;
         }
     }
     public virtual void Update()
@@ -118,12 +125,12 @@ public class ItemSlot : MonoBehaviour, IPointerUpHandler, IPointerDownHandler, I
     public virtual void RightMouseUp() { }
     public virtual void Increment()
     {
-        if (!InventoryManager.Instance.TargetInventory.CanIncrement(SlotData, Quantity)) return;
+        if (!PlayerUI.UI_Inventory.TargetInventory.CanIncrement(SlotData, Quantity)) return;
         if (!PointerIsOver) return;
 
         Quantity++;
-        var tempData = new ItemSlotData { ID = SlotData.ID, Materials = SlotData.Materials, Quantity = DragGhostManager.Instance.TargetGhost.ClientGhost.Quantity + Quantity };
-        DragGhostManager.Instance.UpdateTempUI(tempData);
+        var tempData = new ItemSlotData { ID = SlotData.ID, Materials = SlotData.Materials, Quantity = PlayerUI.UI_DragGhost.TargetGhost.ClientGhost.Quantity + Quantity };
+        PlayerUI.UI_DragGhost.UpdateTempUI(tempData);
 
         UpdateUI(SlotData.Quantity - Quantity);
     }

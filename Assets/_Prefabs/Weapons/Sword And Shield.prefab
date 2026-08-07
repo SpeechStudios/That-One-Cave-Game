@@ -222,7 +222,7 @@ MonoBehaviour:
   _spectatorInterpolation: 2
   _enableTeleport: 0
   _teleportThreshold: 1
-  <PrefabId>k__BackingField: 1
+  <PrefabId>k__BackingField: 3
   <SpawnableCollectionId>k__BackingField: 0
   <AssetPathHash>k__BackingField: 3536856854484616284
   SceneId: 0
@@ -239,7 +239,8 @@ MonoBehaviour:
   <PredictedOwner>k__BackingField: {fileID: 0}
   NetworkBehaviours:
   - {fileID: 3927305091859071162}
-  - {fileID: 0}
+  - {fileID: 827482681854472615}
+  - {fileID: 2186440337431217251}
   InitializedParentNetworkBehaviour: {fileID: 0}
   InitializedNestedNetworkObjects: []
   RuntimeParentNetworkBehaviour: {fileID: 0}
@@ -250,7 +251,7 @@ MonoBehaviour:
   _initializeOrder: 0
   _preventDespawnOnDisconnect: 0
   _defaultDespawnType: 0
-  _initializedTimestamp: -8584189329495496767
+  _initializedTimestamp: -8584156890434406289
 --- !u!114 &-396703920364613857
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -282,6 +283,9 @@ MonoBehaviour:
   _componentIndexCache: 0
   _addedNetworkObject: {fileID: -10708954039162812}
   _networkObjectCache: {fileID: -10708954039162812}
+  WeaponData: {fileID: 11400000, guid: 59352ac340fc5c3498c75c2be90c642c, type: 2}
+  TestingHandle: 2
+  TestingBlade: 1
   SwingHitDetection: {fileID: 827482681854472615}
   ShapeHitDetection: {fileID: 2186440337431217251}
   HitDetectionXOffset: -0.45
@@ -327,9 +331,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1b900e89edd0144493ba52f1d9a650e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SwingHitDetection
-  _componentIndexCache: 255
+  _componentIndexCache: 1
   _addedNetworkObject: {fileID: -10708954039162812}
-  _networkObjectCache: {fileID: 0}
+  _networkObjectCache: {fileID: -10708954039162812}
   Length: 2
   Radius: 0.4
   ShowGizmos: 0
@@ -345,9 +349,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b059e87152234746a4ad84d37f9ea35, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShapeHitDetection
-  _componentIndexCache: 255
+  _componentIndexCache: 2
   _addedNetworkObject: {fileID: -10708954039162812}
-  _networkObjectCache: {fileID: 0}
+  _networkObjectCache: {fileID: -10708954039162812}
 --- !u!1 &6345270525604990282
 GameObject:
   m_ObjectHideFlags: 0

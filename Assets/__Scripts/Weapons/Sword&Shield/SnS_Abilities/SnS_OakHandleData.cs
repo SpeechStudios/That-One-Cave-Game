@@ -7,12 +7,12 @@ public class SnS_OakHandleData : AbilityData
     public float KnockbackUpForce = 15f;
     public float DelayBeforeCast = 0.1f;
     public float AreaRadius = 2f;
+    public override Ability CreateAbility() => new SnS_OakHandle();
 }
 public class SnS_OakHandle : Ability
 {
     private SwordAndShield SwordAndShield;
     private SnS_OakHandleData OakHandleData;
-    public override System.Type DataType => typeof(SnS_OakHandleData);
     public override void Initialize(Weapon owner, AbilityData data)
     {
         base.Initialize(owner, data);

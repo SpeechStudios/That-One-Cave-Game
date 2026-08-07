@@ -3,46 +3,50 @@ using UnityEngine;
 
 public class WoodNode : NetworkBehaviour
 {
-    internal bool IsBottomNode;
-    internal TreeNode TreeParent;
-    internal float Health;
+    private bool IsBottomNode;
+    private float Health;
+    private int ChoppingLevelRequirement;
+    private int MinAmount, MaxAmount, MinBotAmount, MaxBotAmount;
 
-    private int MinAmount;
-    private int MaxAmount;
+    private TreeNode _treeParent;
+    private TreeNode TreeParent => _treeParent ??= GetComponentInParent<TreeNode>();
 
-    private int MinBotAmmount;
-    private int MaxBotAmount;
-
-    public void Setup(int min, int max, int minBot, int maxBot)
+    public void ServerInitialize(int choppingLevelRequirment, bool isBottomNode, float health, int minAmount, int maxAmount, int minBotAmount, int maxBotAmount)
     {
-        MinAmount = min;
-        MaxAmount = max;
-        MinBotAmmount = minBot;
-        MaxBotAmount = maxBot;
+        ChoppingLevelRequirement = choppingLevelRequirment;
+        IsBottomNode = isBottomNode;
+        Health = health;
+        MinAmount = minAmount;
+        MaxAmount = maxAmount;
+        MinBotAmount = minBotAmount;
+        MaxBotAmount = maxBotAmount;
     }
 
-
-    public void TakeDamage(float damage, bool isServer)
+    public void TakeDamage(float damage, int level, bool isServer)
     {
-        if (IsBottomNode && TreeParent.WoodNodes.Count > 1) return;
-        if (isServer)
+        if (!isServer)
         {
-            Health -= damage;
-            if (Health <= 0)
-            {
-                TreeParent.BringWoodNodesDown(this);
-
-                if (IsBottomNode)
-                    SpawnWood(Random.Range(MinBotAmmount, MaxBotAmount));
-                else
-                    SpawnWood(Random.Range(MinAmount, MaxAmount));
-
-                GetComponent<NetworkObject>().Despawn();
-            }
+            //VFX
+            return;
         }
-        else
+
+        if (IsBottomNode && TreeParent.ServerRemainingNodeCount > 1)
+            return;
+
+        if (level < ChoppingLevelRequirement)
+            return;
+
+        Health -= damage;
+        if (Health <= 0)
         {
-            //Client Visuals
+            TreeParent.ServerBringNodesDown(this);
+
+            int amount = IsBottomNode
+                ? Random.Range(MinBotAmount, MaxBotAmount)
+                : Random.Range(MinAmount, MaxAmount);
+
+            SpawnWood(amount);
+            GetComponent<NetworkObject>().Despawn();
         }
     }
 
@@ -57,8 +61,16 @@ public class WoodNode : NetworkBehaviour
             NetworkObject worldItem = Instantiate(ServerWorldItemStash.Instance.WorldItemPrefab, spawnPos, Quaternion.identity);
             worldItem.GetComponent<WorldItemGameObject>().Initialize(TreeParent.Wood.ID, 1, null);
             ServerManager.Spawn(worldItem);
-
-
         }
+    }
+
+    [ObserversRpc(BufferLast = true)]
+    public void RpcSetPosition(Vector3 targetPosition, bool animate)
+    {
+        LeanTween.cancel(gameObject);
+        if (animate)
+            LeanTween.move(gameObject, targetPosition, 0.5f).setEase(LeanTweenType.easeInOutCubic);
+        else
+            transform.position = targetPosition;
     }
 }

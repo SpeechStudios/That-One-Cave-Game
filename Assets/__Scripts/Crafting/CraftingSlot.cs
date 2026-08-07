@@ -17,18 +17,18 @@ public class CraftingSlot : ItemSlot, IPointerDownHandler
     }
     public override void SlotToGhost()
     {
-        CraftingManager.Instance.TargetCrafting.SlotToGhost(SlotIndex, SlotData.Quantity);
+        PlayerUI.UI_Crafting.TargetCrafting.SlotToGhost(SlotIndex, SlotData.Quantity);
     }
     public override void GhostToSlot()
     {
-        CraftingManager.Instance.TargetCrafting.GhostToSlot(SlotIndex);
+        PlayerUI.UI_Crafting.TargetCrafting.GhostToSlot(SlotIndex);
     }
     public override void RightMouseUp()
     {
-        CraftingManager.Instance.TargetCrafting.SlotToGhost(SlotIndex, Quantity);
+        PlayerUI.UI_Crafting.TargetCrafting.SlotToGhost(SlotIndex, Quantity);
     }
     public override void ShiftRightMouseClicked()
     {
-        CraftingManager.Instance.TargetCrafting.InstantGrab(SlotIndex);
+        PlayerUI.UI_Crafting.TargetCrafting.InstantGrab(SlotIndex);
     }
 }

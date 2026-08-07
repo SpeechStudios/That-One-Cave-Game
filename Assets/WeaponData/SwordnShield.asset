@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a12c6fb749fd1e4f998cc4479908d11, type: 3}
+  m_Name: SwordnShield
+  m_EditorClassIdentifier: Assembly-CSharp::SnSData
+  WeaponName: SwordAndShield
+  HandleStats:
+  - MaterialType: 1
+    AttackSpeed: 0.6
+    Damage: 0
+    Resiliance: 1
+    PrimaryQAbility: {fileID: 11400000, guid: 55d6a9ef385bdc04f99df310dd292a5e, type: 2}
+  - MaterialType: 2
+    AttackSpeed: 0.75
+    Damage: 3
+    Resiliance: 2
+    PrimaryQAbility: {fileID: 11400000, guid: 1ae8b36530bb6874fbbd1bdc4d8e2c6d, type: 2}
+  - MaterialType: 3
+    AttackSpeed: 0.5
+    Damage: 2
+    Resiliance: 3
+    PrimaryQAbility: {fileID: 11400000, guid: ec5758dbc8b296942be0285a7458ca4c, type: 2}
+  BladeStats:
+  - MaterialType: 16
+    Damage: 5
+    Resiliance: -1
+    SecondaryEAbility: {fileID: 11400000, guid: 7589ca8c7447e5045899060643cfb754, type: 2}
+  - MaterialType: 17
+    Damage: 9
+    Resiliance: -2
+    SecondaryEAbility: {fileID: 11400000, guid: d6bb0f4444856f2499bb49d4f3bed90d, type: 2}
+  - MaterialType: 18
+    Damage: 16
+    Resiliance: -3
+    SecondaryEAbility: {fileID: 11400000, guid: c61076521b34c8647bf52fc4a16fd12e, type: 2}

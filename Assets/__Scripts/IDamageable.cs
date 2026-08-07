@@ -5,9 +5,9 @@ using System;
 public interface IDamageable
 {
     void TakeDamage(float damage, bool isServer);
-    void TakeDamageOverTime(DamageOverTimeProperties properties, bool isServer);
-    void GainHealth(float health, bool isServer) { }
-    void GainArmor(float armor, float capacity, string source, bool isServer) { }
+    void TakeDamageOverTime(DamageOverTimeProperties properties, bool isServer) { }
+    void Heal(float health, bool isServer) { }
+    void GainTempHealth(float armor, float capacity, string source, bool isServer) { }
 
 }
 public class DamageOverTimeProperties
@@ -60,7 +60,7 @@ public class HealthState
         OnHealthChanged?.Invoke();
     }
 
-    public void GainHealth(float amount)
+    public void Heal(float amount)
     {
         Health = Mathf.Min(MaxHealth, Health + amount);
         OnHealthChanged?.Invoke();

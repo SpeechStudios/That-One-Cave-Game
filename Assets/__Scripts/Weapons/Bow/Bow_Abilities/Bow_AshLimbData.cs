@@ -7,6 +7,7 @@ public class Bow_AshLimbData : AbilityData
     public float LaunchBackForce = 4f;
     public float CritMultiplier = 2f;
     public float MinAirTimeBeforeGroundCheck = 0.15f;
+    public override Ability CreateAbility() => new Bow_AshLimb();
 }
 
 public class Bow_AshLimb : MovementAbility
@@ -14,8 +15,6 @@ public class Bow_AshLimb : MovementAbility
     private Bow_AshLimbData AshLimbData;
     private Bow Bow;
     private PlayerControllerModule Controller;
-    public override System.Type DataType => typeof(Bow_AshLimbData);
-
 
     public override float Duration => 5f;
 

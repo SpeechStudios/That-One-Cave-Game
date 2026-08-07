@@ -4,27 +4,28 @@ using UnityEngine;
 public class OreNode : NetworkBehaviour
 {
     public Item Ore;
-    public float MiningLevelRequirements = 0;
+    public float MiningLevelRequirement = 0;
     public float NodeHealth = 20;
     public int MinOreAmount = 6;
     public int MaxOreAmount = 8;
 
 
-    public void TakeDamage(float damage, bool isServer)
+    public void TakeDamage(float damage, int level, bool isServer)
     {
-        if (isServer)
+        if (!isServer)
         {
-            NodeHealth -= damage;
-            Debug.Log($"Taking {damage} Damage, Remaining Health = {NodeHealth}");
-            if (NodeHealth <= 0)
-            {
-                SpawnOre(Random.Range(MinOreAmount, MaxOreAmount + 1));
-                GetComponent<NetworkObject>().Despawn();
-            }
+            //VFX
+            return;
         }
-        else
+
+        if (level < MiningLevelRequirement)
+            return;
+
+        NodeHealth -= damage;
+        if (NodeHealth <= 0)
         {
-            //Client Visuals
+            SpawnOre(Random.Range(MinOreAmount, MaxOreAmount + 1));
+            GetComponent<NetworkObject>().Despawn();
         }
     }
     [Server]

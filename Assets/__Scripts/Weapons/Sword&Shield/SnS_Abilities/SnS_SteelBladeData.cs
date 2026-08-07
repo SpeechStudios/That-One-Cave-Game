@@ -8,12 +8,12 @@ public class SnS_SteelBladeData : AbilityData
     public float DelayBeforeCast = 0.5f;
     public float AreaRadius = 2f;
     public float AreaLength = 4f;
+    public override Ability CreateAbility() => new SnS_SteelBlade();
 }
 public class SnS_SteelBlade : Ability
 {
     private SwordAndShield SwordAndShield;
     private SnS_SteelBladeData SteelBladeData;
-    public override System.Type DataType => typeof(SnS_SteelBladeData);
 
     public override void Initialize(Weapon owner, AbilityData data)
     {
@@ -43,12 +43,12 @@ public class SnS_SteelBlade : Ability
     private void ClientApplyEffect(GameObject target, Vector3 point)
     {
         if (target.TryGetComponent<IDamageable>(out var damageable))
-            damageable.TakeDamage(SwordAndShield.Damage * SteelBladeData.DamagePercentage, false);
+            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * SteelBladeData.DamagePercentage, false);
     }
     private void ServerApplyEffect(GameObject target)
     {
         if (target.TryGetComponent<IDamageable>(out var damageable))
-            damageable.TakeDamage(SwordAndShield.Damage * SteelBladeData.DamagePercentage, true);
+            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * SteelBladeData.DamagePercentage, true);
         if (target.TryGetComponent<IMoveable>(out var movable))
             movable.ApplyImmobilize(SteelBladeData.ImmobilizeDuration);
     }

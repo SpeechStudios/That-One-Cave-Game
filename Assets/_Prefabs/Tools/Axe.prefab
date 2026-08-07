@@ -65,7 +65,7 @@ MonoBehaviour:
   _spectatorInterpolation: 2
   _enableTeleport: 0
   _teleportThreshold: 1
-  <PrefabId>k__BackingField: 9
+  <PrefabId>k__BackingField: 10
   <SpawnableCollectionId>k__BackingField: 0
   <AssetPathHash>k__BackingField: 15069853990981723750
   SceneId: 0
@@ -93,7 +93,7 @@ MonoBehaviour:
   _initializeOrder: 0
   _preventDespawnOnDisconnect: 0
   _defaultDespawnType: 0
-  _initializedTimestamp: -8584165766500541988
+  _initializedTimestamp: -8584157277863322246
 --- !u!114 &5488479129703107513
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -109,8 +109,10 @@ MonoBehaviour:
   _componentIndexCache: 0
   _addedNetworkObject: {fileID: 2510687094153561741}
   _networkObjectCache: {fileID: 2510687094153561741}
+  WeaponData: {fileID: 11400000, guid: fe44bf3180fc3e34dad00a67063488a9, type: 2}
+  MaterialArray: 
   HitDelay: 0.35
-  HitRadius: 2
+  HitRadius: 1.75
   HitDistance: 0.5
   HitLayers:
     serializedVersion: 2

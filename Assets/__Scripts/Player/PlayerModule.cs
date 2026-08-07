@@ -9,7 +9,8 @@ public class PlayerModule : NetworkBehaviour
     public PlayerCraftingModule Crafting;
     public PlayerSmeltingModule Smelting;
     public PlayerLoadoutModule Loadout;
-    public DamageableComponent Damageable;
+    public PlayerStatsModule Stats;
+    public CamFollowPlayer CameraFollow;
     public override void OnStartServer()
     {
         base.OnStartServer();
@@ -30,24 +31,26 @@ public class PlayerModule : NetworkBehaviour
     public void ServerInit()
     {
         Inventory.ServerInit();
-        Damageable.ServerInit();
+        Stats.ServerInit();
         Loadout.Init();
     }
     public void ClientInit()
     {
-        Damageable.ClientInit();
         if (!IsOwner)
         {
             enabled = false;
             return;
         }
-        Damageable.HealthBar.SetActive(false);
+        CameraFollow.Init();
+        Stats.ClientInit();
+        Stats.HealthBar.SetActive(false);
         Controller.enabled = true;
         DragGhost.enabled = true;
         Inventory.enabled = true;
         Crafting.enabled = true;
         Smelting.enabled = true;
         Loadout.enabled = true;
+        Stats.enabled = true;
 
         Controller.Init();
         DragGhost.Init();

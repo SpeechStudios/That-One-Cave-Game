@@ -6,12 +6,12 @@ public class Bow_BirchHandleData : AbilityData
     public float DamageMultiplierPerTick = 0.2f;
     public float TickInterval = 3f;
     public float Duration = 15f;
+    public override Ability CreateAbility() => new Bow_BirchHandle();
 }
 public class Bow_BirchHandle : Ability
 {
     private Bow Bow;
     private Bow_BirchHandleData BirchHandleData;
-    public override System.Type DataType => typeof(Bow_BirchHandleData);
 
     public override void Initialize(Weapon weapon, AbilityData data)
     {
@@ -56,7 +56,7 @@ public class PoisonEffect : IArrowEffect
         {
             DamageOverTimeProperties properties = new()
             {
-                Damage = source.Damage * DamageMultiplierPerTick,
+                Damage = source.Stats.GetDamage() * DamageMultiplierPerTick,
                 Interval = TickInterval,
                 Duration = Duration,
                 EffectId = "PoisonEffect",

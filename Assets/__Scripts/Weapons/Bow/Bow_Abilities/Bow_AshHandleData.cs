@@ -7,12 +7,12 @@ public class Bow_AshHandleData : AbilityData
     public float DamageMultiplier = 1.5f;
     public float ExplosionRadius = 3f;
     public GameObject ExplosionEffectPrefab;
+    public override Ability CreateAbility() => new Bow_AshHandle();
 }
 public class Bow_AshHandle : Ability
 {
     private Bow Bow;
     private Bow_AshHandleData AshHandleData;
-    public override System.Type DataType => typeof(Bow_AshHandleData);
 
     public override void Initialize(Weapon weapon, AbilityData data)
     {
@@ -70,7 +70,7 @@ public class ExplosiveEffect : IArrowEffect
                 continue;
 
             hitCharacters.Add(characterRoot);
-            explosionDamageable.TakeDamage(source.Damage * DamageMultiplier, isServer);
+            explosionDamageable.TakeDamage(source.Stats.GetDamage() * DamageMultiplier, isServer);
         }
     }
 }

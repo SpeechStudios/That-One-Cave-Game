@@ -6,13 +6,12 @@ public class SnS_BronzeBladeData : AbilityData
     public float DelayBeforeCast = 0.1f;
     public float SphereCastRadius = 1.5f;
     public float DamagePercentage = 1.5f;
+    public override Ability CreateAbility() => new SnS_BronzeBlade();
 }
 public class SnS_BronzeBlade : Ability
 {
-
     private SwordAndShield SwordAndShield;
     private SnS_BronzeBladeData BronzeBladeData;
-    public override System.Type DataType => typeof(SnS_BronzeBladeData);
     public override void Initialize(Weapon owner, AbilityData data)
     {
         base.Initialize(owner, data);
@@ -40,11 +39,11 @@ public class SnS_BronzeBlade : Ability
     private void ClientApplyDamage(GameObject target, Vector3 point)
     {
         if (target.TryGetComponent<IDamageable>(out var damageable))
-            damageable.TakeDamage(SwordAndShield.Damage * BronzeBladeData.DamagePercentage, false); 
+            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * BronzeBladeData.DamagePercentage, false); 
     }
     private void ServerApplyDamage(GameObject target)
     {
         if (target.TryGetComponent<IDamageable>(out var damageable))
-            damageable.TakeDamage(SwordAndShield.Damage * BronzeBladeData.DamagePercentage, true);
+            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * BronzeBladeData.DamagePercentage, true);
     }
 }

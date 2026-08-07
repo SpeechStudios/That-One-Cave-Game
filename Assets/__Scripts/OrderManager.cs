@@ -4,17 +4,11 @@ public class OrderManager : MonoBehaviour
 {
     public ConnectionManager ConnectionManager;
     public Registry Registry;
-    public DragGhostManager DragGhostManager;
-    public InventoryManager InventoryManager;
-    public CraftingManager CraftingManager;
-    public SmeltingManager SmeltingManager;
+    public PlayerUIManager PlayerUIManager;
     private void Awake()
     {
         Registry.Init();
-        DragGhostManager.Init();
-        InventoryManager.Init();
-        CraftingManager.Init();
-        SmeltingManager.Init();
+        PlayerUIManager.Init();
     }
     void Start()
     {

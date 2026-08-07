@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3e12add08cd28b4e8b0de199e7b4341, type: 3}
+  m_Name: Bow
+  m_EditorClassIdentifier: Assembly-CSharp::BowData
+  WeaponName: Bow
+  LimbStats:
+  - MaterialType: 1
+    BaseAttackSpeed: 1
+    BaseDamage: 10
+    PrimaryQAbility: {fileID: 11400000, guid: fe6791c7ea21dc84daf3ad5df3912cd4, type: 2}
+  - MaterialType: 2
+    BaseAttackSpeed: 1.2
+    BaseDamage: 14
+    PrimaryQAbility: {fileID: 11400000, guid: a5db0ef0ccdebdf42adb5e52fbf8627d, type: 2}
+  - MaterialType: 3
+    BaseAttackSpeed: 0.8
+    BaseDamage: 14
+    PrimaryQAbility: {fileID: 11400000, guid: dddaa7db1d2cd104fb75b81c026ce453, type: 2}
+  HandleStats:
+  - MaterialType: 1
+    BonusDamage: 0
+    ArrowVelocity: 40
+    SecondaryEAbility: {fileID: 11400000, guid: daf6452543915544f997af32ff4390c5, type: 2}
+  - MaterialType: 2
+    BonusDamage: 4
+    ArrowVelocity: 30
+    SecondaryEAbility: {fileID: 11400000, guid: d267f57e43cbe9440b14f1eb899a113d, type: 2}
+  - MaterialType: 3
+    BonusDamage: 2
+    ArrowVelocity: 50
+    SecondaryEAbility: {fileID: 11400000, guid: 5c728badfbf1c624f98edd6d60fdd6a5, type: 2}

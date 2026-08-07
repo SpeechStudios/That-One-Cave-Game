@@ -5,6 +5,7 @@ public class Registry : MonoBehaviour
 {
     public static Registry Instance { get; private set; }
 
+    public FirstPersonCamera FPCam_Prefab;
     public static List<Item> GetStartingItems() => Instance?.StartingItems ?? new List<Item>();
     [SerializeField] private List<Item> StartingItems;
 

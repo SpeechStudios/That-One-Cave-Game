@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
@@ -11,7 +9,7 @@ public class CraftingOutcomeSlot : ItemSlot, IPointerDownHandler
         if (isReady)
         {
             SlotData = itemData;
-            SlotData.Materials = CraftingManager.Instance.TargetCrafting.ClientSlots.Select(slot => (int)Registry.GetItem(slot.Data.ID).MaterialType).ToArray();
+            SlotData.Materials = PlayerUI.UI_Crafting.TargetCrafting.ClientSlots.Select(slot => (int)Registry.GetItem(slot.Data.ID).MaterialType).ToArray();
             UpdateUI();
         }
         else
@@ -31,10 +29,10 @@ public class CraftingOutcomeSlot : ItemSlot, IPointerDownHandler
         {
             if (SlotData.HasItem())
             {
-                if (CraftingManager.Instance.TargetCrafting.CraftItem())
+                if (PlayerUI.UI_Crafting.TargetCrafting.CraftItem())
                 {
                     UpdateUI();
-                    DragGhostManager.Instance.UpdateUI();
+                    PlayerUI.UI_DragGhost.UpdateUI();
                 }
             }
         }
@@ -54,18 +52,17 @@ public class CraftingOutcomeSlot : ItemSlot, IPointerDownHandler
     }
     public override void ShiftRightMouseClicked()
     {
-        if (CraftingManager.Instance.TargetCrafting.InstantCraft())
+        if (PlayerUI.UI_Crafting.TargetCrafting.InstantCraft())
         {
-            Debug.Log("Instant Crafting");
             UpdateUI();
         }
     }
     public override void Increment()
     {
-        if (CraftingManager.Instance.TargetCrafting.CraftItem())
+        if (PlayerUI.UI_Crafting.TargetCrafting.CraftItem())
         {
             UpdateUI();
-            DragGhostManager.Instance.UpdateUI();
+            PlayerUI.UI_DragGhost.UpdateUI();
         }
     }
 }
