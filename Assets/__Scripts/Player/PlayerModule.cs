@@ -31,6 +31,7 @@ public class PlayerModule : NetworkBehaviour
     public void ServerInit()
     {
         Inventory.ServerInit();
+        Crafting.ServerInit();
         Stats.ServerInit();
         Loadout.Init();
     }
@@ -56,7 +57,7 @@ public class PlayerModule : NetworkBehaviour
         DragGhost.Init();
         Inventory.ClientInit();
         Smelting.Init();
-        Crafting.Init();
+        Crafting.ClientInit();
         Loadout.Init();
 
         Inventory.RequestStart();

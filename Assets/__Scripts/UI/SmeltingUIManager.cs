@@ -3,9 +3,8 @@ using UnityEngine;
 
 public class SmeltingUIManager : MonoBehaviour
 {
-
     public GameObject SmeltingCanvas;
-    public List<ForgeUI> Forges;
+    public ForgeUI Forge;
 
     [HideInInspector] public PlayerSmeltingModule TargetSmelting;
     private DragGhostUIManager UI_DragGhost;
@@ -15,10 +14,7 @@ public class SmeltingUIManager : MonoBehaviour
     }
     public void Init()
     {
-        for (int i = 0; i < Forges.Count; i++)
-        {
-            Forges[i].SetupSlots(i);
-        }
+        Forge.SetupSlots();
     }
     public void Bind(PlayerSmeltingModule targetSmelting)
     {
@@ -35,34 +31,20 @@ public class SmeltingUIManager : MonoBehaviour
     }
     public void SyncForgeTimers()
     {
-        var ClientForges = TargetSmelting.ClientForges;
-        for (int i = 0; i < ClientForges.Count; i++)
-        {
-            SmeltingForgeData data = ClientForges[i];
-            ForgeUI ui = Forges[i];
-            ui.UpdateFill(data);
-        }
+        SmeltingForgeData data = TargetSmelting.ClientForge;
+        Forge.UpdateFill(data);
     }
     public void SyncForgeItems()
     {
-        var ClientForges = TargetSmelting.ClientForges;
-        for (int i = 0; i < ClientForges.Count; i++)
-        {
-            ForgeUI ui = Forges[i];
-            ui.UpdateUI(TargetSmelting.ClientSlots, i);
-        }
+        SmeltingForgeData data = TargetSmelting.ClientForge;
+        Forge.UpdateFill(data);
     }
     public void CheckResetTimer(bool isValid)
     {
         if (isValid) return;
 
-        var ClientForges = TargetSmelting.ClientForges;
-        for (int i = 0; i < ClientForges.Count; i++)
-        {
-            SmeltingForgeData data = ClientForges[i];
-            ForgeUI ui = Forges[i];
-            ui.UpdateFill(data);
-        }
+        SmeltingForgeData data = TargetSmelting.ClientForge;
+        Forge.UpdateFill(data);
     }
 
     private void HandleSmeltingSlotsChanged(List<SlotPatch> patches)
@@ -83,19 +65,12 @@ public class SmeltingUIManager : MonoBehaviour
     }
     private ItemSlot GetForgeSlot(int slotIndex)
     {
-        int forgeIndex = 0;
-        while (slotIndex >= 3)
-        {
-            forgeIndex++;
-            slotIndex -= 3;
-        }
-
         if (slotIndex == 0)
-            return Forges[forgeIndex].Slot1;
+            return Forge.Slot1;
         if (slotIndex == 1)
-            return Forges[forgeIndex].Slot2;
+            return Forge.Slot2;
         if (slotIndex == 2)
-            return Forges[forgeIndex].OutcomeSlot;
+            return Forge.OutcomeSlot;
 
         throw null;
     }

@@ -1,21 +1,25 @@
+using GameKit.Dependencies.Utilities;
 using System.Linq;
+using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 public class CraftingOutcomeSlot : ItemSlot, IPointerDownHandler
 {
-    public void OnRecipeComplete(bool isReady, ItemSlotData itemData)
+    public void OnRecipeComplete(bool isReady, PlayerCraftingModule targetCrafting)
     {
         if (isReady)
         {
-            SlotData = itemData;
-            SlotData.Materials = PlayerUI.UI_Crafting.TargetCrafting.ClientSlots.Select(slot => (int)Registry.GetItem(slot.Data.ID).MaterialType).ToArray();
+            SlotData.ID = targetCrafting.ClientRecipe.CraftedOutcome.ID;
+            SlotData.Quantity = targetCrafting.ClientRecipe.CraftedOutcomeQuantity;
+            SlotData.Materials = targetCrafting.Materials.OrderBy(kvp => kvp.Key).Select(kvp => (int)kvp.Value).ToArray();
             UpdateUI();
         }
         else
         {
             SlotData.Clear();
             UpdateUI();
+            Debug.Log("Updating UI With Empty");
         }
     }
     public override void UpdateUI(int quantity = -1)

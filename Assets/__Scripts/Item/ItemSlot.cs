@@ -1,5 +1,4 @@
 using TMPro;
-using Unity.IO.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -19,9 +18,9 @@ public class ItemSlot : MonoBehaviour, IPointerUpHandler, IPointerDownHandler, I
     public TextMeshProUGUI QuantityText;
     [HideInInspector] public ItemSlotData SlotData;
 
-    public bool Incrementing;
-    public bool PointerIsOver;
-    public int Quantity;
+    internal bool Incrementing;
+    internal bool PointerIsOver;
+    internal int Quantity;
 
     private float CurrentSpeed = 0f;
     private float Accumulator;
@@ -62,7 +61,6 @@ public class ItemSlot : MonoBehaviour, IPointerUpHandler, IPointerDownHandler, I
     }
     public virtual void OnPointerDown(PointerEventData e)
     {
-        Debug.Log(PlayerUI.UI_DragGhost.name);
         if (PlayerUI.UI_DragGhost.Incrementing) return;
 
         if (e.button == PointerEventData.InputButton.Left)

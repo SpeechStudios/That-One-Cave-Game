@@ -1,20 +1,9 @@
-using TMPro;
-using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.Rendering.Universal;
-using UnityEngine.UI;
 
 public class CraftingSlot : ItemSlot, IPointerDownHandler
 {
-    public TextMeshProUGUI RequiredMaterialText;
-    [HideInInspector] public bool RequirementMet;
-    private int SlotIndex;
+    public int SlotIndex;
 
-    public void Setup(CraftingComponent component, int slotIndex)
-    {
-        RequiredMaterialText.text = $"{component.ResourceType} ({component.RequiredQuantity})";
-        SlotIndex = slotIndex;
-    }
     public override void SlotToGhost()
     {
         PlayerUI.UI_Crafting.TargetCrafting.SlotToGhost(SlotIndex, SlotData.Quantity);

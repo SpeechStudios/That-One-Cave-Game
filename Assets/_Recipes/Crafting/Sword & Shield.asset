@@ -13,13 +13,24 @@ MonoBehaviour:
   m_Name: Sword & Shield
   m_EditorClassIdentifier: Assembly-CSharp::CraftingRecipe
   ID: 2
-  ItemName: Sword & Shield
-  Components:
-  - ResourceType: 2
-    RequiredQuantity: 4
-    Name: Handle
+  Pattern:
   - ResourceType: 3
-    RequiredQuantity: 12
-    Name: Blade
+    MaterialGroup: 1
+  - ResourceType: 0
+    MaterialGroup: -1
+  - ResourceType: 0
+    MaterialGroup: -1
+  - ResourceType: 3
+    MaterialGroup: 1
+  - ResourceType: 3
+    MaterialGroup: 1
+  - ResourceType: 3
+    MaterialGroup: 1
+  - ResourceType: 2
+    MaterialGroup: 0
+  - ResourceType: 3
+    MaterialGroup: 1
+  - ResourceType: 3
+    MaterialGroup: 1
   CraftedOutcome: {fileID: 11400000, guid: f9dbb13172a85b845ae8b16acb139b6d, type: 2}
   CraftedOutcomeQuantity: 1

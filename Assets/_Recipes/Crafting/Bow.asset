@@ -13,13 +13,24 @@ MonoBehaviour:
   m_Name: Bow
   m_EditorClassIdentifier: Assembly-CSharp::CraftingRecipe
   ID: 1
-  ItemName: Longbow
-  Components:
+  Pattern:
+  - ResourceType: 0
+    MaterialGroup: -1
+  - ResourceType: 0
+    MaterialGroup: -1
   - ResourceType: 2
-    RequiredQuantity: 12
-    Name: Limb
+    MaterialGroup: 0
+  - ResourceType: 0
+    MaterialGroup: -1
   - ResourceType: 2
-    RequiredQuantity: 6
-    Name: Handle
+    MaterialGroup: 1
+  - ResourceType: 2
+    MaterialGroup: 0
+  - ResourceType: 0
+    MaterialGroup: -1
+  - ResourceType: 0
+    MaterialGroup: -1
+  - ResourceType: 2
+    MaterialGroup: 0
   CraftedOutcome: {fileID: 11400000, guid: 18e7d5b1c2cc83b4d90f777520350aec, type: 2}
   CraftedOutcomeQuantity: 1

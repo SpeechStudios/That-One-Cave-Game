@@ -8,11 +8,11 @@ public class ForgeUI : MonoBehaviour
     public SmeltingOutcomeSlot OutcomeSlot;
     public Transform SmeltingFill;
 
-    public void SetupSlots(int forgeIndex)
+    public void SetupSlots()
     {
-        Slot1.Setup(forgeIndex, 0);
-        Slot2.Setup(forgeIndex, 1);
-        OutcomeSlot.Setup(forgeIndex);
+        Slot1.Setup(0);
+        Slot2.Setup(1);
+        OutcomeSlot.Setup();
     }
     public void UpdateUI(List<SmeltingSlotData> slots, int forgeIndex)
     {

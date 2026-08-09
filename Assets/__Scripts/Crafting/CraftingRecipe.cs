@@ -49,28 +49,15 @@ public enum MaterialType
 public struct CraftingComponent
 {
     public ResourceType ResourceType;
-    public int RequiredQuantity;
-    public string Name;
+    public int MaterialGroup;
 }
 
-[CreateAssetMenu(fileName = "CraftingRecipe", menuName = "New Crafting Recipe")]
+
+[CreateAssetMenu(menuName = "Crafting/Recipe", fileName = "New Crafting Recipe")]
 public class CraftingRecipe : ScriptableObject
 {
-    [HideInInspector] public int ID;
-    public string ItemName;
-    public List<CraftingComponent> Components;
+    public int ID;
+    public CraftingComponent[] Pattern = new CraftingComponent[9];
     public Item CraftedOutcome;
-    public int CraftedOutcomeQuantity = 1;
-
-    private const int MaxComponents = 4;
-
-    private void OnValidate()
-    {
-        if (Components == null) return;
-
-        if (Components.Count > MaxComponents)
-        {
-            Components.RemoveRange(MaxComponents, Components.Count - MaxComponents);
-        }
-    }
+    public int CraftedOutcomeQuantity;
 }

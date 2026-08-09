@@ -13,13 +13,24 @@ MonoBehaviour:
   m_Name: Pickaxe
   m_EditorClassIdentifier: Assembly-CSharp::CraftingRecipe
   ID: 0
-  ItemName: Pickaxe
-  Components:
-  - ResourceType: 2
-    RequiredQuantity: 8
-    Name: Handle
+  Pattern:
   - ResourceType: 3
-    RequiredQuantity: 4
-    Name: Head
+    MaterialGroup: 1
+  - ResourceType: 2
+    MaterialGroup: 0
+  - ResourceType: 3
+    MaterialGroup: 1
+  - ResourceType: 0
+    MaterialGroup: -1
+  - ResourceType: 2
+    MaterialGroup: 0
+  - ResourceType: 0
+    MaterialGroup: -1
+  - ResourceType: 0
+    MaterialGroup: -1
+  - ResourceType: 2
+    MaterialGroup: 0
+  - ResourceType: 0
+    MaterialGroup: -1
   CraftedOutcome: {fileID: 11400000, guid: ed50287fd82cf734fa4e7e1911122311, type: 2}
   CraftedOutcomeQuantity: 1

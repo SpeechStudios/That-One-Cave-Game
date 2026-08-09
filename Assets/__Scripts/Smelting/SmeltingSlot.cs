@@ -2,13 +2,11 @@ using UnityEngine.EventSystems;
 
 public class SmeltingSlot : ItemSlot
 {
-    private int ForgeIndex;
     private int SlotIndex;
 
-    public void Setup(int forgeIndex, int slotIndex)
+    public void Setup(int slotIndex)
     {
         SlotIndex = slotIndex;
-        ForgeIndex = forgeIndex;
         SlotData.Clear();
     }
     public override void OnPointerEnter(PointerEventData e)
@@ -22,18 +20,18 @@ public class SmeltingSlot : ItemSlot
     }
     public override void SlotToGhost()
     {
-        PlayerUI.UI_Smelting.TargetSmelting.SlotToGhost(ForgeIndex, SlotIndex, SlotData.Quantity);
+        PlayerUI.UI_Smelting.TargetSmelting.SlotToGhost(SlotIndex, SlotData.Quantity);
     }
     public override void GhostToSlot()
     {
-        PlayerUI.UI_Smelting.TargetSmelting.GhostToSlot(ForgeIndex, SlotIndex);
+        PlayerUI.UI_Smelting.TargetSmelting.GhostToSlot(SlotIndex);
     }
     public override void RightMouseUp()
     {
-        PlayerUI.UI_Smelting.TargetSmelting.SlotToGhost(ForgeIndex, SlotIndex, Quantity);
+        PlayerUI.UI_Smelting.TargetSmelting.SlotToGhost(SlotIndex, Quantity);
     }
     public override void ShiftRightMouseClicked()
     {
-        PlayerUI.UI_Smelting.TargetSmelting.InstantGrab(ForgeIndex, SlotIndex);
+        PlayerUI.UI_Smelting.TargetSmelting.InstantGrab(SlotIndex);
     }
 }

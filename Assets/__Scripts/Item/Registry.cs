@@ -5,7 +5,6 @@ public class Registry : MonoBehaviour
 {
     public static Registry Instance { get; private set; }
 
-    public FirstPersonCamera FPCam_Prefab;
     public static List<Item> GetStartingItems() => Instance?.StartingItems ?? new List<Item>();
     [SerializeField] private List<Item> StartingItems;
 
@@ -50,7 +49,7 @@ public class Registry : MonoBehaviour
             if (recipe == null) continue;
             recipe.ID = CraftingRecipeID++;
             if (!CraftingRecipeLookUp.TryAdd(recipe.ID, recipe))
-                Debug.LogWarning($"[ItemRegistry] Duplicate ID {recipe.ID} — '{recipe.CraftedOutcome.Name}' skipped.");
+                Debug.LogWarning($"[ItemRegistry] Duplicate ID {recipe.ID} — '{recipe.CraftedOutcome.ID}' skipped.");
         }
         foreach (SmeltingRecipe recipe in SmeltingRecipeList)
         {
