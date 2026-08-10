@@ -171,8 +171,15 @@ public class ShapeHitDetection : NetworkBehaviour
 
     private void TryRegisterHit(Collider col, HashSet<GameObject> hitObjects, Action<GameObject> callback)
     {
-        if (col == null || col.transform == transform.root || hitObjects.Contains(col.gameObject)) return;
+        if (!IsValidHit(col, hitObjects)) return;
         hitObjects.Add(col.gameObject);
         callback?.Invoke(col.gameObject);
+    }
+    private bool IsValidHit(Collider col, HashSet<GameObject> hitObjects)
+    {
+        if (col == null) return false;
+        if (col.transform == Loadout.transform.root) return false;
+        if (hitObjects.Contains(col.gameObject)) return false;
+        return true;
     }
 }

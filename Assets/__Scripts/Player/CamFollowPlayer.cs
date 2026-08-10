@@ -5,7 +5,7 @@ public class CamFollowPlayer : MonoBehaviour
     public PlayerControllerModule Controller;
     public FirstPersonCamera FPCam;
     internal Camera Cam;
-    public void Init()
+    public void ClientInit()
     {
         Cam = Camera.main;
         FPCam.transform.SetParent(null);

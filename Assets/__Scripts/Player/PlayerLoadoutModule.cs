@@ -30,7 +30,7 @@ public class PlayerLoadoutModule : NetworkBehaviour
     private bool Initalized;
     private Dictionary<ItemSlotType, EquippedSlot> ServerLoadout = new();
 
-    public void Init()
+    public void ClientInit()
     {
         Initalized = true;
         MainCam = Camera.main.GetComponent<MainCamera>();
@@ -41,6 +41,7 @@ public class PlayerLoadoutModule : NetworkBehaviour
     [Server]
     public void EquipItem(Item item, ItemSlotType type, int[] materialArray, NetworkConnection conn)
     {
+        Debug.Log("Server Equip");
         NetworkObject itemPrefab = Instantiate(item.EquipPrefab);
         InstanceFinder.ServerManager.Spawn(itemPrefab, conn);
 
@@ -54,22 +55,22 @@ public class PlayerLoadoutModule : NetworkBehaviour
 
         AssignSlot(type, weapon);
 
-        if (activateWeapon )
+        if (activateWeapon)
         {
             CurrentItemIndex = SlotToIndex(type);
-            weapon.Activate();
+            weapon.Activate(true);
         }
         else
         {
             itemPrefab.gameObject.SetActive(false);
         }
-
         Target_Equip_RPC(conn, item.ID, itemPrefab, materialArray, type, activateWeapon);
         Observers_Equip_RPC(itemPrefab, type, activateWeapon);
     }
     [TargetRpc]
     private void Target_Equip_RPC(NetworkConnection conn, int itemID, NetworkObject obj, int[] materialArray, ItemSlotType slotType, bool activateNow)
     {
+        Debug.Log("Target Equip");
         SetLayerRecursively(obj.gameObject, LayerMask.NameToLayer("LocalTools"));
 
         Weapon weapon = obj.GetComponent<Weapon>();
@@ -82,7 +83,7 @@ public class PlayerLoadoutModule : NetworkBehaviour
         if (activateNow)
         {
             CurrentItemIndex = SlotToIndex(slotType);
-            weapon.Activate();
+            weapon.Activate(false);
             SelectItem(slotType);
         }
         else
@@ -93,8 +94,8 @@ public class PlayerLoadoutModule : NetworkBehaviour
     [ObserversRpc]
     private void Observers_Equip_RPC(NetworkObject obj, ItemSlotType slotType, bool activateNow)
     {
+        Debug.Log("Observer Equip");
         if (obj.Owner == LocalConnection) return;
-
         Weapon weapon = obj.GetComponent<Weapon>();
         weapon.Loadout = this;
 
@@ -117,24 +118,24 @@ public class PlayerLoadoutModule : NetworkBehaviour
         ServerLoadout[type] = null;
         AssignSlot(type, null);
 
-        Target_UnEquip_RPC(conn,type);
+        Target_UnEquip_RPC(conn, type);
         Observers_UnEquip_RPC(type);
     }
     [TargetRpc]
     private void Target_UnEquip_RPC(NetworkConnection conn, ItemSlotType slotType)
     {
         RemoveIcon(slotType);
+        if (SlotToIndex(slotType) == CurrentItemIndex)
+        {
+            Weapon current = GetSlot(slotType);
+            current?.Deactivate();
+            PlayerUI.UI_PlayerOverlay.SelectItem(-1);
+        }
     }
     [ObserversRpc]
     private void Observers_UnEquip_RPC(ItemSlotType slotType)
     {
         if (IsServerInitialized) return;
-
-        if (SlotToIndex(slotType) == CurrentItemIndex)
-        {
-            Weapon current = GetSlot(slotType);
-            current?.Deactivate();
-        }
 
         AssignSlot(slotType, null);
     }
@@ -261,7 +262,7 @@ public class PlayerLoadoutModule : NetworkBehaviour
         current.gameObject.SetActive(enable);
 
         if (enable)
-            current.Activate();
+            current.Activate(false);
         else
             current.Deactivate();
     }
@@ -351,6 +352,7 @@ public class PlayerLoadoutModule : NetworkBehaviour
     }
     private void RemoveIcon(ItemSlotType type)
     {
+        Debug.Log("Removing Icon");
         switch (type)
         {
             case ItemSlotType.Weapon:

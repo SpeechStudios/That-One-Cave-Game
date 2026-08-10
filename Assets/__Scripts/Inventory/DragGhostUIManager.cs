@@ -1,25 +1,25 @@
-using FishNet.Connection;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public class DragGhostUIManager : MonoBehaviour
 {
 
-    [Header("UI")]
 
+    [Header("UI")]
     public Image DragIcon;
     public TextMeshProUGUI StackCountText;
     public Canvas Canvas;
     public RectTransform RectTransform;
     public Vector2 Pivot = new(0, 0.5f);
-    public bool Incrementing;
 
     [HideInInspector] public PlayerDragGhostModule TargetGhost;
     private InventoryUIManager UI_Inventory;
+    internal bool IsRightDragging;
+    internal bool IsShiftRightDragging;
+    internal HashSet<ItemSlot> RightDraggedSlots = new();
     private void Start()
     {
         UI_Inventory = PlayerUIManager.Instance.UI_Inventory;
@@ -62,8 +62,17 @@ public class DragGhostUIManager : MonoBehaviour
 
     public void Update()
     {
+        if (IsRightDragging && Mouse.current != null && Mouse.current.rightButton.wasReleasedThisFrame)
+        {
+            StopRightDrag();
+        }
+        if(IsShiftRightDragging && Mouse.current != null && Mouse.current.rightButton.wasReleasedThisFrame)
+        {
+            IsShiftRightDragging = false;
+        }
+
         if (TargetGhost == null) return;
-        if (!TargetGhost.ClientGhost.HasItem() && !Incrementing) return;
+        if (!TargetGhost.ClientGhost.HasItem()) return;
 
         Vector2 screenPos = Pointer.current.position.ReadValue();
 
@@ -82,11 +91,21 @@ public class DragGhostUIManager : MonoBehaviour
 
         for (int i = 0; i < UI_Inventory.Slots.Count; i++)
         {
-            if (UI_Inventory.TargetInventory.GhostToSlot(i))
+            if (UI_Inventory.TargetInventory.GhostToSlot(i, TargetGhost.ClientGhost.Quantity))
             {
                 return;
             }
         }
         UI_Inventory.TargetInventory.DropItem(TargetGhost.ClientGhost.Quantity);
+    }
+    public void StartRightDrag()
+    {
+        IsRightDragging = true;
+        RightDraggedSlots.Clear();
+    }
+    public void StopRightDrag()
+    {
+        IsRightDragging = false;
+        RightDraggedSlots.Clear();
     }
 }

@@ -49,11 +49,12 @@ public class Weapon : NetworkBehaviour
             MaterialArray = null;
     }
 
-    public virtual void Activate()
+    public virtual void Activate(bool isServer)
     {
         GainStats();
-        Loadout.RebindAnimator(WeaponData.WeaponName);
+        if (isServer) return;
 
+        Loadout.RebindAnimator(WeaponData.WeaponName);
         if (Loadout.WeaponAnimator != null)
         {
             Loadout.WeaponAnimator.SetTrigger("Attack");

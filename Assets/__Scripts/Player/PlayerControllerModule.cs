@@ -147,7 +147,7 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
     [HideInInspector] public bool CanMove = false;
     [HideInInspector] public bool CanSprint = false;
 
-    public void Init()
+    public void ClientInit()
     {
         TPRoot.SetActive(false);
         PlayerCamera = Camera.main;

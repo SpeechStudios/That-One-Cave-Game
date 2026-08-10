@@ -61,29 +61,52 @@ public class InventorySlot : ItemSlot
     }
     public override void SlotToGhost()
     {
+        if (!SlotData.HasItem()) return;
+
         PlayerUI.UI_Inventory.TargetInventory.SlotToGhost(SlotIndex, SlotData.Quantity);
     }
     public override void GhostToSlot()
     {
-        PlayerUI.UI_Inventory.TargetInventory.GhostToSlot(SlotIndex);
+        PlayerUI.UI_Inventory.TargetInventory.GhostToSlot(SlotIndex, PlayerUI.UI_DragGhost.TargetGhost.ClientGhost.Quantity);
     }
-    public override void RightMouseUp()
+    public override void RightMouseClicked()
     {
-        PlayerUI.UI_Inventory.TargetInventory.SlotToGhost(SlotIndex, Quantity);
+        if(PlayerUI.UI_DragGhost.TargetGhost.ClientGhost.HasItem())
+        {
+            PlayerUI.UI_Inventory.TargetInventory.GhostToSlot(SlotIndex, 1);
+        }
+        else
+        {
+            PlayerUI.UI_Inventory.TargetInventory.SlotToGhost(SlotIndex, Mathf.CeilToInt(SlotData.Quantity / 2f));
+        }
+    }
+    public override void RightDragEnter()
+    {
+        base.RightDragEnter();
+        PlayerUI.UI_Inventory.TargetInventory.GhostToSlot(SlotIndex, 1);
     }
     public override void ShiftRightMouseClicked()
     {
-        if (TabManager.Instance.CurrentTab == Tab.Smelting)
+        if (!SlotData.HasItem()) return;
+
+        if (Registry.GetItem(SlotData.ID).ItemType != ItemType.Material)
         {
-            PlayerUI.UI_Smelting.TargetSmelting.InstantFill(SlotIndex);
+            if (InventorySlotType == ItemSlotType.Inventory)
+            {
+                PlayerUI.UI_Inventory.TargetInventory.InstantEquip(SlotIndex);
+            }
+            else
+            {
+                PlayerUI.UI_Inventory.TargetInventory.InstantGrab(SlotIndex);
+            }
+            return;
         }
-        if (TabManager.Instance.CurrentTab == Tab.Crafting)
+        else
         {
-            PlayerUI.UI_Crafting.TargetCrafting.InstantFill(SlotIndex);
-        }
-        if (TabManager.Instance.CurrentTab == Tab.Player)
-        {
-            PlayerUI.UI_Inventory.TargetInventory.InstantEquip(SlotIndex);
+            if (TabManager.Instance.CurrentTab == Tab.Smelting)
+            {
+                PlayerUI.UI_Smelting.TargetSmelting.InstantFill(SlotIndex);
+            }
         }
     }
 

@@ -1,9 +1,10 @@
-using FishNet.Object;
 using FishNet.Connection;
+using FishNet.Object;
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using System.Linq;
+using Unity.VisualScripting;
+using UnityEngine;
 
 public class SmeltingSlotData : ISlotContainer
 {
@@ -32,34 +33,47 @@ public class PlayerSmeltingModule : NetworkBehaviour
     public event Action<bool> OnSmeltingValidated;
     public event Action OnSmeltingComplete;
 
-    public void Init()
+    public void ClientInit()
     {
         PlayerUIManager.Instance.UI_Smelting.Bind(this);
-    }
-    public void Start()
-    {
         ClientSlots.Add(new SmeltingSlotData { SlotIndex = 0, Data = new ItemSlotData() });
         ClientSlots.Add(new SmeltingSlotData { SlotIndex = 1, Data = new ItemSlotData() });
         ClientSlots.Add(new SmeltingSlotData { SlotIndex = 2, Data = new ItemSlotData() });
-
+    }
+    public void ServerInit()
+    {
         ServerSlots.Add(new SmeltingSlotData { SlotIndex = 0, Data = new ItemSlotData() });
         ServerSlots.Add(new SmeltingSlotData { SlotIndex = 1, Data = new ItemSlotData() });
         ServerSlots.Add(new SmeltingSlotData { SlotIndex = 2, Data = new ItemSlotData() });
     }
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+        TimeManager.OnTick += ServerTick;
+    }
+
+    public override void OnStopServer()
+    {
+        base.OnStopServer();
+        TimeManager.OnTick -= ServerTick;
+    }
+    private void ServerTick()
+    {
+        if (!ServerForge.IsSmelting) return;
+
+        float dt = (float)TimeManager.TickDelta;
+        ServerForge.SmeltingTimer += dt;
+
+        if (ServerForge.SmeltingTimer > ServerForge.CurrentRecipe.SmeltingTime)
+            SmeltComplete();
+    }
     public void Update()
     {
         float dt = Time.deltaTime;
-        if (ClientForge.IsSmelting)
-        {
-            if (ClientForge.SmeltingTimer < ClientForge.CurrentRecipe.SmeltingTime)
-                ClientForge.SmeltingTimer += dt;
-        }
-        if (ServerForge.IsSmelting)
-        {
-            ServerForge.SmeltingTimer += dt;
-            if (ServerForge.SmeltingTimer > ServerForge.CurrentRecipe.SmeltingTime)
-                SmeltComplete();
-        }
+        if (!ClientForge.IsSmelting) return;
+
+        if (ClientForge.SmeltingTimer < ClientForge.CurrentRecipe.SmeltingTime)
+            ClientForge.SmeltingTimer += dt;
     }
 
     #region Client Commands
@@ -75,14 +89,14 @@ public class PlayerSmeltingModule : NetworkBehaviour
         Server_SlotToGhost_RPC(slotIndex, quantity);
     }
     [Client]
-    public void GhostToSlot(int slotIndex)
+    public void GhostToSlot(int slotIndex, int quantity)
     {
-        LocalResponse response = LocalGhostToSlot(ClientSlots, DragGhost.ClientGhost, slotIndex);
+        LocalResponse response = LocalGhostToSlot(ClientSlots, DragGhost.ClientGhost, slotIndex, quantity);
         if (!response.Accepted) return;
 
         LocalSyncSlots(response.Patches, false);
         InvokeChange(response.Patches);
-        Server_GhostToSlot_RPC(slotIndex);
+        Server_GhostToSlot_RPC(slotIndex, quantity);
     }
     [Client]
     public void InstantGrab(int slotIndex)
@@ -110,9 +124,9 @@ public class PlayerSmeltingModule : NetworkBehaviour
 
     #region Server RPC's
     [ServerRpc]
-    private void Server_SlotToGhost_RPC(int syncIndex, int quantity)
+    private void Server_SlotToGhost_RPC(int slotIndex, int quantity)
     {
-        LocalResponse response = LocalSlotToGhost(ServerSlots, DragGhost.ServerGhost, syncIndex, quantity);
+        LocalResponse response = LocalSlotToGhost(ServerSlots, DragGhost.ServerGhost, slotIndex, quantity);
 
         if (!response.Accepted)
         {
@@ -126,9 +140,9 @@ public class PlayerSmeltingModule : NetworkBehaviour
 
     }
     [ServerRpc]
-    private void Server_GhostToSlot_RPC(int syncIndex)
+    private void Server_GhostToSlot_RPC(int slotIndex, int quantity)
     {
-        LocalResponse response = LocalGhostToSlot(ServerSlots, DragGhost.ServerGhost, syncIndex);
+        LocalResponse response = LocalGhostToSlot(ServerSlots, DragGhost.ServerGhost, slotIndex, quantity);
 
         if (!response.Accepted)
         {
@@ -199,14 +213,16 @@ public class PlayerSmeltingModule : NetworkBehaviour
         patches.Add(new() { Data = ghost, Type = SlotType.Ghost });
         return new LocalResponse { Accepted = true, Patches = patches };
     }
-    private LocalResponse LocalGhostToSlot(List<SmeltingSlotData> slots, ItemSlotData ghost, int slotIndex)
+
+    private LocalResponse LocalGhostToSlot(List<SmeltingSlotData> slots, ItemSlotData ghost, int slotIndex, int quantity)
     {
         Item ghostItem = Registry.TryGetItem(ghost.ID, out var tryGhostItem) ? tryGhostItem : null;
         ItemSlotData slotData = slots[slotIndex].Data;
+        Item toItem = Registry.TryGetItem(slotData.ID, out var toitem) ? toitem : null;
         List<SlotPatch> patches = new();
         bool isClient = slots == ClientSlots;
 
-        if (!GhostToSlotValid(slots, slotData, ghost, ghostItem, slotIndex))
+        if (!GhostToSlotValid(slots, slotData, ghost, ghostItem, slotIndex, quantity))
         {
             if (isClient) return new LocalResponse { Accepted = false };
             patches.Add(new() { Index = slotIndex, Data = slotData, Type = SlotType.Smelting });
@@ -214,11 +230,19 @@ public class PlayerSmeltingModule : NetworkBehaviour
             return new LocalResponse { Accepted = false, Patches = patches };
         }
 
+        int moveAmount = Mathf.Min(quantity, ghost.Quantity);
+
         if (PlayerHelperFunctions.StackingValid(ghost, slotData, ghostItem.MaxStackSize))
         {
-            var (stack, remainder) = PlayerHelperFunctions.TryStackItems(ghost, slotData, ghostItem.MaxStackSize);
-            ghost.Quantity = remainder;
+            var (stack, remainder) = PlayerHelperFunctions.TryStackItems(
+                new ItemSlotData { ID = ghost.ID, Materials = ghost.Materials, Quantity = moveAmount },
+                slotData,
+                ghostItem.MaxStackSize);
+
+            ghost.Quantity -= moveAmount;
+            ghost.Quantity += remainder;
             slotData.Quantity = stack;
+
             if (ghost.Quantity <= 0)
                 ghost.Clear();
 
@@ -227,8 +251,42 @@ public class PlayerSmeltingModule : NetworkBehaviour
             return new LocalResponse { Accepted = true, Patches = patches };
         }
 
-        patches.Add(new() { Index = slotIndex, Data = ghost, Type = SlotType.Smelting });
-        patches.Add(new() { Data = slotData, Type = SlotType.Ghost });
+        if (slotData.HasItem())
+        {
+            if (moveAmount != ghost.Quantity)
+            {
+                patches.Add(new() { Index = slotIndex, Data = slotData, Type = SlotType.Smelting });
+                patches.Add(new() { Data = ghost, Type = SlotType.Ghost });
+                return new LocalResponse { Accepted = false, Patches = patches };
+            }
+
+            ItemSlotData incoming = new ItemSlotData
+            {
+                ID = ghost.ID,
+                Materials = ghost.Materials,
+                Quantity = moveAmount
+            };
+
+            (ghost.ID, ghost.Materials, ghost.Quantity) = (slotData.ID, slotData.Materials, slotData.Quantity);
+
+            patches.Add(new() { Index = slotIndex, Data = incoming, Type = SlotType.Smelting });
+            patches.Add(new() { Data = ghost, Type = SlotType.Ghost });
+            return new LocalResponse { Accepted = true, Patches = patches };
+        }
+
+        ItemSlotData newSlotData = new ItemSlotData
+        {
+            ID = ghost.ID,
+            Materials = ghost.Materials,
+            Quantity = moveAmount
+        };
+
+        ghost.Quantity -= moveAmount;
+        if (ghost.Quantity <= 0)
+            ghost.Clear();
+
+        patches.Add(new() { Index = slotIndex, Data = newSlotData, Type = SlotType.Smelting });
+        patches.Add(new() { Data = ghost, Type = SlotType.Ghost });
         return new LocalResponse { Accepted = true, Patches = patches };
     }
     private LocalResponse LocalInstantFill(SmeltingForgeData forge, List<SmeltingSlotData> slots, List<InventorySlotData> inventorySlots, int inventorySlotIndex)
@@ -415,11 +473,12 @@ public class PlayerSmeltingModule : NetworkBehaviour
 
         return true;
     }
-    private bool GhostToSlotValid(List<SmeltingSlotData> slots, ItemSlotData slotData, ItemSlotData ghost, Item ghostItem, int syncIndex)
+    private bool GhostToSlotValid(List<SmeltingSlotData> slots, ItemSlotData slotData, ItemSlotData ghost, Item ghostItem, int slotIndex, int quantity)
     {
         if (ghostItem == null) return false;
         if (ghostItem.ResourceType != ResourceType.Ore) return false;
-        if (!PlayerHelperFunctions.SlotValid(slots, syncIndex)) return false;
+        if (!PlayerHelperFunctions.SlotValid(slots, slotIndex)) return false;
+        if (quantity <= 0 || quantity > ghost.Quantity) return false;
         if (!PlayerHelperFunctions.TransferValid(ghost, slotData)) return false;
         return true;
     }
@@ -531,8 +590,6 @@ public class PlayerSmeltingModule : NetworkBehaviour
         };
         LocalSyncSlots(slotPatches, true);
         Target_SmeltComplete(Owner, slotPatches.ToArray());
-
-        Debug.Log("Smelting Compelte");
     }
     private List<SlotPatch> SnapshotSlots(List<SlotPatch> slotPatches)
     {

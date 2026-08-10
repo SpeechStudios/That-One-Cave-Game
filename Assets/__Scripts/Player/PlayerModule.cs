@@ -32,8 +32,9 @@ public class PlayerModule : NetworkBehaviour
     {
         Inventory.ServerInit();
         Crafting.ServerInit();
+        Smelting.ServerInit();
         Stats.ServerInit();
-        Loadout.Init();
+        Loadout.ClientInit();
     }
     public void ClientInit()
     {
@@ -42,7 +43,7 @@ public class PlayerModule : NetworkBehaviour
             enabled = false;
             return;
         }
-        CameraFollow.Init();
+        CameraFollow.ClientInit();
         Stats.ClientInit();
         Stats.HealthBar.SetActive(false);
         Controller.enabled = true;
@@ -53,12 +54,12 @@ public class PlayerModule : NetworkBehaviour
         Loadout.enabled = true;
         Stats.enabled = true;
 
-        Controller.Init();
-        DragGhost.Init();
+        Controller.ClientInit();
+        DragGhost.ClientInit();
         Inventory.ClientInit();
-        Smelting.Init();
+        Smelting.ClientInit();
         Crafting.ClientInit();
-        Loadout.Init();
+        Loadout.ClientInit();
 
         Inventory.RequestStart();
     }

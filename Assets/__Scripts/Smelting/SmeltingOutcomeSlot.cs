@@ -12,18 +12,22 @@ public class SmeltingOutcomeSlot : ItemSlot
 
     public override void SlotToGhost()
     {
+        if (!SlotData.HasItem()) return;
         PlayerUI.UI_Smelting.TargetSmelting.SlotToGhost(SlotIndex, SlotData.Quantity);
     }
     public override void GhostToSlot()
     {
+        if (!SlotData.HasItem()) return;
         PlayerUI.UI_Smelting.TargetSmelting.SlotToGhost(SlotIndex, SlotData.Quantity);
     }
-    public override void RightMouseUp()
+    public override void RightMouseClicked()
     {
-        PlayerUI.UI_Smelting.TargetSmelting.SlotToGhost(SlotIndex, Quantity);
+        if (!SlotData.HasItem()) return;
+        PlayerUI.UI_Smelting.TargetSmelting.SlotToGhost(SlotIndex, 1);
     }
     public override void ShiftRightMouseClicked()
     {
+        if (!SlotData.HasItem()) return;
         PlayerUI.UI_Smelting.TargetSmelting.InstantGrab(SlotIndex);
     }
 }

@@ -149,14 +149,14 @@ public class PlayerInventoryModule : NetworkBehaviour
         Server_SlotToGhost_RPC(fromSlot, quantity);
     }
     [Client]
-    public bool GhostToSlot(int toSlot)
+    public bool GhostToSlot(int toSlot, int quantity)
     {
-        LocalResponse response = LocalGhostToSlot(ClientSlots, DragGhost.ClientGhost, toSlot);
+        LocalResponse response = LocalGhostToSlot(ClientSlots, DragGhost.ClientGhost, toSlot, quantity);
         if (!response.Accepted) return false;
 
         LocalSyncSlots(response.Patches, false);
         InvokeChange(response.Patches);
-        Server_GhostToSlot_RPC(toSlot);
+        Server_GhostToSlot_RPC(toSlot, quantity);
         return true;
     }
     [Client]
@@ -168,6 +168,16 @@ public class PlayerInventoryModule : NetworkBehaviour
         LocalSyncSlots(response.Patches, false);
         InvokeChange(response.Patches);
         Server_InstantEquip_RPC(fromSlot);
+    }
+    [Client]
+    public void InstantGrab(int equipSlotIndex)
+    {
+        LocalResponse response = LocalInstantGrab(ClientSlots, equipSlotIndex);
+        if (!response.Accepted) return;
+
+        LocalSyncSlots(response.Patches, false);
+        InvokeChange(response.Patches);
+        Server_InstantGrab_RPC(equipSlotIndex);
     }
     #endregion
 
@@ -225,7 +235,7 @@ public class PlayerInventoryModule : NetworkBehaviour
     [ServerRpc]
     private void Server_SlotToGhost_RPC(int fromSlot, int quantity)
     {
-        LocalResponse response = LocalSlotToGhost(ServerSlots, DragGhost.ServerGhost, fromSlot, quantity);
+        LocalResponse response = LocalSlotToGhost(ServerSlots, DragGhost.ServerGhost, fromSlot, quantity, Owner);
 
         if (!response.Accepted)
         {
@@ -240,9 +250,9 @@ public class PlayerInventoryModule : NetworkBehaviour
 
     }
     [ServerRpc]
-    private void Server_GhostToSlot_RPC(int toSlot)
+    private void Server_GhostToSlot_RPC(int toSlot, int quantity)
     {
-        LocalResponse response = LocalGhostToSlot(ServerSlots, DragGhost.ServerGhost, toSlot, Owner);
+        LocalResponse response = LocalGhostToSlot(ServerSlots, DragGhost.ServerGhost, toSlot, quantity, Owner);
 
         if (!response.Accepted)
         {
@@ -262,6 +272,22 @@ public class PlayerInventoryModule : NetworkBehaviour
         if (!response.Accepted)
         {
             Debug.Log($"<color=red>Instant Equip Rollback: Response Accepted: {response.Accepted}</color>");
+            List<SlotPatch> before = SnapshotSlots(response.Patches);
+            Target_SyncSlots(Owner, before.ToArray());
+        }
+        else
+        {
+            LocalSyncSlots(response.Patches, true);
+        }
+    }
+    [ServerRpc]
+    private void Server_InstantGrab_RPC(int equipSlotIndex)
+    {
+        LocalResponse response = LocalInstantGrab(ServerSlots, equipSlotIndex, Owner);
+
+        if (!response.Accepted)
+        {
+            Debug.Log($"<color=red>Instant Grab Rollback: Response Accepted: {response.Accepted}</color>");
             List<SlotPatch> before = SnapshotSlots(response.Patches);
             Target_SyncSlots(Owner, before.ToArray());
         }
@@ -384,7 +410,7 @@ public class PlayerInventoryModule : NetworkBehaviour
         patches.Add(new() { Data = ghost, Type = SlotType.Ghost });
         return new LocalResponse { Accepted = true, Patches = patches };
     }
-    private LocalResponse LocalGhostToSlot(List<InventorySlotData> slots, ItemSlotData ghost, int to, NetworkConnection conn = default)
+    private LocalResponse LocalGhostToSlot(List<InventorySlotData> slots, ItemSlotData ghost, int to, int quantity, NetworkConnection conn = default)
     {
         ItemSlotData slotData = slots[to].Data;
         Item ghostItem = Registry.TryGetItem(ghost.ID, out var tryGhostItem) ? tryGhostItem : null;
@@ -392,7 +418,7 @@ public class PlayerInventoryModule : NetworkBehaviour
         List<SlotPatch> patches = new();
         bool isClient = slots == ClientSlots;
 
-        if (!GhostToSlotValid(slots, ghost, ghostItem, to))
+        if (!GhostToSlotValid(slots, ghost, ghostItem, to, quantity))
         {
             if (isClient) return new LocalResponse { Accepted = false };
             patches.Add(new() { Index = to, Data = slotData, Type = SlotType.Inventory });
@@ -400,22 +426,34 @@ public class PlayerInventoryModule : NetworkBehaviour
             return new LocalResponse { Accepted = false, Patches = patches };
         }
 
-        if (slots == ServerSlots && CheckIfIsEquipRequest(slots,to))
+        int moveAmount = Mathf.Min(quantity, ghost.Quantity);
+
+        if (slots == ServerSlots && CheckIfIsEquipRequest(slots, to))
         {
-            if (!EquipValid())
-                return new LocalResponse { Accepted = false };
+            if (!EquipValid() || moveAmount != ghost.Quantity)
+            {
+                patches.Add(new() { Index = to, Data = slotData, Type = SlotType.Inventory });
+                patches.Add(new() { Data = ghost, Type = SlotType.Ghost });
+                return new LocalResponse { Accepted = false, Patches = patches };
+            }
 
             if (toItem != null)
                 Loadout.UnequipItem(slots[to].Type, conn);
 
-            Loadout.EquipItem(tryGhostItem,  slots[to].Type, ghost.Materials, conn);
+            Loadout.EquipItem(tryGhostItem, slots[to].Type, ghost.Materials, conn);
         }
 
-        if (PlayerHelperFunctions.StackingValid(ghost, slots[to].Data, ghostItem.MaxStackSize))
+        if (PlayerHelperFunctions.StackingValid(ghost, slotData, ghostItem.MaxStackSize))
         {
-            var (stack,remainder) = PlayerHelperFunctions.TryStackItems(ghost, slots[to].Data, ghostItem.MaxStackSize);
-            ghost.Quantity = remainder;
+            var (stack, remainder) = PlayerHelperFunctions.TryStackItems(
+                new ItemSlotData { ID = ghost.ID, Materials = ghost.Materials, Quantity = moveAmount },
+                slotData,
+                ghostItem.MaxStackSize);
+
+            ghost.Quantity -= moveAmount;
+            ghost.Quantity += remainder;
             slotData.Quantity = stack;
+
             if (ghost.Quantity <= 0)
                 ghost.Clear();
 
@@ -423,9 +461,44 @@ public class PlayerInventoryModule : NetworkBehaviour
             patches.Add(new() { Data = ghost, Type = SlotType.Ghost });
             return new LocalResponse { Accepted = true, Patches = patches };
         }
+        bool destinationOccupied = toItem != null && slotData.Quantity > 0;
 
-        patches.Add(new() { Index = to, Data = ghost, Type = SlotType.Inventory });
-        patches.Add(new() { Data = slotData, Type = SlotType.Ghost });
+        if (destinationOccupied)
+        {
+            if (moveAmount != ghost.Quantity)
+            {
+                patches.Add(new() { Index = to, Data = slotData, Type = SlotType.Inventory });
+                patches.Add(new() { Data = ghost, Type = SlotType.Ghost });
+                return new LocalResponse { Accepted = false, Patches = patches };
+            }
+
+            ItemSlotData incoming = new ItemSlotData
+            {
+                ID = ghost.ID,
+                Materials = ghost.Materials,
+                Quantity = moveAmount
+            };
+
+            (ghost.ID, ghost.Materials, ghost.Quantity) = (slotData.ID, slotData.Materials, slotData.Quantity);
+
+            patches.Add(new() { Index = to, Data = incoming, Type = SlotType.Inventory });
+            patches.Add(new() { Data = ghost, Type = SlotType.Ghost });
+            return new LocalResponse { Accepted = true, Patches = patches };
+        }
+
+        ItemSlotData newSlotData = new ItemSlotData
+        {
+            ID = ghost.ID,
+            Materials = ghost.Materials,
+            Quantity = moveAmount
+        };
+
+        ghost.Quantity -= moveAmount;
+        if (ghost.Quantity <= 0)
+            ghost.Clear();
+
+        patches.Add(new() { Index = to, Data = newSlotData, Type = SlotType.Inventory });
+        patches.Add(new() { Data = ghost, Type = SlotType.Ghost });
         return new LocalResponse { Accepted = true, Patches = patches };
     }
     private LocalResponse LocalInstantEquip(List<InventorySlotData> slots, int from, NetworkConnection conn = default)
@@ -459,6 +532,35 @@ public class PlayerInventoryModule : NetworkBehaviour
 
         patches.Add(new SlotPatch { Index = from, Data = fromData, Type = SlotType.Inventory });
         patches.Add(new SlotPatch { Index = EquipSlot, Data = firstSlotData, Type = SlotType.Inventory });
+
+        return new LocalResponse { Accepted = true, Patches = patches };
+    }
+    private LocalResponse LocalInstantGrab(List<InventorySlotData> slots, int equipSlotIndex, NetworkConnection conn = default)
+    {
+        ItemSlotData equippedData = slots[equipSlotIndex].Data;
+        Item item = Registry.TryGetItem(equippedData.ID, out var tryItem) ? tryItem : null;
+        List<SlotPatch> patches = new();
+        bool isClient = slots == ClientSlots;
+
+        if (!InstantGrabValid(slots, item, equipSlotIndex))
+        {
+            return InvalidateInstantGrab(ref patches, slots, equipSlotIndex, isClient);
+        }
+
+        int emptySlot = slots.FindIndex(s => s.Type == ItemSlotType.Inventory && !s.Data.HasItem());
+        if (emptySlot < 0)
+        {
+            return InvalidateInstantGrab(ref patches, slots, equipSlotIndex, isClient);
+        }
+
+        if (!isClient)
+            Loadout.UnequipItem(slots[equipSlotIndex].Type, conn);
+
+        ItemSlotData movedData = equippedData;
+        equippedData.Clear();
+
+        patches.Add(new SlotPatch { Index = equipSlotIndex, Data = equippedData, Type = SlotType.Inventory });
+        patches.Add(new SlotPatch { Index = emptySlot, Data = movedData, Type = SlotType.Inventory });
 
         return new LocalResponse { Accepted = true, Patches = patches };
     }
@@ -537,14 +639,23 @@ public class PlayerInventoryModule : NetworkBehaviour
 
         return true;
     }
-    private bool GhostToSlotValid(List<InventorySlotData> slots, ItemSlotData ghost, Item ghostItem, int to)
+    private bool GhostToSlotValid(List<InventorySlotData> slots, ItemSlotData ghost, Item ghostItem, int to, int quantity)
     {
 
         if (!PlayerHelperFunctions.SlotValid(slots, to)) return false;
         InventorySlotData slotData = slots[to];
+        if (quantity <= 0 || quantity > ghost.Quantity) return false;
         if (!SlotTypeValid(ghostItem, slotData)) return false;
         //if (!PlayerHelperFunctions.TransferValid(ghost, slotData.Data)) return false;
 
+        return true;
+    }
+    private bool InstantGrabValid(List<InventorySlotData> slots, Item item, int equipSlotIndex)
+    {
+        if (!PlayerHelperFunctions.SlotValid(slots, equipSlotIndex)) return false;
+        if (slots[equipSlotIndex].Type == ItemSlotType.Inventory) return false;
+        if (!slots[equipSlotIndex].Data.HasItem()) return false;
+        if (item == null) return false;
         return true;
     }
     public bool CanAcceptItem(ItemSlotData item)
@@ -559,14 +670,6 @@ public class PlayerInventoryModule : NetworkBehaviour
             }
         }
         return false;
-    }
-    public bool CanIncrement(ItemSlotData data, int quantity)
-    {
-        if (data.Quantity - quantity <= 0) return false;
-        if (DragGhost.ClientGhost.HasItem() && DragGhost.ClientGhost.ID != data.ID) return false;
-        if (!PlayerHelperFunctions.NullSafeSequenceEqual(DragGhost.ClientGhost.Materials, data.Materials)) return false;
-        if (DragGhost.ClientGhost.Quantity + quantity >= Registry.GetItem(data.ID).MaxStackSize) return false;
-        return true;
     }
     private bool EquipValid()
     {
@@ -595,6 +698,13 @@ public class PlayerInventoryModule : NetworkBehaviour
     {
         if (isClient) return new LocalResponse { Accepted = false };
         patches.Add(new() { Index = slotIndex, Data = slots[slotIndex].Data, Type = SlotType.Inventory });
+        patches.AddRange(PlayerHelperFunctions.SnapshotInventory(slots, true));
+        return new LocalResponse { Accepted = false, Patches = patches };
+    }
+    private LocalResponse InvalidateInstantGrab(ref List<SlotPatch> patches, List<InventorySlotData> slots, int equipSlotIndex, bool isClient)
+    {
+        if (isClient) return new LocalResponse { Accepted = false };
+        patches.Add(new() { Index = equipSlotIndex, Data = slots[equipSlotIndex].Data, Type = SlotType.Inventory });
         patches.AddRange(PlayerHelperFunctions.SnapshotInventory(slots, true));
         return new LocalResponse { Accepted = false, Patches = patches };
     }

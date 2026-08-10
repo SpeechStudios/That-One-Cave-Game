@@ -29,6 +29,7 @@ public class Pickaxe : Weapon
             Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed);
             return;
         }
+
         for (int i = 0; i < MaterialArray.Length; i++)
         {
             MaterialType type = (MaterialType)MaterialArray[i];

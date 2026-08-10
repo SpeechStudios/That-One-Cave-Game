@@ -53,14 +53,14 @@ public class PlayerCraftingModule : NetworkBehaviour
         Server_SlotToGhost_RPC(fromSlot, quantity);
     }
     [Client]
-    public void GhostToSlot(int toSlot)
+    public void GhostToSlot(int toSlot, int quantity)
     {
-        LocalResponse response = LocalGhostToSlot(ClientGrid, DragGhost.ClientGhost, toSlot);
+        LocalResponse response = LocalGhostToSlot(ClientGrid, DragGhost.ClientGhost, toSlot, quantity);
         if (!response.Accepted) return;
 
         LocalSyncSlots(response.Patches, false);
         InvokeChange(response.Patches);
-        Server_GhostToSlot_RPC(toSlot);
+        Server_GhostToSlot_RPC(toSlot, quantity);
     }
     [Client]
     public bool CraftItem()
@@ -72,17 +72,6 @@ public class PlayerCraftingModule : NetworkBehaviour
         InvokeChange(response.Patches);
         Server_CraftItem_RPC();
         return true;
-    }
-    [Client]
-    public void InstantFill(int inventorySlotIndex)
-    {
-        LocalResponse response = LocalInstantFill(Inventory.ClientSlots, ClientGrid, inventorySlotIndex);
-        if (!response.Accepted) return;
-
-        LocalSyncSlots(response.Patches, false);
-        InvokeChange(response.Patches);
-        Inventory.InvokeChange(response.Patches);
-        Server_InstantFill_RPC(inventorySlotIndex);
     }
     [Client]
     public void InstantGrab(int fromSlot)
@@ -127,9 +116,9 @@ public class PlayerCraftingModule : NetworkBehaviour
         }
     }
     [ServerRpc]
-    private void Server_GhostToSlot_RPC(int toSlot)
+    private void Server_GhostToSlot_RPC(int toSlot, int quantity)
     {
-        LocalResponse response = LocalGhostToSlot(ServerGrid,  DragGhost.ServerGhost, toSlot);
+        LocalResponse response = LocalGhostToSlot(ServerGrid,  DragGhost.ServerGhost, toSlot, quantity);
 
         if (!response.Accepted)
         {
@@ -155,21 +144,7 @@ public class PlayerCraftingModule : NetworkBehaviour
             LocalSyncSlots(response.Patches, true);
         }
     }
-    [ServerRpc]
-    private void Server_InstantFill_RPC(int inventorySlotIndex)
-    {
 
-        LocalResponse response = LocalInstantFill(Inventory.ServerSlots, ServerGrid, inventorySlotIndex);
-        if (!response.Accepted)
-        {
-            List<SlotPatch> before = SnapshotSlots(response.Patches);
-            Target_SyncSlots(Owner, before.ToArray());
-        }
-        else
-        {
-            LocalSyncSlots(response.Patches, true);
-        }
-    }
     [ServerRpc]
     private void Server_InstantGrab_RPC(int fromSlot)
     {
@@ -227,14 +202,15 @@ public class PlayerCraftingModule : NetworkBehaviour
         patches.Add(new() { Data = ghost, Type = SlotType.Ghost });
         return new LocalResponse { Accepted = true, Patches = patches };
     }
-    private LocalResponse LocalGhostToSlot(List<CraftingSlotData> slots, ItemSlotData ghost, int to)
+    private LocalResponse LocalGhostToSlot(List<CraftingSlotData> slots, ItemSlotData ghost, int to, int quantity)
     {
         ItemSlotData slotData = slots[to].Data;
         Item ghostItem = Registry.TryGetItem(ghost.ID, out var tryGhostItem) ? tryGhostItem : null;
+        Item toItem = Registry.TryGetItem(slotData.ID, out var toitem) ? toitem : null;
         List<SlotPatch> patches = new();
         bool isClient = slots == ClientGrid;
 
-        if (!GhostToSlotValid(slots, ghost, ghostItem, to))
+        if (!GhostToSlotValid(slots, ghost, ghostItem, to, quantity))
         {
             if (isClient) return new LocalResponse { Accepted = false };
             patches.Add(new() { Index = to, Data = slotData, Type = SlotType.Crafting });
@@ -242,11 +218,19 @@ public class PlayerCraftingModule : NetworkBehaviour
             return new LocalResponse { Accepted = false, Patches = patches };
         }
 
-        if (PlayerHelperFunctions.StackingValid(ghost, slots[to].Data, ghostItem.MaxStackSize))
+        int moveAmount = Mathf.Min(quantity, ghost.Quantity);
+
+        if (PlayerHelperFunctions.StackingValid(ghost, slotData, ghostItem.MaxStackSize))
         {
-            var (stack, remainder) = PlayerHelperFunctions.TryStackItems(ghost, slots[to].Data, ghostItem.MaxStackSize);
-            ghost.Quantity = remainder;
+            var (stack, remainder) = PlayerHelperFunctions.TryStackItems(
+                new ItemSlotData { ID = ghost.ID, Materials = ghost.Materials, Quantity = moveAmount },
+                slotData,
+                ghostItem.MaxStackSize);
+
+            ghost.Quantity -= moveAmount;
+            ghost.Quantity += remainder;
             slotData.Quantity = stack;
+
             if (ghost.Quantity <= 0)
                 ghost.Clear();
 
@@ -255,8 +239,44 @@ public class PlayerCraftingModule : NetworkBehaviour
             return new LocalResponse { Accepted = true, Patches = patches };
         }
 
-        patches.Add(new() { Index = to, Data = ghost, Type = SlotType.Crafting });
-        patches.Add(new() { Data = slotData, Type = SlotType.Ghost });
+        bool destinationOccupied = toItem != null && slotData.Quantity > 0;
+
+        if (destinationOccupied)
+        {
+            if (moveAmount != ghost.Quantity)
+            {
+                patches.Add(new() { Index = to, Data = slotData, Type = SlotType.Crafting });
+                patches.Add(new() { Data = ghost, Type = SlotType.Ghost });
+                return new LocalResponse { Accepted = false, Patches = patches };
+            }
+
+            ItemSlotData incoming = new ItemSlotData
+            {
+                ID = ghost.ID,
+                Materials = ghost.Materials,
+                Quantity = moveAmount
+            };
+
+            (ghost.ID, ghost.Materials, ghost.Quantity) = (slotData.ID, slotData.Materials, slotData.Quantity);
+
+            patches.Add(new() { Index = to, Data = incoming, Type = SlotType.Crafting });
+            patches.Add(new() { Data = ghost, Type = SlotType.Ghost });
+            return new LocalResponse { Accepted = true, Patches = patches };
+        }
+
+        ItemSlotData newSlotData = new ItemSlotData
+        {
+            ID = ghost.ID,
+            Materials = ghost.Materials,
+            Quantity = moveAmount
+        };
+
+        ghost.Quantity -= moveAmount;
+        if (ghost.Quantity <= 0)
+            ghost.Clear();
+
+        patches.Add(new() { Index = to, Data = newSlotData, Type = SlotType.Crafting });
+        patches.Add(new() { Data = ghost, Type = SlotType.Ghost });
         return new LocalResponse { Accepted = true, Patches = patches };
     }
     private LocalResponse LocalCraftItem(List<CraftingSlotData> slots, ItemSlotData ghost)
@@ -298,60 +318,7 @@ public class PlayerCraftingModule : NetworkBehaviour
         patches.Add(new SlotPatch { Data = ghost, Type = SlotType.Ghost });
         return new LocalResponse { Accepted = true, Patches = patches };
     }
-    private LocalResponse LocalInstantFill(List<InventorySlotData> inventorySlots, List<CraftingSlotData> slots, int inventorySlotIndex)
-    {
-        ItemSlotData inventorySlotData = inventorySlots[inventorySlotIndex].Data;
-        List<SlotPatch> patches = new();
-        bool isClient = slots == ClientGrid;
-
-        if (!InstantFillValid(inventorySlots, inventorySlotIndex, out var item))
-        {
-            return InvalidateInstantFill(ref patches, slots, inventorySlots, inventorySlotIndex, isClient);
-        }
-
-        //Try Stack
-        for (int i = 0; i < slots.Count; i++)
-        {
-            ItemSlotData slotData = slots[i].Data;
-            if (!PlayerHelperFunctions.StackingValid(inventorySlotData, slotData, item.MaxStackSize)) continue;
-
-            var (stack, remainder) = PlayerHelperFunctions.TryStackItems(inventorySlotData, slotData, item.MaxStackSize);
-            slotData.Quantity = stack;
-            inventorySlotData.Quantity = remainder;
-
-            patches.Add(new SlotPatch { Index = i, Data = slotData, Type = SlotType.Crafting });
-            if (inventorySlotData.Quantity <= 0)
-            {
-                inventorySlotData.Clear();
-                patches.Add(new SlotPatch { Index = inventorySlotIndex, Data = inventorySlotData, Type = SlotType.Inventory });
-                return new LocalResponse { Accepted = true, Patches = patches };
-            }
-        }
-        //Try Recipe Fill
-        for (int i = 0; i < slots.Count; i++)
-        {
-            if (slots[i].Data.HasItem()) continue;
-            if (item.ResourceType != slots[i].Component.ResourceType) continue;
-
-            ItemSlotData slotData = slots[i].Data;
-            return new LocalResponse
-            {
-                Accepted = true,
-                Patches = new List<SlotPatch>
-                {
-                    new() { Index = inventorySlotIndex, Data = slotData, Type = SlotType.Inventory },
-                    new() { Index = i, Data = inventorySlotData, Type = SlotType.Crafting }
-                }
-            };
-        }
-
-        if (patches.Count > 0)
-        {
-            patches.Add(new SlotPatch { Index = inventorySlotIndex, Data = inventorySlotData, Type = SlotType.Inventory });
-            return new LocalResponse { Accepted = true, Patches = patches };
-        }
-        return InvalidateInstantFill(ref patches, slots, inventorySlots, inventorySlotIndex, isClient);
-    }
+   
     private LocalResponse LocalInstantGrab(List<InventorySlotData> inventorySlots, List<CraftingSlotData> slots, int slotIndex)
     {
         ItemSlotData grabbedSlot = slots[slotIndex].Data;
@@ -413,13 +380,10 @@ public class PlayerCraftingModule : NetworkBehaviour
         List<SlotPatch> patches = new();
         bool isClient = slots == ClientGrid;
 
-        if (!InstantCraftValid(slots, out CraftingRecipe recipe))
+        if (!InstantCraftValid(slots, out CraftingRecipe recipe, out int[] materialArray))
         {
             return InvalidateInstantCraft(ref patches, slots, inventorySlots, isClient);
         }
-
-        var materialArray = slots.Where(slot => slot.Data.HasItem() && Registry.TryGetItem(slot.Data.ID, out _))
-            .Select(slot => (int)Registry.GetItem(slot.Data.ID).MaterialType).ToArray();
 
         ItemSlotData craftedOutcome = new()
         {
@@ -528,21 +492,22 @@ public class PlayerCraftingModule : NetworkBehaviour
 
         return true;
     }
+    private bool GhostToSlotValid(List<CraftingSlotData> slots, ItemSlotData ghost, Item ghostItem, int to, int quantity)
+    {
+        if (!PlayerHelperFunctions.SlotValid(slots, to)) return false;
+        if (quantity <= 0 || quantity > ghost.Quantity) return false;
+        if (ghostItem == null) return false;
+        if (ghostItem.ItemType !=  ItemType.Material) return false;
+        if (slots[to].Component.ResourceType != ResourceType.None) return false;
+        //if (!PlayerHelperFunctions.TransferValid(ghost, slots[to].Data)) return false;
+
+        return true;
+    }
     private bool InstantFillValid(List<InventorySlotData> slots, int index, out Item inventoryItem)
     {
         if (!Registry.TryGetItem(slots[index].Data.ID, out inventoryItem)) return false;
         if (!PlayerHelperFunctions.SlotValid(slots, index)) return false;
         if (inventoryItem.ResourceType == ResourceType.None) return false;
-
-        return true;
-    }
-    private bool GhostToSlotValid(List<CraftingSlotData> slots, ItemSlotData ghost, Item ghostItem, int to)
-    {
-        if (!PlayerHelperFunctions.SlotValid(slots, to)) return false;
-        if (ghostItem == null) return false;
-        if (ghostItem.ItemType !=  ItemType.Material) return false;
-        if (slots[to].Component.ResourceType != ResourceType.None && ghostItem.ResourceType != slots[to].Component.ResourceType) return false;
-        if (!PlayerHelperFunctions.TransferValid(ghost, slots[to].Data)) return false;
 
         return true;
     }
@@ -603,8 +568,7 @@ public class PlayerCraftingModule : NetworkBehaviour
         if (recipe == null) return false;
         if (!Registry.TryGetItem(recipe.CraftedOutcome.ID, out Item craftedItem)) return false;
 
-        materialArray = slots.Where(s => s.Data.HasItem())
-            .Select(s => (int)Registry.GetItem(s.Data.ID).MaterialType).ToArray();
+        materialArray = Materials.OrderBy(kvp => kvp.Key).Select(kvp => (int)kvp.Value).ToArray();
 
         if (ghost.HasItem())
         {
@@ -614,11 +578,15 @@ public class PlayerCraftingModule : NetworkBehaviour
 
         return true;
     }
-    private bool InstantCraftValid(List<CraftingSlotData> slots, out CraftingRecipe recipe)
+    private bool InstantCraftValid(List<CraftingSlotData> slots, out CraftingRecipe recipe, out int[] materialArray)
     {
+        materialArray = default;
         recipe = Match(slots);
         if (recipe == null) return false;
         if (!Registry.TryGetItem(recipe.CraftedOutcome.ID, out Item craftedItem)) return false;
+
+
+        materialArray = Materials.OrderBy(kvp => kvp.Key).Select(kvp => (int)kvp.Value).ToArray();
 
         return true;
     }

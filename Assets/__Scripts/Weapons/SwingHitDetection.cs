@@ -247,7 +247,7 @@ public class SwingHitDetection : NetworkBehaviour
     private bool IsValidHit(Collider col, HashSet<GameObject> hitObjects)
     {
         if (col == null) return false;
-        if (col.transform == transform.root) return false;
+        if (col.transform == Loadout.transform.root) return false;
         if (hitObjects.Contains(col.gameObject)) return false;
         return true;
     }
