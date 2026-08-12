@@ -1,18 +1,19 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "New Ability/Bow/AshLimb")]
-public class Bow_AshLimbData : AbilityData
+[CreateAssetMenu(menuName = "New Ability/Bow/JumpShot")]
+public class Bow_JumpShotData : AbilityData
 {
     public float LaunchUpForce = 12f;
     public float LaunchBackForce = 4f;
     public float CritMultiplier = 2f;
     public float MinAirTimeBeforeGroundCheck = 0.15f;
-    public override Ability CreateAbility() => new Bow_AshLimb();
+    public override Ability CreateAbility() => new Bow_JumpShot();
 }
 
-public class Bow_AshLimb : MovementAbility
+public class Bow_JumpShot: MovementAbility
 {
-    private Bow_AshLimbData AshLimbData;
+
+    private Bow_JumpShotData JumpShotData;
     private Bow Bow;
     private PlayerControllerModule Controller;
 
@@ -22,7 +23,7 @@ public class Bow_AshLimb : MovementAbility
     {
         base.Initialize(weapon, data);
         Bow = weapon as Bow;
-        AshLimbData = data as Bow_AshLimbData;
+        JumpShotData = data as Bow_JumpShotData;
     }
 
     public override MovementAbilityResult ExecuteMove(PlayerControllerModule controller, Vector2 moveInput, ref AbilityState state, float dt, float elapsed)
@@ -32,9 +33,9 @@ public class Bow_AshLimb : MovementAbility
         if (forward.sqrMagnitude < 0.0001f) forward = controller.transform.forward;
         forward.Normalize();
 
-        Vector3 launchVelocity = (Vector3.up * AshLimbData.LaunchUpForce) + (-forward * AshLimbData.LaunchBackForce);
+        Vector3 launchVelocity = (Vector3.up * JumpShotData.LaunchUpForce) + (-forward * JumpShotData.LaunchBackForce);
 
-        Bow.QueueCrit(AshLimbData.AbilityName, AshLimbData.CritMultiplier, isServer: true);
+        Bow.QueueCrit(JumpShotData.AbilityName, JumpShotData.CritMultiplier, isServer: true);
 
         Controller = controller;
         controller.OnLanded -= HandleLanded;
@@ -47,7 +48,7 @@ public class Bow_AshLimb : MovementAbility
     }
     private void HandleLanded()
     {
-        Bow.DequeueCrit(AshLimbData.AbilityName, isServer: true);
+        Bow.DequeueCrit(JumpShotData.AbilityName, isServer: true);
         if (Controller != null)
         {
             Controller.OnLanded -= HandleLanded;

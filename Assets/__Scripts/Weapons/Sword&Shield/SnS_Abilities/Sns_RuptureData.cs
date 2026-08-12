@@ -1,7 +1,7 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "New Ability/SnS/MithrilBlade")]
-public class SnS_MithrilBladeData : AbilityData
+[CreateAssetMenu(menuName = "New Ability/SnS/Rupture")]
+public class Sns_RuptureData : AbilityData
 {
     public float DelayBeforeCast = 0.1f;
     public float SphereCastRadius = 1.5f;
@@ -9,32 +9,32 @@ public class SnS_MithrilBladeData : AbilityData
     public float DamageInterval = 1f;
     public float DamageDuration = 5f;
     public int MaxStacks = 5;
-    public override Ability CreateAbility() => new SnS_MithrilBlade();
+    public override Ability CreateAbility() => new Sns_Rupture();
 }
-public class SnS_MithrilBlade : Ability
+public class Sns_Rupture : Ability
 {
     private SwordAndShield SwordAndShield;
-    private SnS_MithrilBladeData MithrilBladeData;
+    private Sns_RuptureData RuptureData;
 
     public override void Initialize(Weapon owner, AbilityData data)
     {
         base.Initialize(owner, data);
         SwordAndShield = owner as SwordAndShield;
-        MithrilBladeData = data as SnS_MithrilBladeData;
+        RuptureData = data as Sns_RuptureData;
     }
 
     public override void ClientActivate(uint tick)
     {
         Vector3 origin = SwordAndShield.ShapeHitDetection.transform.position;
         Weapon.Loadout.WeaponAnimator.SetTrigger("InstantStrike");
-        SwordAndShield.ShapeHitDetection.TriggerSphere(origin, MithrilBladeData.DelayBeforeCast, MithrilBladeData.SphereCastRadius, isServer: false,
+        SwordAndShield.ShapeHitDetection.TriggerSphere(origin, RuptureData.DelayBeforeCast, RuptureData.SphereCastRadius, isServer: false,
             clientCallback: (obj, point) => ClientApplyDamage(obj, point));
     }
 
     public override void ServerActivate(uint tick)
     {
         Vector3 origin = SwordAndShield.ShapeHitDetection.transform.position;
-        SwordAndShield.ShapeHitDetection.TriggerSphere(origin, MithrilBladeData.DelayBeforeCast, MithrilBladeData.SphereCastRadius, isServer: true,
+        SwordAndShield.ShapeHitDetection.TriggerSphere(origin, RuptureData.DelayBeforeCast, RuptureData.SphereCastRadius, isServer: true,
             serverCallback: (obj) => ServerApplyDamage(obj));
     }
 
@@ -44,16 +44,16 @@ public class SnS_MithrilBlade : Ability
     {
         if (target.TryGetComponent<IDamageable>(out var damageable))
         {
-            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * MithrilBladeData.DamagePercentage, false);
+            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * RuptureData.DamagePercentage, false);
             DamageOverTimeProperties properties = new()
             {
-                Damage = SwordAndShield.Stats.GetDamage() * MithrilBladeData.DamagePercentage,
-                Interval = MithrilBladeData.DamageInterval,
-                Duration = MithrilBladeData.DamageDuration,
-                EffectId = MithrilBladeData.AbilityName,
+                Damage = SwordAndShield.Stats.GetDamage() * RuptureData.DamagePercentage,
+                Interval = RuptureData.DamageInterval,
+                Duration = RuptureData.DamageDuration,
+                EffectId = RuptureData.AbilityName,
                 SourceId = Weapon.ObjectId,
                 RefreshAllDotDurations = true,
-                MaxStacks = MithrilBladeData.MaxStacks
+                MaxStacks = RuptureData.MaxStacks
             };
             damageable.TakeDamageOverTime(properties, isServer: false);
         }
@@ -62,16 +62,16 @@ public class SnS_MithrilBlade : Ability
     {
         if (target.TryGetComponent<IDamageable>(out var damageable))
         {
-            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * MithrilBladeData.DamagePercentage, true);
+            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * RuptureData.DamagePercentage, true);
             DamageOverTimeProperties properties = new()
             {
-                Damage = SwordAndShield.Stats.GetDamage() * MithrilBladeData.DamagePercentage,
-                Interval = MithrilBladeData.DamageInterval,
-                Duration = MithrilBladeData.DamageDuration,
-                EffectId = MithrilBladeData.AbilityName,
+                Damage = SwordAndShield.Stats.GetDamage() * RuptureData.DamagePercentage,
+                Interval = RuptureData.DamageInterval,
+                Duration = RuptureData.DamageDuration,
+                EffectId = RuptureData.AbilityName,
                 SourceId = Weapon.ObjectId,
                 RefreshAllDotDurations = true,
-                MaxStacks = MithrilBladeData.MaxStacks
+                MaxStacks = RuptureData.MaxStacks
             };
             damageable.TakeDamageOverTime(properties, isServer: true);
         }

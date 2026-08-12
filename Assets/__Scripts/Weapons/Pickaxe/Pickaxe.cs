@@ -13,14 +13,15 @@ public class Pickaxe : Weapon
     [SerializeField] internal ShapeHitDetection ShapeHitDetection;
 
 
-    public override void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout, PlayerStatsModule stats, int[] materialArray)
+    public override void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout, PlayerStatsModule stats, int[] materialArray, NetworkRole role)
     {
-        base.Initalize(movement, loadout, stats, materialArray);
-        ShapeHitDetection.Initalize(loadout, HitLayers);
         Data = WeaponData as PickaxeData;
-    }
+        base.Initalize(movement, loadout, stats, materialArray, role);
+        if (role == NetworkRole.Observer) return;
 
-    public override void GainStats()
+        ShapeHitDetection.Initalize(loadout, HitLayers);
+    }
+    public override void InitalizeStats(bool stats, bool abilities)
     {
         if (MaterialArray == null)
         {
@@ -59,17 +60,18 @@ public class Pickaxe : Weapon
             }
 
         }
-        if(Resiliance < 0)
+        if (Resiliance < 0)
         {
             TotalWeaponAttackSpeed -= TotalWeaponAttackSpeed / 2 * Resiliance;
         }
+    }
+    public override void GainStats()
+    {  
         Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed);
     }
     public override void RemoveStats()
     {
-        TotalWeaponDamage = 0;
-        TotalWeaponAttackSpeed = 0;
-        Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed);
+        Stats.SetWeaponContribution(0, 0);
     }
 
     public override void AttackRequest()

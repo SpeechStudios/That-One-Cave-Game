@@ -1,26 +1,26 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "New Ability/SnS/AshHandle")]
-public class SnS_AshHandleData : AbilityData
+[CreateAssetMenu(menuName = "New Ability/SnS/Charge")]
+public class Sns_ChargeData : AbilityData
 {
     public float MaxChargeSpeed = 20f;
     public float ChargeDamagePercentage = 1.36f;
     public float CheckRadius = 2f;
-    public override Ability CreateAbility() => new SnS_AshHandle();
+    public override Ability CreateAbility() => new SnS_Charge();
 }
-public class SnS_AshHandle : MovementAbility
+public class SnS_Charge : MovementAbility
 {
     private float ChargeSpeed;
     private Vector3 ChargeDirection;
     private GameObject HitTarget;
-    private SnS_AshHandleData AshHandleData;
+    private Sns_ChargeData ChargeData;
 
     public override float Duration => 1f;
 
     public override void Initialize(Weapon weapon, AbilityData data)
     {
         base.Initialize(weapon, data);
-        AshHandleData = data as SnS_AshHandleData;
+        ChargeData = data as Sns_ChargeData;
     }
     public override MovementAbilityResult ExecuteMove(PlayerControllerModule controller, Vector2 moveInput, ref AbilityState state, float dt, float elapsed)
     {
@@ -29,7 +29,7 @@ public class SnS_AshHandle : MovementAbility
         if (forward.sqrMagnitude < 0.0001f) forward = controller.transform.forward;
 
         ChargeDirection = forward.normalized;
-        ChargeSpeed = Mathf.Lerp(AshHandleData.MaxChargeSpeed / 2, AshHandleData.MaxChargeSpeed, elapsed / Duration);
+        ChargeSpeed = Mathf.Lerp(ChargeData.MaxChargeSpeed / 2, ChargeData.MaxChargeSpeed, elapsed / Duration);
 
         state.MoveDirection = ChargeDirection;
         state.MoveSpeed = ChargeSpeed;
@@ -48,20 +48,20 @@ public class SnS_AshHandle : MovementAbility
 
     public override void ServerOnMovementComplete(PlayerControllerModule controller)
     {
-        CompleteAbility();
+        Weapon.AbilityComplete(this,true);
         if (HitTarget == null) return;
         if (HitTarget.TryGetComponent<IDamageable>(out var damageable))
         {
-            damageable.TakeDamage(Weapon.Stats.GetDamage() * AshHandleData.ChargeDamagePercentage, true);
+            damageable.TakeDamage(Weapon.Stats.GetDamage() * ChargeData.ChargeDamagePercentage, true);
         }
     }
     public override void ClientOnMovementComplete(PlayerControllerModule controller)
     {
-        CompleteAbility();
+        Weapon.AbilityComplete(this, false);
         if (HitTarget == null) return;
         if (HitTarget.TryGetComponent<IDamageable>(out var damageable))
         {
-            damageable.TakeDamage(Weapon.Stats.GetDamage() * AshHandleData.ChargeDamagePercentage, false);
+            damageable.TakeDamage(Weapon.Stats.GetDamage() * ChargeData.ChargeDamagePercentage, false);
         }
     }
     private GameObject CheckCollisionAhead(PlayerControllerModule controller, Vector3 direction, float distance)
@@ -69,7 +69,7 @@ public class SnS_AshHandle : MovementAbility
         CharacterController cc = controller.CC;
         Vector3 origin = controller.transform.position + (controller.transform.forward * 0.2f);
 
-        if (Physics.SphereCast(origin, AshHandleData.CheckRadius, direction, out RaycastHit hit, distance, Weapon.Loadout.HitLayers, QueryTriggerInteraction.Ignore))
+        if (Physics.SphereCast(origin, ChargeData.CheckRadius, direction, out RaycastHit hit, distance, Weapon.Loadout.HitLayers, QueryTriggerInteraction.Ignore))
         {
             return hit.collider.gameObject;
         }

@@ -1,9 +1,7 @@
+using FishNet.Connection;
 using FishNet.Object;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
-
-
 
 public class Bow : Weapon
 {
@@ -11,48 +9,49 @@ public class Bow : Weapon
     public int TestingHandle;
 
     private BowData Data;
-    private FirstPersonCamera PlayerCam;
     private float ReloadSpeed;
     internal float ArrowVelocity;
 
     private float CurrentCharge;
     private bool IsCharging;
 
-
-    private IArrowEffect ClientPendingEffect;
+    internal List<Ability> ClientPendingAbilties = new();
+    internal List<int> ClientPendingEffects = new();
     private Dictionary<string, float> ClientPendingCrits = new();
 
-    private IArrowEffect ServerPendingEffect;
+    internal List<Ability> ServerPendingAbilties = new();
+    internal List<int> ServerPendingEffects = new();
     private Dictionary<string, float> ServerPendingCrits = new();
 
-    private const float MAX_PASSED_TIME = 0.3f;
-    public override void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout, PlayerStatsModule stats, int[] materialArray)
+    public override void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout, PlayerStatsModule stats, int[] materialArray, NetworkRole role)
     {
-        base.Initalize(movement, loadout, stats, materialArray);
-        Loadout.RebindAnimator(WeaponData.WeaponName);
-        PlayerCam = Loadout.FPCam;
         Data = WeaponData as BowData;
+        base.Initalize(movement, loadout, stats, materialArray, role);
+        if (role == NetworkRole.Observer) return;
+
+        Loadout.RebindAnimator(WeaponData.WeaponName);
     }
-    public override void GainStats()
+    public override void InitalizeStats(bool stats, bool abilities)
     {
-        //Testing
         if (MaterialArray == null)
         {
             var limb = Data.LimbStats[TestingLimb];
             var handle = Data.HandleStats[TestingHandle];
-
-            TotalWeaponDamage = limb.BaseDamage;
-            TotalWeaponAttackSpeed = limb.BaseAttackSpeed;
-
-            PrimaryQAbility = limb.PrimaryQAbility.CreateAbility();
-            PrimaryQAbility.Initialize(this, limb.PrimaryQAbility);
-
-            ArrowVelocity = handle.ArrowVelocity;
-            TotalWeaponDamage += handle.BonusDamage;
-
-            SecondaryEAbility = handle.SecondaryEAbility.CreateAbility();
-            SecondaryEAbility.Initialize(this, handle.SecondaryEAbility);
-
+            if (stats)
+            {
+                TotalWeaponDamage = limb.BaseDamage;
+                TotalWeaponAttackSpeed = limb.BaseAttackSpeed;
+                ArrowVelocity = handle.ArrowVelocity;
+                TotalWeaponDamage += handle.BonusDamage;
+                ReloadSpeed = 0.25f;
+            }
+            if (abilities)
+            {
+                PrimaryQAbility = limb.PrimaryQAbility.CreateAbility();
+                PrimaryQAbility.Initialize(this, limb.PrimaryQAbility);
+                SecondaryEAbility = handle.SecondaryEAbility.CreateAbility();
+                SecondaryEAbility.Initialize(this, handle.SecondaryEAbility);
+            }
         }
         else
         {
@@ -67,11 +66,16 @@ public class Bow : Weapon
                     {
                         if (limb.MaterialType == type)
                         {
-                            TotalWeaponDamage = limb.BaseDamage;
-                            TotalWeaponAttackSpeed = limb.BaseAttackSpeed;
-
-                            PrimaryQAbility = limb.PrimaryQAbility.CreateAbility();
-                            PrimaryQAbility.Initialize(this, limb.PrimaryQAbility);
+                            if (stats)
+                            {
+                                TotalWeaponDamage = limb.BaseDamage;
+                                TotalWeaponAttackSpeed = limb.BaseAttackSpeed;
+                            }
+                            if (abilities)
+                            {
+                                PrimaryQAbility = limb.PrimaryQAbility.CreateAbility();
+                                PrimaryQAbility.Initialize(this, limb.PrimaryQAbility);
+                            }
                         }
                     }
                 }
@@ -81,28 +85,31 @@ public class Bow : Weapon
                     {
                         if (handle.MaterialType == type)
                         {
-                            ArrowVelocity = handle.ArrowVelocity;
-                            TotalWeaponDamage += handle.BonusDamage;
-
-                            SecondaryEAbility = handle.SecondaryEAbility.CreateAbility();
-                            SecondaryEAbility.Initialize(this, handle.SecondaryEAbility);
+                            if (stats)
+                            {
+                                ArrowVelocity = handle.ArrowVelocity;
+                                TotalWeaponDamage += handle.BonusDamage;
+                            }
+                            if (abilities)
+                            {
+                                SecondaryEAbility = handle.SecondaryEAbility.CreateAbility();
+                                SecondaryEAbility.Initialize(this, handle.SecondaryEAbility);
+                            }
                         }
                     }
                 }
             }
         }
+    }
+    public override void GainStats()
+    {
         Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed);
     }
     public override void RemoveStats()
     {
-        TotalWeaponDamage = 0;
-        TotalWeaponAttackSpeed = 0;
-        ArrowVelocity = 0;
+        Stats.SetWeaponContribution(0, 0);
         SecondaryEAbility.Deinitialize();
         PrimaryQAbility.Deinitialize();
-        SecondaryEAbility = null;
-        PrimaryQAbility = null;
-        Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed);
     }
     public override void InterruptAttack()
     {
@@ -112,7 +119,7 @@ public class Bow : Weapon
     }
     public override void AttackRequest()
     {
-        if (!ClientCanAttack || ClientBlockAttacks) 
+        if (!ClientCooldown.IsReady || ClientVariables.PrimaryAbility.BlockAttacks || ClientVariables.SecondaryAbility.BlockAttacks)
             return;
 
         if (!IsCharging)
@@ -126,18 +133,19 @@ public class Bow : Weapon
     {
         if (!IsCharging) return;
         IsCharging = false;
-        ClientCanAttack = false;
 
         Loadout.WeaponAnimator.SetBool("Aiming", false);
 
         float chargedVelocity = ArrowVelocity * CurrentCharge;
-        float totalDamage = Stats.GetDamage() * CurrentCharge;
+        float baseDamage = Stats.GetDamage();
+        float totalDamage = baseDamage * CurrentCharge;
 
         Vector3 spawnPos = Loadout.FPCam.ClientFirePoint.position;
         Vector3 aimDir = Loadout.FPCam.ClientFirePoint.forward;
 
-        SpawnArrow(spawnPos, aimDir, totalDamage, chargedVelocity, 0f, false);
-        Loadout.StartWeaponCooldown(this, ReloadSpeed + 0.05f, isServer: false);
+        SpawnArrow(spawnPos, aimDir, Loadout.transform, chargedVelocity, baseDamage, totalDamage, ClientPendingEffects.ToArray(), 0f, isServer: false);
+        ClearEffects(isServer: false);
+        ClientCooldown.Start(ReloadSpeed + 0.05f);
 
         uint Tick = TimeManager.Tick;
         Server_Attack_RPC(CurrentCharge, Tick);
@@ -146,48 +154,63 @@ public class Bow : Weapon
     [ServerRpc]
     public void Server_Attack_RPC(float charge, uint tick)
     {
-        float Now = TimeManager.Tick * (float)TimeManager.TickDelta;
-        if (Now - LastAttackTime < ReloadSpeed - AttackTolerance)
+        if (!ServerCooldown.IsReady || ServerVariables.PrimaryAbility.BlockAttacks || ServerVariables.SecondaryAbility.BlockAttacks)
             return;
-        LastAttackTime = Now;
 
-        float PassedTime = (float)TimeManager.TimePassed(tick, allowNegative: false);
-        PassedTime = Mathf.Min(MAX_PASSED_TIME / 2f, PassedTime);
+        uint serverTick = TimeManager.LocalTick;
+        uint clampedTick = tick > serverTick ? serverTick : tick;
+        if (serverTick - clampedTick > MAX_TICK_DELAY)
+            return;
+        float passedTime = (float)TimeManager.TimePassed(clampedTick, allowNegative: false);
 
         Vector3 spawnPos = Loadout.FPCam.ServerFirePoint.position;
         Vector3 aimDir = Loadout.FPCam.ServerFirePoint.forward;
 
         charge = Mathf.Clamp01(charge);
-        float ChargedVelocity = ArrowVelocity * charge;
-        float TotalDamage = Stats.GetDamage() * charge;
+        float chargedVelocity = ArrowVelocity * charge;
+        float baseDamage = Stats.GetDamage();
+        float totalDamage = baseDamage * charge;
 
-        SpawnArrow(spawnPos, aimDir, TotalDamage, ChargedVelocity, PassedTime, true);
-        ObserversFireRpc(TotalDamage, ChargedVelocity, tick);
-
-        Loadout.StartWeaponCooldown(this, ReloadSpeed + 0.05f, isServer: true);
+        SpawnArrow(spawnPos, aimDir, Loadout.transform, chargedVelocity, baseDamage, totalDamage, ServerPendingEffects.ToArray(), passedTime, isServer: true);
+        foreach (NetworkConnection conn in ServerManager.Clients.Values)
+        {
+            if (conn == Owner) continue;
+            AllTargetFireRPC(conn, Loadout, baseDamage, totalDamage, chargedVelocity, clampedTick, ServerPendingEffects.ToArray());
+        }
+        ClearEffects(isServer: true, clampedTick);
+        ServerCooldown.StartAtTick(clampedTick, ReloadSpeed + 0.05f);
     }
-    [ObserversRpc(ExcludeOwner = true)]
-    public void ObserversFireRpc(float damage, float velocity, uint tick)
+
+    [TargetRpc]
+    public void AllTargetFireRPC(NetworkConnection conn, NetworkObject shooter, float baseDamage, float totalDamage, float velocity, uint tick, int[] effects)
     {
-        float PassedTime = (float)TimeManager.TimePassed(tick, allowNegative: false);
-        PassedTime = Mathf.Min(MAX_PASSED_TIME, PassedTime);
+        uint ObserverTick = TimeManager.LocalTick;
+        uint clampedTick = tick > ObserverTick ? ObserverTick : tick;
+        float passedTime = (float)TimeManager.TimePassed(clampedTick, allowNegative: false);
 
         Vector3 spawnPos = Loadout.TP_BowFirePoint.position;
         Vector3 aimDir = Loadout.TP_BowFirePoint.forward;
 
-        SpawnArrow(spawnPos, aimDir, damage, velocity, PassedTime, false);
+        SpawnArrow(spawnPos, aimDir, shooter.transform, velocity, baseDamage, totalDamage, effects, passedTime, isServer: false);
     }
 
-    public void QueueEffect(IArrowEffect effect, bool isServer) 
-    { 
-        if (isServer)
-            ServerPendingEffect = effect;
-        else 
-            ClientPendingEffect = effect;
+    public void QueueEffect(Ability ability, int abilityID, bool isServer)
+    {
+        var pendingEffects = isServer ? ServerPendingEffects : ClientPendingEffects;
+        var pendingAbilities = isServer ? ServerPendingAbilties : ClientPendingAbilties;
+
+        Toggle(pendingEffects, abilityID);
+        Toggle(pendingAbilities, ability);
+    }
+
+    private static void Toggle<T>(ICollection<T> collection, T item)
+    {
+        if (!collection.Remove(item))
+            collection.Add(item);
     }
     public void QueueCrit(string source, float multiplier, bool isServer)
     {
-        var Dict = isServer ? ServerPendingCrits : ClientPendingCrits;
+        var Dict = isServer? ServerPendingCrits : ClientPendingCrits;
         Dict[source] = multiplier;
     }
     public void DequeueCrit(string source, bool isServer)
@@ -202,27 +225,32 @@ public class Bow : Weapon
         foreach (var Value in Dict.Values) Total *= Value;
         return Total;
     }
-
-    public void SpawnArrow(Vector3 position, Vector3 direction, float damage, float velocity, float passedTime, bool isServer)
+    public void SpawnArrow(Vector3 pos, Vector3 dir, Transform source, float velocity, float baseDamage, float totalDamage, int[] EffectArray, float passedTime, bool isServer)
     {
-        Arrow ArrowInstance = ArrowPoolManager.Instance.Get(position, Quaternion.LookRotation(direction));
-        float CritMultiplier = GetPendingCritMultiplier(isServer);
-        ArrowInstance.Initialize(this, direction, velocity, passedTime, damage * CritMultiplier, isServer, Loadout.transform.root, ServerPendingEffect);
+        Arrow ArrowInstance = ArrowPoolManager.Instance.Get(pos, Quaternion.LookRotation(dir));
+        ArrowInstance.Initialize(source, dir, velocity, passedTime, baseDamage, totalDamage, EffectArray, isServer);
+    }
+    public void ClearEffects(bool isServer, uint tick = 0)
+    {
         if (isServer)
         {
-            ServerPendingEffect = null;
+            foreach(var ability in ServerPendingAbilties)
+            {
+                ServerTriggerCooldown(tick, ability);
+            }
+            ServerPendingAbilties.Clear();
+            ServerPendingEffects.Clear();
             ServerPendingCrits.Clear();
         }
         else
         {
-            ClientPendingEffect = null;
+            foreach (var ability in ClientPendingAbilties)
+            {
+                ClientTriggerCooldown(ability);
+            }
+            ClientPendingAbilties.Clear();
+            ClientPendingEffects.Clear();
             ClientPendingCrits.Clear();
         }
     }
-    public void SpawnNormalArrow(Vector3 position, Vector3 direction, float damage, float velocity, float passedTime, bool isServer)
-    {
-        Arrow ArrowInstance = ArrowPoolManager.Instance.Get(position, Quaternion.LookRotation(direction));
-        ArrowInstance.Initialize(this, direction, velocity, passedTime, damage, isServer, Loadout.transform.root, null);
-    }
-
 }

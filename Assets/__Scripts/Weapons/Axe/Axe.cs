@@ -14,13 +14,15 @@ public class Axe : Weapon
     [SerializeField] internal ShapeHitDetection ShapeHitDetection;
 
 
-    public override void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout,PlayerStatsModule stats, int[] materialArray)
+    public override void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout,PlayerStatsModule stats, int[] materialArray, NetworkRole role)
     {
         Data = WeaponData as AxeData;
-        base.Initalize(movement, loadout,stats, materialArray);
+        base.Initalize(movement, loadout,stats, materialArray, role);
+        if (role == NetworkRole.Observer) return;
+
         ShapeHitDetection.Initalize(loadout, HitLayers);
     }
-    public override void GainStats()
+    public override void InitalizeStats(bool stats, bool abilities)
     {
         if (MaterialArray == null)
         {
@@ -62,13 +64,14 @@ public class Axe : Weapon
         {
             TotalWeaponAttackSpeed -= TotalWeaponAttackSpeed / 2 * Resiliance;
         }
+    }
+    public override void GainStats()
+    {  
         Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed);
     }
     public override void RemoveStats()
     {
-        TotalWeaponDamage = 0;
-        TotalWeaponAttackSpeed = 0;
-        Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed);
+        Stats.SetWeaponContribution(0, 0);
     }
     public override void AttackRequest()
     {

@@ -29,35 +29,38 @@ public class SwordAndShield : Weapon
         SwingHitDetection.ClientOnHit -= ClientHit;
         SwingHitDetection.ServerOnHit -= ServerHit;
     }
-    public override void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout, PlayerStatsModule stats, int[] materialArray)
+    public override void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout, PlayerStatsModule stats, int[] materialArray, NetworkRole role)
     {
         Data = WeaponData as SnSData;
-        base.Initalize(movement, loadout, stats, materialArray);
+        base.Initalize(movement, loadout, stats, materialArray, role);
+        if (role == NetworkRole.Observer) return;
+
         loadout.FPCam.MeleeHitPoint.transform.localPosition = new Vector2(HitDetectionXOffset, loadout.FPCam.MeleeHitPoint.transform.localPosition.y);
         SwingHitDetection.Initalize(loadout);
         ShapeHitDetection.Initalize(loadout, Loadout.HitLayers);
 
     }
-    public override void GainStats()
+    public override void InitalizeStats(bool stats, bool abilties)
     {
-        //Testing
         if (MaterialArray == null)
         {
             var handle = Data.HandleStats[TestingHandle];
             var blade = Data.BladeStats[TestingBlade];
-
-            TotalWeaponDamage = handle.Damage;
-            TotalWeaponAttackSpeed = handle.AttackSpeed;
-
-            Resilliance = handle.Resiliance;
-            PrimaryQAbility = handle.PrimaryQAbility.CreateAbility();
-            PrimaryQAbility.Initialize(this, handle.PrimaryQAbility);
-
-            TotalWeaponDamage += blade.Damage;
-
-            Resilliance += blade.Resiliance;
-            SecondaryEAbility = blade.SecondaryEAbility.CreateAbility();
-            SecondaryEAbility.Initialize(this, blade.SecondaryEAbility);
+            if (stats)
+            {
+                TotalWeaponDamage = handle.Damage;
+                TotalWeaponAttackSpeed = handle.AttackSpeed;
+                Resilliance = handle.Resiliance;
+                TotalWeaponDamage += blade.Damage;
+                Resilliance += blade.Resiliance;
+            }
+            if (abilties)
+            {
+                PrimaryQAbility = handle.PrimaryQAbility.CreateAbility();
+                PrimaryQAbility.Initialize(this, handle.PrimaryQAbility);
+                SecondaryEAbility = blade.SecondaryEAbility.CreateAbility();
+                SecondaryEAbility.Initialize(this, blade.SecondaryEAbility);
+            }
         }
         else
         {
@@ -71,12 +74,17 @@ public class SwordAndShield : Weapon
                     {
                         if (handle.MaterialType == type)
                         {
-                            TotalWeaponDamage = handle.Damage;
-                            TotalWeaponAttackSpeed = handle.AttackSpeed;
-
-                            Resilliance = handle.Resiliance;
-                            PrimaryQAbility = handle.PrimaryQAbility.CreateAbility();
-                            PrimaryQAbility.Initialize(this, handle.PrimaryQAbility);
+                            if (stats)
+                            {
+                                TotalWeaponDamage = handle.Damage;
+                                TotalWeaponAttackSpeed = handle.AttackSpeed;
+                                Resilliance = handle.Resiliance;
+                            }
+                            if (abilties)
+                            {
+                                PrimaryQAbility = handle.PrimaryQAbility.CreateAbility();
+                                PrimaryQAbility.Initialize(this, handle.PrimaryQAbility);
+                            }
                         }
                     }
                 }
@@ -86,38 +94,46 @@ public class SwordAndShield : Weapon
                     {
                         if (blade.MaterialType == type)
                         {
-                            TotalWeaponDamage += blade.Damage;
-
-                            Resilliance += blade.Resiliance;
-                            SecondaryEAbility = blade.SecondaryEAbility.CreateAbility();
-                            SecondaryEAbility.Initialize(this, blade.SecondaryEAbility);
+                            if (stats)
+                            {
+                                TotalWeaponDamage += blade.Damage;
+                                Resilliance += blade.Resiliance;
+                            }
+                            if (abilties)
+                            {
+                                SecondaryEAbility = blade.SecondaryEAbility.CreateAbility();
+                                SecondaryEAbility.Initialize(this, blade.SecondaryEAbility);
+                            }
                         }
                     }
                 }
             }
         }
-        if (Resilliance < 0)
+        if (stats)
         {
-            TotalWeaponAttackSpeed -= Resilliance * 0.1f;
+            if (Resilliance < 0)
+            {
+                TotalWeaponAttackSpeed -= Resilliance * 0.1f;
+            }
         }
+    }
+    public override void GainStats()
+    {
         Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed);
     }
     public override void RemoveStats()
     {
-        TotalWeaponDamage = 0;
-        TotalWeaponAttackSpeed = 0;
-        Resilliance = 0;
+        Stats.SetWeaponContribution(0, 0);
         SecondaryEAbility.Deinitialize();
         PrimaryQAbility.Deinitialize();
-        SecondaryEAbility = null;
-        PrimaryQAbility = null;
-        Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed);
     }
+
     public override void AttackRequest()
     {
-        if (!ClientCanAttack || ClientBlockAttacks)
+        if (!ClientCooldown.IsReady || ClientVariables.PrimaryAbility.BlockAttacks || ClientVariables.SecondaryAbility.BlockAttacks)
             return;
-        ClientCanAttack = false;
+
+        uint currentTick = TimeManager.LocalTick;
 
         int SwingIndex = ClientSwingIndex;
         ClientSwingIndex = (ClientSwingIndex + 1) % AnimationSwings.Count;
@@ -127,24 +143,28 @@ public class SwordAndShield : Weapon
         Loadout.WeaponAnimator.SetTrigger("Attack");
 
         SwingHitDetection.EnableHitDetection(Swing.AttackData, Stats.GetAttackSpeed(), isServer: false);
-        Loadout.StartWeaponCooldown(this, Stats.GetAttackSpeed() + AttackTolerance, isServer: false);
+        ClientCooldown.Start(Stats.GetAttackSpeed() + AttackTolerance);
 
-        Server_Attack_RPC();
+        Server_Attack_RPC(currentTick);
     }
+
     [ServerRpc]
-    public void Server_Attack_RPC()
+    public void Server_Attack_RPC(uint tick)
     {
-        float Now = TimeManager.Tick * (float)TimeManager.TickDelta;
-        if (Now - LastAttackTime < Stats.GetAttackSpeed() - AttackTolerance || ServerBlockAttacks)
+        if (!ServerCooldown.IsReady || ServerVariables.PrimaryAbility.BlockAttacks || ServerVariables.SecondaryAbility.BlockAttacks)
             return;
-        LastAttackTime = Now;
+
+        uint serverTick = TimeManager.LocalTick;
+        uint clampedTick = tick > serverTick ? serverTick : tick;
+        if (serverTick - clampedTick > MAX_TICK_DELAY)
+            return;
 
         int SwingIndex = ServerSwingIndex;
         ServerSwingIndex = (ServerSwingIndex + 1) % AnimationSwings.Count;
         SwingData Swing = AnimationSwings[SwingIndex];
 
         SwingHitDetection.EnableHitDetection(Swing.AttackData, Stats.GetAttackSpeed(), isServer: true);
-        Loadout.StartWeaponCooldown(this, Stats.GetAttackSpeed() + AttackTolerance, isServer: true);
+        ServerCooldown.StartAtTick(clampedTick, Stats.GetAttackSpeed() + AttackTolerance);
         Observer_Attack_RPC(SwingIndex);
     }
 

@@ -12,9 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 443bce909b5937749b200f3a95daa9ee, type: 3}
   m_Name: Bow_ExplosiveShot
   m_EditorClassIdentifier: Assembly-CSharp::Bow_AshHandleData
+  ID: 2
+  CooldownType: 1
   AbilityName: Explosive Arrow
   AbilityIcon: {fileID: 0}
-  Cooldown: 4
+  Cooldown: 3
+  InterruptAutoAttack: 0
+  BlockAttacks: 0
+  BlockOtherAbilities: 0
+  BlockSwapping: 0
   DamageMultiplier: 1.5
-  ExplosionRadius: 3
-  ExplosionEffectPrefab: {fileID: 0}
+  ExplosionRadius: 5
+  ExplosionEffectPrefab: {fileID: 868468853075218060, guid: 1088de5662f7a1346b1d36be122c094a, type: 3}

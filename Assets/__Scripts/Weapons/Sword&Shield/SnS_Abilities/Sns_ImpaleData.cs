@@ -1,40 +1,40 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "New Ability/SnS/SteelBlade")]
-public class SnS_SteelBladeData : AbilityData
+[CreateAssetMenu(menuName = "New Ability/SnS/Impale")]
+public class Sns_ImpaleData : AbilityData
 {
     public float ImmobilizeDuration = 2f;
     public float DamagePercentage = 1.72f;
     public float DelayBeforeCast = 0.5f;
     public float AreaRadius = 2f;
     public float AreaLength = 4f;
-    public override Ability CreateAbility() => new SnS_SteelBlade();
+    public override Ability CreateAbility() => new Sns_Impale();
 }
-public class SnS_SteelBlade : Ability
+public class Sns_Impale : Ability
 {
     private SwordAndShield SwordAndShield;
-    private SnS_SteelBladeData SteelBladeData;
+    private Sns_ImpaleData ImpaleData;
 
     public override void Initialize(Weapon owner, AbilityData data)
     {
         base.Initialize(owner, data);
         SwordAndShield = owner as SwordAndShield;
-        SteelBladeData = data as SnS_SteelBladeData;
+        ImpaleData = data as Sns_ImpaleData;
     }
     public override void ClientActivate(uint tick)
     {
         Vector3 p1 = SwordAndShield.ShapeHitDetection.transform.position;
-        Vector3 p2 = p1 + (SwordAndShield.ShapeHitDetection.transform.forward * SteelBladeData.AreaLength);
+        Vector3 p2 = p1 + (SwordAndShield.ShapeHitDetection.transform.forward * ImpaleData.AreaLength);
         Weapon.Loadout.WeaponAnimator.SetTrigger("Impale");
-        SwordAndShield.ShapeHitDetection.TriggerCapsule(p1, p2, SteelBladeData.DelayBeforeCast, SteelBladeData.AreaRadius, isServer: false,
+        SwordAndShield.ShapeHitDetection.TriggerCapsule(p1, p2, ImpaleData.DelayBeforeCast, ImpaleData.AreaRadius, isServer: false,
             clientCallback: (obj, point) => ClientApplyEffect(obj, point));
     }
 
     public override void ServerActivate(uint tick)
     {
         Vector3 p1 = SwordAndShield.ShapeHitDetection.transform.position;
-        Vector3 p2 = p1 + (SwordAndShield.ShapeHitDetection.transform.forward * SteelBladeData.AreaLength);
-        SwordAndShield.ShapeHitDetection.TriggerCapsule(p1, p2, SteelBladeData.DelayBeforeCast, SteelBladeData.AreaRadius, isServer: true,
+        Vector3 p2 = p1 + (SwordAndShield.ShapeHitDetection.transform.forward * ImpaleData.AreaLength);
+        SwordAndShield.ShapeHitDetection.TriggerCapsule(p1, p2, ImpaleData.DelayBeforeCast, ImpaleData.AreaRadius, isServer: true,
             serverCallback: (obj) => ServerApplyEffect(obj));
     }
 
@@ -43,13 +43,13 @@ public class SnS_SteelBlade : Ability
     private void ClientApplyEffect(GameObject target, Vector3 point)
     {
         if (target.TryGetComponent<IDamageable>(out var damageable))
-            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * SteelBladeData.DamagePercentage, false);
+            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * ImpaleData.DamagePercentage, false);
     }
     private void ServerApplyEffect(GameObject target)
     {
         if (target.TryGetComponent<IDamageable>(out var damageable))
-            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * SteelBladeData.DamagePercentage, true);
+            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * ImpaleData.DamagePercentage, true);
         if (target.TryGetComponent<IMoveable>(out var movable))
-            movable.ApplyImmobilize(SteelBladeData.ImmobilizeDuration);
+            movable.ApplyImmobilize(ImpaleData.ImmobilizeDuration);
     }
 }

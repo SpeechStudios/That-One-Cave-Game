@@ -1,51 +1,46 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
-public interface IArrowEffect
-{
-    void OnHit(Weapon weapon, GameObject hitEntity, Vector3 hitPoint, bool isServer, Arrow arrow)
-    {
-        if (hitEntity.TryGetComponent<IDamageable>(out var damageable))
-        {
-            damageable.TakeDamage(arrow.Damage, isServer);
-        }
-    }
-}
-public class DefaultArrowEffect : IArrowEffect { }
 
 public class Arrow : MonoBehaviour
 {
     public GameObject MyRend;
     public Transform ColliderPosition;
     public float ColliderRadius;
-    internal float Damage;
+    internal float TotalDamage;
+    internal float BaseDamage;
 
-    private Weapon Source;
-    private Transform Root;
+    private Transform Source;
     private Vector3 Velocity;
     private float PassedTime;
     private bool IsServer;
     private bool Initialized;
     private bool Hit;
-    private IArrowEffect Effect;
-    private static readonly IArrowEffect DefaultEffect = new DefaultArrowEffect();
+    private List<AbilityData> EffectArray = new();
 
     private const float CATCH_UP_RATE = 0.08f;
 
-    public void Initialize(Weapon source, Vector3 direction, float speed, float passedTime, float damage, bool isServer, Transform root, IArrowEffect effect)
+
+    public void Initialize(Transform source, Vector3 direction, float speed, float passedTime, float baseDamage, float totalDamage, int[] effectArray, bool isServer)
     {
         Hit = false;
         Source = source;
         Velocity = direction.normalized * speed;
         PassedTime = passedTime;
-        Damage = damage;
+        BaseDamage = baseDamage;
+        TotalDamage = totalDamage;
         IsServer = isServer;
         Initialized = true;
-        Root = root;
-        Effect = effect;
-        if (isServer)
-            MyRend.SetActive(false);
-        else
-            MyRend.SetActive(true);
+        MyRend.SetActive(!isServer);
+        foreach (int i in effectArray)
+        {
+            var data = Registry.GetAbilityData(i);
+            EffectArray.Add(data);
+
+            if (!isServer)
+                data.SpawnInitalizeClientVisuals();
+        }
     }
     private void Update()
     {
@@ -92,11 +87,27 @@ public class Arrow : MonoBehaviour
     {
         if (Hit) return;
         if (!IsValidHit(other)) return;
-
-        var effectToUse = Effect ?? DefaultEffect;
         transform.SetParent(other.transform);
-        effectToUse.OnHit(Source, other.gameObject, hitPoint, IsServer, this);
 
+        foreach (var data in EffectArray)
+        {
+            data.OnHitFunction(new HitContext
+            {
+                HitPoint = hitPoint,
+                HitEntity = other.transform,
+                Source = Source,
+                BaseDamage = BaseDamage,
+                TotalDamage = TotalDamage,
+
+            }, IsServer);
+        }
+        //Default Arrow Behavior
+        if (EffectArray.Count == 0)
+        {
+            if (other.transform.TryGetComponent<IDamageable>(out var explosionDamageable))
+                explosionDamageable.TakeDamage(TotalDamage, IsServer);
+        }
+        
         Hit = true;
         StartCoroutine(ReturnToPool(other));
     }
@@ -104,7 +115,7 @@ public class Arrow : MonoBehaviour
     {
         if (col == null) return false;
         if (col.transform == transform.root) return false;
-        if (col.transform == Root) return false;
+        if (col.transform == Source.root) return false;
         return true;
     }
     private IEnumerator ReturnToPool(Collider hitCollider)
@@ -119,6 +130,7 @@ public class Arrow : MonoBehaviour
 
         MyRend.SetActive(false);
         Initialized = false;
+        EffectArray.Clear();
         ArrowPoolManager.Instance.Return(this);
     }
 }

@@ -1,14 +1,23 @@
 using FishNet.Object;
-using FishNet.Object.Synchronizing;
-using System;
+using Unity.GraphToolkit.Editor;
+using Unity.VisualScripting;
 using UnityEngine;
 public class WeaponData : ScriptableObject
 {
     public string WeaponName;
 }
-public struct AbilityContext
+public struct WeaponNetworkVariables
 {
-
+    public AbilityNetworkVariables PrimaryAbility;
+    public AbilityNetworkVariables SecondaryAbility;
+}
+public struct AbilityNetworkVariables
+{
+    public CooldownTimer Cooldown;
+    public bool PendingEffect;
+    public bool BlockAttacks;
+    public bool BlockAbilities;
+    public bool BlockSwapping;
 }
 public class Weapon : NetworkBehaviour
 {
@@ -17,113 +26,146 @@ public class Weapon : NetworkBehaviour
     internal int[] MaterialArray = null;
     internal int TotalWeaponDamage;
     internal float TotalWeaponAttackSpeed;
+
+    public CooldownTimer ClientCooldown;
+    public CooldownTimer ServerCooldown;
+
     internal Ability PrimaryQAbility;
     internal Ability SecondaryEAbility;
 
     internal float AttackTolerance = 0.05f;
-
-    private readonly SyncVar<uint> PrimaryLastUsedTick = new(0u);
-    private readonly SyncVar<uint> SecondaryLastUsedTick = new(0u);
+    internal WeaponNetworkVariables ServerVariables;
+    internal WeaponNetworkVariables ClientVariables;
 
     internal float LastAttackTime;
     internal bool ClientCanAttack = true;
-
-    internal bool ClientBlockAttacks = false;
-    internal bool ServerBlockAttacks = false;
-
-    internal bool ClientBlockOtherAbilities = false;
-    internal bool ServerBlockOtherAbilities = false;
 
     internal PlayerLoadoutModule Loadout;
     internal PlayerStatsModule Stats;
     private PlayerControllerModule MovementController;
 
-    public virtual void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout, PlayerStatsModule stats, int[] materialArray)
+    internal const uint MAX_TICK_DELAY = 30;
+
+    #region Initalization
+    public virtual void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout, PlayerStatsModule stats, int[] materialArray, NetworkRole role)
     {
         MovementController = movement;
         Loadout = loadout;
         Stats = stats;
+        
         if (materialArray != null)
             MaterialArray = materialArray;
         else
             MaterialArray = null;
+
+        if (role == NetworkRole.Server || role == NetworkRole.Owner)
+            InitalizeStats(stats: true, abilities: true);
+        if (role == NetworkRole.Observer)
+            InitalizeStats(stats: false, abilities: true);
     }
-
-    public virtual void Activate(bool isServer)
+    public virtual void InitalizeStats(bool stats, bool abilities) { }
+    public void Activate(NetworkRole role)
     {
-        GainStats();
-        if (isServer) return;
-
-        Loadout.RebindAnimator(WeaponData.WeaponName);
-        if (Loadout.WeaponAnimator != null)
+        if(role == NetworkRole.Server)
         {
-            Loadout.WeaponAnimator.SetTrigger("Attack");
-            Loadout.WeaponAnimator.Update(0f);
-            int attackStateHash = Loadout.WeaponAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash;
-            Loadout.WeaponAnimator.Play(attackStateHash, 0, 0f);
-            Loadout.WeaponAnimator.Update(0f);
+            GainStats();
+        }
+        if(role == NetworkRole.Owner)
+        {
+            GainStats();
+            AffixateModel();
+
+            Loadout.RebindAnimator(WeaponData.WeaponName);
+            if (Loadout.WeaponAnimator != null)
+            {
+                Loadout.WeaponAnimator.SetTrigger("Attack");
+                Loadout.WeaponAnimator.Update(0f);
+                int attackStateHash = Loadout.WeaponAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash;
+                Loadout.WeaponAnimator.Play(attackStateHash, 0, 0f);
+                Loadout.WeaponAnimator.Update(0f);
+            }
+        }
+        if(role == NetworkRole.Observer)
+        {
+            AffixateModel();
         }
     }
-    public virtual void Deactivate() { RemoveStats(); }
+    public virtual void Deactivate(NetworkRole role) 
+    {
+        if (role == NetworkRole.Server)
+        {
+            RemoveStats();
+        }
+        if (role == NetworkRole.Owner)
+        {
+            RemoveStats();
+        }
+        if (role == NetworkRole.Observer)
+        {
+            RemoveStats();
+        }
+    }
     public virtual void GainStats() { }
     public virtual void RemoveStats() { }
+    public virtual void AffixateModel() { }
+    #endregion
+
+    #region Input Requests
     public virtual void AttackRequest() { }
     public virtual void InterruptAttack() { }
     public virtual void ReleaseRequest() { }
+    public void PrimaryAbilityRequest() => RequestActivateAbility(isPrimary: true);
+    public void SecondaryAbilityRequest() => RequestActivateAbility(isPrimary: false);
+    #endregion
 
-    public void PrimaryAbilityRequest() => RequestActivateAbility(PrimaryQAbility, PrimaryLastUsedTick, isPrimary: true);
-    public void SecondaryAbilityRequest() => RequestActivateAbility(SecondaryEAbility, SecondaryLastUsedTick, isPrimary: false);
-
-    private void RequestActivateAbility(Ability ability, SyncVar<uint> lastUsedTick, bool isPrimary)
+    private void RequestActivateAbility(bool isPrimary)
     {
         if (!IsOwner) return;
-        if (ability == null) return;
-        if (ClientBlockOtherAbilities) return;
+        Ability ability = isPrimary ? PrimaryQAbility : SecondaryEAbility;
+        if (!AbilityCanBeActivated(ability, ClientVariables, isPrimary)) return;
 
         uint currentTick = TimeManager.LocalTick;
-        float tickDelta = (float)TimeManager.TickDelta;
-        bool isMovementAbility = ability is MovementAbility;
 
-        if (ability.IsOnCooldown(lastUsedTick.Value, currentTick, tickDelta)) return;
-
-        if (ability.Data.BlockAttacks) ClientBlockAttacks = true;
-        if (ability.Data.BlockOtherAbilities) ClientBlockOtherAbilities = true;
-        if (ability.Data.InterruptAutoAttack) InterruptAttack();
-
-        if (isMovementAbility)
+        switch (ability.Data.CooldownType)
         {
-           MovementController.BeginMovementOverride(isPrimary, currentTick);
+            case CooldownType.Instant:
+                ClientTriggerCooldown(ability);
+                ClientActivateAbility(ability, currentTick, isPrimary);
+                break;
+            case CooldownType.TogglePending:
+                ToggleAbility(ref ClientVariables, isPrimary);
+                ClientActivateAbility(ability, currentTick, isPrimary);
+                break;
         }
-        else
-        {
-           ability.ClientActivate(currentTick);
-        }
-        ServerActivate(isPrimary, currentTick);
     }
-
     [ServerRpc]
     private void ServerActivate(bool isPrimary, uint tick)
     {
-        if (ServerBlockOtherAbilities) return;
-
         Ability ability = isPrimary ? PrimaryQAbility : SecondaryEAbility;
-        var lastUsedTIck = isPrimary ? PrimaryLastUsedTick : SecondaryLastUsedTick;
+        if (!AbilityCanBeActivated(ability, ServerVariables, isPrimary)) return;
+        uint serverTick = TimeManager.LocalTick;
+        uint clampedTick = tick > serverTick ? serverTick : tick;
+        if (serverTick - clampedTick > MAX_TICK_DELAY)
+            return;
 
-        if (ability.Data.BlockAttacks) ServerBlockAttacks = true;
-        if (ability.Data.BlockOtherAbilities) ServerBlockOtherAbilities = true;
-
-        lastUsedTIck.Value = tick;
-        if (ability is not MovementAbility)
+        switch (ability.Data.CooldownType)
         {
-            ability.ServerActivate(tick);
-            ObserverActivate(isPrimary, tick);
+            case CooldownType.Instant:
+                ServerTriggerCooldown(clampedTick, ability);
+                ServerActivateAbility(ability, clampedTick, isPrimary);
+                break;
+            case CooldownType.TogglePending:
+                ToggleAbility(ref ServerVariables, isPrimary);
+                ServerActivateAbility(ability, clampedTick, isPrimary);
+                break;
+            default:
+                break;
         }
     }
     [ObserversRpc]
     private void ObserverActivate(bool isPrimary, uint tick)
     {
-        /*
-        if(isPrimary)
+        if (isPrimary)
         {
             PrimaryQAbility.ObserverActivate(tick);
         }
@@ -131,19 +173,98 @@ public class Weapon : NetworkBehaviour
         {
             SecondaryEAbility.ObserverActivate(tick);
         }
-        */
     }
-    public void OnAbilityComplete(AbilityData data)
+    private bool AbilityCanBeActivated(Ability ability, WeaponNetworkVariables variables, bool isPrimary)
     {
-        if (data.BlockAttacks)
+        if (ability == null) return false;
+        var cooldown = isPrimary ? variables.PrimaryAbility.Cooldown : variables.SecondaryAbility.Cooldown;
+        if (!cooldown.IsReady) return false;
+        if (variables.PrimaryAbility.BlockAbilities) return false;
+        if (variables.SecondaryAbility.BlockAbilities) return false;
+
+        return true;
+    }
+    private void ToggleAbility(ref WeaponNetworkVariables variables, bool isPrimary)
+    {
+        if (isPrimary)
+            variables.PrimaryAbility.PendingEffect = !variables.PrimaryAbility.PendingEffect;
+        else
+            variables.SecondaryAbility.PendingEffect = !variables.SecondaryAbility.PendingEffect;
+    }
+    private void ClientActivateAbility(Ability ability, uint currentTick, bool isPrimary)
+    {
+        bool isMovementAbility = ability is MovementAbility;
+        var abilityVariables = isPrimary ? ClientVariables.PrimaryAbility : ClientVariables.SecondaryAbility;
+
+        if (ability.Data.BlockAttacks) abilityVariables.BlockAttacks = true;
+        if (ability.Data.BlockOtherAbilities) abilityVariables.BlockAbilities = true;
+        if (ability.Data.BlockSwapping) abilityVariables.BlockSwapping = true;
+        if (ability.Data.InterruptAutoAttack) InterruptAttack();
+
+        if (isMovementAbility)
         {
-            ClientBlockAttacks = false;
-            ServerBlockAttacks = false;
+            MovementController.BeginMovementOverride(isPrimary, currentTick);
         }
-        if (data.BlockOtherAbilities)
+        else
         {
-            ClientBlockOtherAbilities = false;
-            ServerBlockOtherAbilities = false;
+            ability.ClientActivate(currentTick);
+        }
+        ServerActivate(isPrimary, currentTick);
+    }
+    private void ServerActivateAbility(Ability ability, uint serverTick, bool isPrimary)
+    {
+        var abilityVariables = isPrimary ? ServerVariables.PrimaryAbility : ServerVariables.SecondaryAbility;
+        if (ability.Data.BlockAttacks) abilityVariables.BlockAttacks = true;
+        if (ability.Data.BlockOtherAbilities) abilityVariables.BlockAbilities = true;
+        if (ability.Data.BlockSwapping) abilityVariables.BlockSwapping = true;
+
+        if (ability is not MovementAbility)
+        {
+            ability.ServerActivate(serverTick);
+            ObserverActivate(isPrimary, serverTick);
+        }
+    }
+
+    public void ClientTriggerCooldown(Ability ability)
+    {
+        if (ability == PrimaryQAbility)
+        {
+            ClientVariables.PrimaryAbility.Cooldown.Start(PrimaryQAbility.Data.Cooldown);
+            ClientVariables.PrimaryAbility.PendingEffect = false;
+        }
+        if (ability == SecondaryEAbility)
+        {
+            ClientVariables.SecondaryAbility.Cooldown.Start(SecondaryEAbility.Data.Cooldown);
+            ClientVariables.SecondaryAbility.PendingEffect = false;
+        }
+    }
+    public void ServerTriggerCooldown(uint startTick, Ability ability)
+    {
+        if (ability == PrimaryQAbility)
+        {
+            ServerVariables.PrimaryAbility.Cooldown.StartAtTick(startTick, PrimaryQAbility.Data.Cooldown);
+            ServerVariables.PrimaryAbility.PendingEffect = false;
+        }
+        if (ability == SecondaryEAbility)
+        {
+            ServerVariables.SecondaryAbility.Cooldown.StartAtTick(startTick, SecondaryEAbility.Data.Cooldown);
+            ServerVariables.SecondaryAbility.PendingEffect = false;
+        }
+    }
+    public void AbilityComplete(Ability ability, bool isServer)
+    {
+        var variables = isServer? ServerVariables : ClientVariables;
+        if (ability == PrimaryQAbility)
+        {
+            variables.PrimaryAbility.BlockAttacks = false;
+            variables.PrimaryAbility.BlockAbilities = false;
+            variables.PrimaryAbility.BlockSwapping = false;
+        }
+        if (ability == SecondaryEAbility)
+        {
+            variables.SecondaryAbility.BlockAttacks = false;
+            variables.SecondaryAbility.BlockAbilities = false;
+            variables.SecondaryAbility.BlockSwapping = false;
         }
     }
 }

@@ -26,7 +26,8 @@ public class PlayerLoadoutModule : NetworkBehaviour
     private Armor Chest;
     private Armor Legs;
 
-    private int CurrentItemIndex;
+    private int ClientCurrentItemIndex;
+    private int ServerCurrentItemIndex;
     private bool Initalized;
     private Dictionary<ItemSlotType, EquippedSlot> ServerLoadout = new();
 
@@ -41,68 +42,71 @@ public class PlayerLoadoutModule : NetworkBehaviour
     [Server]
     public void EquipItem(Item item, ItemSlotType type, int[] materialArray, NetworkConnection conn)
     {
-        Debug.Log("Server Equip");
         NetworkObject itemPrefab = Instantiate(item.EquipPrefab);
         InstanceFinder.ServerManager.Spawn(itemPrefab, conn);
-
         ServerLoadout[type] = new EquippedSlot { Item = itemPrefab, IsEquipped = true };
 
         Weapon weapon = itemPrefab.GetComponent<Weapon>();
-
-        weapon.Initalize(Controller, this, Stats, materialArray);
-
-        bool activateWeapon = (Weapon == null && Pickaxe == null && Axe == null) || CurrentItemIndex == SlotToIndex(type);
-
+        weapon.Initalize(Controller, this, Stats, materialArray, NetworkRole.Server);
         AssignSlot(type, weapon);
 
+        bool activateWeapon = (Weapon == null && Pickaxe == null && Axe == null) || ServerCurrentItemIndex == SlotToIndex(type);
         if (activateWeapon)
         {
-            CurrentItemIndex = SlotToIndex(type);
-            weapon.Activate(true);
+            ServerCurrentItemIndex = SlotToIndex(type);
+            weapon.Activate(NetworkRole.Server);
         }
         else
         {
             itemPrefab.gameObject.SetActive(false);
         }
+
         Target_Equip_RPC(conn, item.ID, itemPrefab, materialArray, type, activateWeapon);
-        Observers_Equip_RPC(itemPrefab, type, activateWeapon);
+        Observers_Equip_RPC(itemPrefab, materialArray, type, activateWeapon);
     }
     [TargetRpc]
-    private void Target_Equip_RPC(NetworkConnection conn, int itemID, NetworkObject obj, int[] materialArray, ItemSlotType slotType, bool activateNow)
+    private void Target_Equip_RPC(NetworkConnection conn, int itemID, NetworkObject obj, int[] materialArray, ItemSlotType slotType, bool activate)
     {
-        Debug.Log("Target Equip");
         SetLayerRecursively(obj.gameObject, LayerMask.NameToLayer("LocalTools"));
 
         Weapon weapon = obj.GetComponent<Weapon>();
-        weapon.Initalize(Controller, this, Stats, materialArray);
+        weapon.Initalize(Controller, this, Stats, materialArray, NetworkRole.Server);
         AssignSlot(slotType, weapon);
         AssignIcon(slotType, itemID);
         obj.transform.SetParent(MainCam.MainHandPos, false);
         obj.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
 
-        if (activateNow)
+        if (activate)
         {
-            CurrentItemIndex = SlotToIndex(slotType);
-            weapon.Activate(false);
+            ClientCurrentItemIndex = SlotToIndex(slotType);
+            weapon.Activate(NetworkRole.Owner);
             SelectItem(slotType);
         }
         else
         {
             obj.gameObject.SetActive(false);
         }
+
     }
-    [ObserversRpc]
-    private void Observers_Equip_RPC(NetworkObject obj, ItemSlotType slotType, bool activateNow)
+    [ObserversRpc(ExcludeOwner = true)]
+    private void Observers_Equip_RPC(NetworkObject obj, int[] materialArray, ItemSlotType slotType, bool activate)
     {
-        Debug.Log("Observer Equip");
-        if (obj.Owner == LocalConnection) return;
         Weapon weapon = obj.GetComponent<Weapon>();
-        weapon.Loadout = this;
+        weapon.Initalize(Controller, this, Stats, materialArray, NetworkRole.Observer);
+        AssignSlot(slotType, weapon);
 
         obj.transform.SetParent(TP_WeaponParent, false);
         obj.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
 
-        obj.gameObject.SetActive(activateNow);
+        if (activate)
+        {
+            ClientCurrentItemIndex = SlotToIndex(slotType);
+            weapon.Activate(NetworkRole.Observer);
+        }
+        else
+        {
+            obj.gameObject.SetActive(false);
+        }
     }
 
     [Server]
@@ -111,8 +115,8 @@ public class PlayerLoadoutModule : NetworkBehaviour
         NetworkObject itemPrefab = ServerLoadout[type].Item;
         Weapon weapon = itemPrefab.GetComponent<Weapon>();
 
-        if (SlotToIndex(type) == CurrentItemIndex)
-            weapon.Deactivate();
+        if (SlotToIndex(type) == ServerCurrentItemIndex)
+            weapon.Deactivate(NetworkRole.Server);
 
         itemPrefab.Despawn();
         ServerLoadout[type] = null;
@@ -125,18 +129,22 @@ public class PlayerLoadoutModule : NetworkBehaviour
     private void Target_UnEquip_RPC(NetworkConnection conn, ItemSlotType slotType)
     {
         RemoveIcon(slotType);
-        if (SlotToIndex(slotType) == CurrentItemIndex)
+        if (SlotToIndex(slotType) == ClientCurrentItemIndex)
         {
             Weapon current = GetSlot(slotType);
-            current?.Deactivate();
+            current.Deactivate(NetworkRole.Owner);
             PlayerUI.UI_PlayerOverlay.SelectItem(-1);
         }
+        AssignSlot(slotType, null);
     }
-    [ObserversRpc]
+    [ObserversRpc(ExcludeOwner = true)]
     private void Observers_UnEquip_RPC(ItemSlotType slotType)
     {
-        if (IsServerInitialized) return;
-
+        if (SlotToIndex(slotType) == ClientCurrentItemIndex)
+        {
+            Weapon current = GetSlot(slotType);
+            current.Deactivate(NetworkRole.Owner);
+        }
         AssignSlot(slotType, null);
     }
 
@@ -156,7 +164,7 @@ public class PlayerLoadoutModule : NetworkBehaviour
 
         if (Attack)
         {
-            if (CurrentItemIndex == 0)
+            if (ClientCurrentItemIndex == 0)
             {
                 if (Weapon != null)
                 {
@@ -165,7 +173,7 @@ public class PlayerLoadoutModule : NetworkBehaviour
                 }
                 return;
             }
-            if (CurrentItemIndex == 1)
+            if (ClientCurrentItemIndex == 1)
             {
                 if (Pickaxe != null)
                 {
@@ -173,7 +181,7 @@ public class PlayerLoadoutModule : NetworkBehaviour
                     return;
                 }
             }
-            if (CurrentItemIndex == 2)
+            if (ClientCurrentItemIndex == 2)
             {
                 if (Axe != null)
                 {
@@ -186,14 +194,13 @@ public class PlayerLoadoutModule : NetworkBehaviour
         bool AttackReleased = Controller.PlayerInput.Player.Attack.WasReleasedThisFrame();
         if (AttackReleased)
         {
-            if (CurrentItemIndex == 0)
+            if (ClientCurrentItemIndex == 0)
             {
                 if (Weapon != null)
                     Weapon.ReleaseRequest();
             }
         }
     }
-
     private void SetAbilityInputs()
     {
         if (Weapon == null) return;
@@ -212,6 +219,10 @@ public class PlayerLoadoutModule : NetworkBehaviour
 
     private void SetWeaponChangeInputs()
     {
+        if (Weapon != null  && ClientCurrentItemIndex == 0)
+        {
+            if (Weapon.ClientVariables.PrimaryAbility.BlockSwapping || Weapon.ClientVariables.SecondaryAbility.BlockSwapping) return;
+        }
         if (Controller.PlayerInput.Player.Option1.WasPressedThisFrame())
         {
             if (Weapon == null) return;
@@ -234,11 +245,11 @@ public class PlayerLoadoutModule : NetworkBehaviour
 
     private void SwapTo(int index)
     {
-        if (index == CurrentItemIndex) return;
+        if (index == ClientCurrentItemIndex) return;
 
-        ShowCurrentWeapon(false);
-        CurrentItemIndex = index;
-        ShowCurrentWeapon(true);
+        ShowCurrentWeapon(NetworkRole.Owner, false);
+        ClientCurrentItemIndex = index;
+        ShowCurrentWeapon(NetworkRole.Owner, true);
 
         Server_SwapWeapon(index);
     }
@@ -246,32 +257,42 @@ public class PlayerLoadoutModule : NetworkBehaviour
     [ServerRpc]
     private void Server_SwapWeapon(int index)
     {
-        if (index == CurrentItemIndex) return;
-        if (GetSlotByIndex(index) == null) return;
+        if (index == ServerCurrentItemIndex) return;
+        if (Weapon != null && ServerCurrentItemIndex == 0)
+        {
+            if (Weapon.ServerVariables.PrimaryAbility.BlockSwapping || Weapon.ServerVariables.SecondaryAbility.BlockSwapping) return;
+        }
 
-        ShowCurrentWeapon(false);
-        CurrentItemIndex = index;
-        ShowCurrentWeapon(true);
+        ShowCurrentWeapon(NetworkRole.Server, false);
+        ServerCurrentItemIndex = index;
+        ShowCurrentWeapon(NetworkRole.Server, true);
+
+        Observer_SwapWeapon(index);
     }
-
-    private void ShowCurrentWeapon(bool enable)
+    [ObserversRpc(ExcludeOwner = true)]
+    private void Observer_SwapWeapon(int index)
     {
-        Weapon current = GetSlotByIndex(CurrentItemIndex);
+        if (index == ClientCurrentItemIndex) return;
+        ShowCurrentWeapon(NetworkRole.Observer, false);
+        ClientCurrentItemIndex = index;
+        ShowCurrentWeapon(NetworkRole.Observer, true);
+    }
+    private void ShowCurrentWeapon(NetworkRole role, bool enable)
+    {
+        Weapon current = GetSlotByIndex(role == NetworkRole.Server ? ServerCurrentItemIndex : ClientCurrentItemIndex);
         if (current == null) return;
-
         current.gameObject.SetActive(enable);
 
         if (enable)
-            current.Activate(false);
+            current.Activate(role);
         else
-            current.Deactivate();
+            current.Deactivate(role);
     }
 
     public void StartWeaponCooldown(Weapon weapon, float cooldown, bool isServer)
     {
         StartCoroutine(AttackCooldownCoroutine(weapon, cooldown, isServer));
     }
-
     private IEnumerator AttackCooldownCoroutine(Weapon weapon, float cooldown, bool isServer)
     {
         yield return new WaitForSecondsRealtime(cooldown);
@@ -281,7 +302,20 @@ public class PlayerLoadoutModule : NetworkBehaviour
             WeaponAnimator.speed = 1;
         }
     }
+    public void StartAbilityCooldown(Weapon weapon, float cooldown, bool isServer)
+    {
+        StartCoroutine(AbilityCooldownCoroutine(weapon, cooldown, isServer));
+    }
 
+    private IEnumerator AbilityCooldownCoroutine(Weapon weapon, float cooldown, bool isServer)
+    {
+        yield return new WaitForSecondsRealtime(cooldown);
+        if (!isServer)
+        {
+            weapon.ClientCanAttack = true;
+            WeaponAnimator.speed = 1;
+        }
+    }
     public void RebindAnimator(string weaponName)
     {
         StartCoroutine(RebindCoroutine(weaponName));

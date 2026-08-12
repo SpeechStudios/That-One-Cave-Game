@@ -20,6 +20,11 @@ public class Registry : MonoBehaviour
     private readonly Dictionary<int, SmeltingRecipe> SmeltingRecipeLookUp = new();
     private int SmeltingRecipeID = 1;
 
+    public List<AbilityData> AbilityDataList;
+    private readonly Dictionary<int, AbilityData> AbilityDataLookUp = new();
+    private int AbilityDataID = 1;
+
+
     public void Init()
     {
         if (Instance != null)
@@ -40,23 +45,25 @@ public class Registry : MonoBehaviour
         {
             if (item == null) continue;
             item.ID = ItemID++;
-            if (!ItemLookUp.TryAdd(item.ID, item))
-                Debug.LogWarning($"[ItemRegistry] Duplicate ID {item.ID} — '{item.Name}' skipped.");
+            ItemLookUp.Add(item.ID, item);
         }
-
         foreach (CraftingRecipe recipe in CraftingRecipeList)
         {
             if (recipe == null) continue;
             recipe.ID = CraftingRecipeID++;
-            if (!CraftingRecipeLookUp.TryAdd(recipe.ID, recipe))
-                Debug.LogWarning($"[ItemRegistry] Duplicate ID {recipe.ID} — '{recipe.CraftedOutcome.ID}' skipped.");
+            CraftingRecipeLookUp.Add(recipe.ID, recipe);
         }
         foreach (SmeltingRecipe recipe in SmeltingRecipeList)
         {
             if (recipe == null) continue;
             recipe.ID = SmeltingRecipeID++;
-            if (!SmeltingRecipeLookUp.TryAdd(recipe.ID, recipe))
-                Debug.LogWarning($"[ItemRegistry] Duplicate ID {recipe.ID} — '{recipe.SmeltingOutcome.Name}' skipped.");
+            SmeltingRecipeLookUp.Add(recipe.ID, recipe);
+        }
+        foreach (AbilityData data in AbilityDataList)
+        {
+            if (data == null) continue;
+            data.ID = AbilityDataID++;
+            AbilityDataLookUp.Add(data.ID, data);
         }
     }
     public static Item GetItem(int id)
@@ -84,14 +91,8 @@ public class Registry : MonoBehaviour
             return null;
         }
 
-        Instance.CraftingRecipeLookUp.TryGetValue(id, out CraftingRecipe recipe);
+        Instance.CraftingRecipeLookUp.TryGetValue(id, out var recipe);
         return recipe;
-    }
-
-    public static bool TryGetCraftingRecipe(int id, out CraftingRecipe recipe)
-    {
-        recipe = GetCraftingRecipe(id);
-        return recipe != null;
     }
 
     public static SmeltingRecipe GetSmeltingRecipe(int id)
@@ -102,13 +103,18 @@ public class Registry : MonoBehaviour
             return null;
         }
 
-        Instance.SmeltingRecipeLookUp.TryGetValue(id, out SmeltingRecipe recipe);
+        Instance.SmeltingRecipeLookUp.TryGetValue(id, out var recipe);
         return recipe;
     }
-
-    public static bool TryGetSmeltingRecipe(int id, out SmeltingRecipe recipe)
+    public static AbilityData GetAbilityData(int id)
     {
-        recipe = GetSmeltingRecipe(id);
-        return recipe != null;
+        if (Instance == null)
+        {
+            Debug.LogError("[ItemRegistry] No instance in scene.");
+            return null;
+        }
+
+        Instance.AbilityDataLookUp.TryGetValue(id, out var data);
+        return data;
     }
 }

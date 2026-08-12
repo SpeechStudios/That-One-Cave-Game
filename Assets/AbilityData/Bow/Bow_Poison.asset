@@ -12,9 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4595ca1c7041880409e602077d9dab2a, type: 3}
   m_Name: Bow_Poison
   m_EditorClassIdentifier: Assembly-CSharp::Bow_BirchHandleData
+  ID: 5
+  CooldownType: 1
   AbilityName: Poison Arrow
   AbilityIcon: {fileID: 0}
   Cooldown: 4
+  InterruptAutoAttack: 0
+  BlockAttacks: 0
+  BlockOtherAbilities: 0
   DamageMultiplierPerTick: 0.2
   TickInterval: 3
   Duration: 15

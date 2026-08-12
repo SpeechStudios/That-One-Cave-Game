@@ -1,6 +1,17 @@
 using UnityEngine;
+public class HitContext
+{
+    public Vector3 HitPoint;
+    public Transform HitEntity;
+    public Transform Source;
+    public float BaseDamage;
+    public float TotalDamage;
+}
+public enum CooldownType { Instant, TogglePending };
 public abstract class AbilityData : ScriptableObject
 {
+    public int ID;
+    public CooldownType CooldownType;
     public string AbilityName;
     public Sprite AbilityIcon;
     public float Cooldown = 4f;
@@ -8,24 +19,18 @@ public abstract class AbilityData : ScriptableObject
     public bool InterruptAutoAttack;
     public bool BlockAttacks;
     public bool BlockOtherAbilities;
+    public bool BlockSwapping;
     public abstract Ability CreateAbility();
+    public virtual void SpawnInitalizeClientVisuals() { }
+    public virtual void OnHitFunction(HitContext ctx, bool isServer) {  }
 }
 public abstract class Ability
 {
     protected Weapon Weapon { get; private set; }
     internal AbilityData Data { get; private set; }
 
-    public event System.Action AbilityComplete;
-    protected void CompleteAbility() => AbilityComplete?.Invoke();
-    public virtual void Initialize(Weapon weapon, AbilityData data) { Weapon = weapon; Data = data; AbilityComplete += () => Weapon.OnAbilityComplete(Data); }
-    public virtual void Deinitialize() { AbilityComplete -= () => Weapon.OnAbilityComplete(Data); }
-    public bool WasOnCooldown;
-    public bool IsOnCooldown(uint lastUsedTick, uint currentTick, float tickDelta)
-    {
-        if (lastUsedTick == 0) return false;
-        float elapsed = (currentTick - lastUsedTick) * tickDelta;
-        return elapsed < Data.Cooldown;
-    }
+    public virtual void Initialize(Weapon weapon, AbilityData data) { Weapon = weapon; Data = data; }
+    public virtual void Deinitialize() { }
     public virtual void ClientActivate(uint tick) { }
     public virtual void ServerActivate(uint tick) { }
     public virtual void ObserverActivate(uint tick) { }
