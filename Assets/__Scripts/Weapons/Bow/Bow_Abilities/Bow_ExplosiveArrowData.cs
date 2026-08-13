@@ -11,7 +11,6 @@ public class Bow_ExplosiveArrowData : AbilityData
     public override Ability CreateAbility() => new Bow_ExplosiveArrow();
     public override void OnHitFunction(HitContext ctx, bool isServer)
     {
-        Debug.Log("On Hit Triggered");
         if(!isServer)
         {
             if (ExplosionEffectPrefab != null)

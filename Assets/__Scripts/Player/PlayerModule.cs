@@ -38,13 +38,14 @@ public class PlayerModule : NetworkBehaviour
     }
     public void ClientInit()
     {
+        Stats.AllInit();
         if (!IsOwner)
         {
             enabled = false;
             return;
         }
-        CameraFollow.ClientInit();
         Stats.ClientInit();
+        CameraFollow.ClientInit();
         Stats.HealthBar.SetActive(false);
         Controller.enabled = true;
         DragGhost.enabled = true;

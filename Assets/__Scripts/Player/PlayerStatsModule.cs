@@ -39,6 +39,7 @@ public class PlayerStatsModule : NetworkBehaviour, IDamageable
     private float HealthBarActiveTimer;
     private Camera MainCam;
 
+    private float PredictedHealth;
     private readonly HealthState ServerState = new();
     private readonly SyncVar<float> SyncedHealth = new();
     private readonly SyncVar<float> SyncedMaxHealth = new();
@@ -67,10 +68,14 @@ public class PlayerStatsModule : NetworkBehaviour, IDamageable
         ServerState.Init(BaseHealth);
         PushServerStateToSync();
     }
+    public void AllInit()
+    {
+        PlayerUI = PlayerUIManager.Instance;
+        PredictedHealth = BaseHealth;
+    }
     public void ClientInit()
     {
         MainCam = Camera.main;
-        PlayerUI = PlayerUIManager.Instance;
         PlayerUI.UI_Stats.Bind(this);
         SyncedHealth.OnChange += OnSyncedHealthChanged;
         SyncedMaxHealth.OnChange += OnAnyStatChanged;
@@ -94,14 +99,18 @@ public class PlayerStatsModule : NetworkBehaviour, IDamageable
 
     public void TakeDamage(float damage, bool isServer)
     {
+        damage = Mathf.Round(damage);
+
         if (isServer)
         {
             ServerState.TakeDamage(damage);
             PushServerStateToSync();
+            Debug.Log("Damage Taken On Server:" + damage + " Remaining Health = " + SyncedHealth.Value);
         }
         else
         {
             ShowTPHealthBar(damage);
+            Debug.Log("Damage Taken On Client:" + damage + " Remaining Health = " + SyncedHealth.Value);
         }
     }
     public void TakeDamageOverTime(DamageOverTimeProperties properties, bool isServer)
@@ -120,7 +129,7 @@ public class PlayerStatsModule : NetworkBehaviour, IDamageable
         }
         else
         {
-            ShowTPHealthBar();
+            ShowTPHealthBar(-value);
         }
     }
     public void IncreaseMaxHealth(float health, bool isServer)
@@ -189,28 +198,30 @@ public class PlayerStatsModule : NetworkBehaviour, IDamageable
     private void OnAnyStatChanged(GearBonuses prev, GearBonuses next, bool asServer) => PlayerUI.UI_Stats.UpdateStats();
     private void OnSyncedHealthChanged(float prev, float next, bool asServer)
     {
-        if (!IsClientInitialized)
-            return;
+        if (!IsClientInitialized) return;
 
+        PredictedHealth = next;
+        Debug.Log(PredictedHealth);
         PlayerUI.UI_PlayerOverlay.UpdateHealth(next, SyncedMaxHealth.Value);
-
         UpdateHealthBar();
-        if (next < prev)
+        if (next != prev)
             ShowTPHealthBar();
     }
     private void ShowTPHealthBar(float predictedDamage = 0f)
     {
         if (HealthBar == null) return;
-        UpdateHealthBar(predictedDamage);
+        if (predictedDamage > 0f)
+            PredictedHealth = Mathf.Max(0f, PredictedHealth - predictedDamage);
+
+        UpdateHealthBar();
         HealthBarActiveTimer = HealthBarActiveDuration;
         HealthBar.SetActive(true);
     }
-    private void UpdateHealthBar(float predictedDamage = 0f)
+    private void UpdateHealthBar()
     {
         if (HealthBar == null) return;
-        float max = SyncedMaxHealth.Value;
-        float predictedHealth = Mathf.Max(0f, SyncedHealth.Value - predictedDamage);
-        float ratio = max > 0 ? predictedHealth / max : 0f;
+        float ratio = PredictedHealth / SyncedMaxHealth.Value;
+        Debug.Log($"Ratio = {ratio}, PredictedHealth = {PredictedHealth}, SyncedMaxeHealth = {SyncedMaxHealth.Value}");
         HealthBarPivot.localScale = new Vector3(ratio, HealthBarPivot.localScale.y, HealthBarPivot.localScale.z);
     }
     void LateUpdate()

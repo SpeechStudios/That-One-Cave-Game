@@ -1,9 +1,7 @@
 ﻿using FishNet.Object;
 using FishNet.Object.Prediction;
 using FishNet.Transporting;
-using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.InputSystem.XR;
 
 
 [RequireComponent(typeof(CharacterController))]
@@ -309,6 +307,7 @@ public class PlayerControllerModule : NetworkBehaviour, IMoveable
         transform.rotation = Quaternion.Euler(0f, TransformLookDelta.x, 0f);
         var XRot = Quaternion.Euler(TransformLookDelta.y, 0f, 0f);
         LoadoutModule.TP_BowFirePoint.transform.localRotation = XRot;
+        if(!IsOwner)
         LoadoutModule.FPCam.ServerFirePoint.transform.localRotation = XRot;
     }
     private void UpdatePosition(Vector2 moveInput, Vector3 knockbackVelocity, bool jump, float dt)

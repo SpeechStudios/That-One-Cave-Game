@@ -477,7 +477,6 @@ MonoBehaviour:
   - {fileID: 8452158226212797364}
   - {fileID: 7845242055680241866}
   - {fileID: -2755357968838943836}
-  - {fileID: 0}
   - {fileID: 365019382439060280}
   InitializedParentNetworkBehaviour: {fileID: 0}
   InitializedNestedNetworkObjects: []
@@ -489,7 +488,7 @@ MonoBehaviour:
   _initializeOrder: 0
   _preventDespawnOnDisconnect: 0
   _defaultDespawnType: 0
-  _initializedTimestamp: -8584154928785336091
+  _initializedTimestamp: -8584149763845680636
 --- !u!114 &1364280588342638064
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1054,7 +1053,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 453481867b26f7c43b5bf38802a5f50e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FishNet.Runtime::FishNet.Component.Transforming.Beta.NetworkTickSmoother
-  _componentIndexCache: 10
+  _componentIndexCache: 9
   _addedNetworkObject: {fileID: 3544688354330196895}
   _networkObjectCache: {fileID: 3544688354330196895}
   _initializationSettings:
