@@ -239,7 +239,7 @@ GameObject:
   - component: {fileID: 5117373193136170569}
   - component: {fileID: 7849789124449014584}
   m_Layer: 5
-  m_Name: Player HealthBar
+  m_Name: Health Bar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -254,16 +254,16 @@ RectTransform:
   m_GameObject: {fileID: 1528972469701969897}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 2.5, y: 2.5, z: 2.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 901127657233967036}
   - {fileID: 3396258125207674517}
-  m_Father: {fileID: 4035375698883825403}
+  m_Father: {fileID: 8207866396890748798}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 6.2}
+  m_AnchoredPosition: {x: 0, y: 1.4799995}
   m_SizeDelta: {x: 1.5, y: 0.16}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &3458878826781663569
@@ -532,6 +532,7 @@ MonoBehaviour:
   Loadout: {fileID: 4610964589504088332}
   Stats: {fileID: -3166358744567229087}
   CameraFollow: {fileID: 8233965153065095199}
+  ThirdPersonHealthBar: {fileID: 6131222591928467619}
 --- !u!114 &8233965153065095199
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -626,9 +627,16 @@ MonoBehaviour:
   _networkObjectCache: {fileID: 3544688354330196895}
   BaseHealth: 100
   BaseMoveSpeed: 8.5
-  HealthBar: {fileID: 1528972469701969897}
-  HealthBarPivot: {fileID: 3396258125207674517}
-  HealthBarActiveDuration: 5
+  BaseCritChance: 5
+  BaseCritDamage: 50
+  DamageMult: 0.04
+  AttackSpeedMult: 0.005
+  CritChanceMult: 0.05
+  CritDamageMult: 2.5
+  ArmorMult: 1
+  HealthMult: 5
+  MovementSpeedMult: 0.03
+  TP_HealthBar: {fileID: 6131222591928467619}
 --- !u!114 &7004708982079632913
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -911,6 +919,54 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1602284043965831096}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8175011179028515644
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8207866396890748798}
+  - component: {fileID: 6131222591928467619}
+  m_Layer: 0
+  m_Name: Player HealthBar
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8207866396890748798
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8175011179028515644}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 2.5, z: 0}
+  m_LocalScale: {x: 2.5, y: 2.5, z: 2.5}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 4765181906405798374}
+  m_Father: {fileID: 4035375698883825403}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6131222591928467619
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8175011179028515644}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a86a85227548efa47a839592d8718287, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThirdPersonHealthBar
+  Controller: {fileID: 2480432547822470069}
+  HealthBar: {fileID: 1528972469701969897}
+  HealthBarPivot: {fileID: 3396258125207674517}
 --- !u!1 &8879005685997130557
 GameObject:
   m_ObjectHideFlags: 0
@@ -1027,7 +1083,7 @@ PrefabInstance:
       addedObject: {fileID: 7498997418411413231}
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 16ad680ebc370b94886d9b4b41aceda5, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 4765181906405798374}
+      addedObject: {fileID: 8207866396890748798}
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 16ad680ebc370b94886d9b4b41aceda5, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8682809256073907498}

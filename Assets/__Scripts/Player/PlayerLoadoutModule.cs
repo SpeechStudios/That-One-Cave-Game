@@ -54,7 +54,9 @@ public class PlayerLoadoutModule : NetworkBehaviour
         if (activateWeapon)
         {
             ServerCurrentItemIndex = SlotToIndex(type);
+            Debug.Log("Activating Server Now");
             weapon.Activate(NetworkRole.Server);
+
         }
         else
         {

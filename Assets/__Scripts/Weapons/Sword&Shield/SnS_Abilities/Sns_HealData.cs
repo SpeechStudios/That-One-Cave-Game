@@ -20,12 +20,12 @@ public class SnS_Heal : Ability
 
     public override void ClientActivate(uint tick)
     {
-        Weapon.Loadout.GetComponent<IDamageable>().Heal(SwordAndShield.Stats.GetDamage() * HealData.HealPercentage, isServer:false);
+      //VFX
     }
 
     public override void ServerActivate(uint tick)
     {
-        Weapon.Loadout.GetComponent<IDamageable>().Heal(SwordAndShield.Stats.GetDamage() * HealData.HealPercentage, isServer: true);
+        Weapon.Loadout.GetComponent<IDamageable>().Heal(SwordAndShield.Stats.GetDamage() * HealData.HealPercentage);
     }
 
     public override void ObserverActivate(uint tick) { }

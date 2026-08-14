@@ -27,7 +27,6 @@ public class Pickaxe : Weapon
         {
             TotalWeaponAttackSpeed = 1f;
             TotalWeaponDamage = 5;
-            Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed);
             return;
         }
 
@@ -65,13 +64,13 @@ public class Pickaxe : Weapon
             TotalWeaponAttackSpeed -= TotalWeaponAttackSpeed / 2 * Resiliance;
         }
     }
-    public override void GainStats()
+    public override void GainStats(bool isServer)
     {  
-        Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed);
+        Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed, isServer);
     }
-    public override void RemoveStats()
+    public override void RemoveStats(bool isServer)
     {
-        Stats.SetWeaponContribution(0, 0);
+        Stats.SetWeaponContribution(0, 0, isServer);
     }
 
     public override void AttackRequest()
@@ -79,12 +78,12 @@ public class Pickaxe : Weapon
         if (!ClientCanAttack)
             return;
         ClientCanAttack = false;
-        Loadout.WeaponAnimator.speed = 1 / Stats.GetAttackSpeed();
+        Loadout.WeaponAnimator.speed = 1 / Stats.ClientValues.AttackSpeed;
         Loadout.WeaponAnimator.SetTrigger("Attack");
 
         Vector3 Origin = transform.position + transform.forward * HitDistance;
         ShapeHitDetection.TriggerSphere(Origin, HitDelay, HitRadius, isServer: false, clientCallback: (Obj, Point) => ClientHit(Obj, Point));
-        Loadout.StartWeaponCooldown(this, Stats.GetAttackSpeed() + 0.05f, isServer: false);
+        Loadout.StartWeaponCooldown(this, Stats.ClientValues.AttackSpeed + 0.05f, isServer: false);
 
         Server_Attack_RPC();
     }
@@ -93,13 +92,13 @@ public class Pickaxe : Weapon
     public void Server_Attack_RPC()
     {
         float Now = TimeManager.Tick * (float)TimeManager.TickDelta;
-        if (Now - LastAttackTime < Stats.GetAttackSpeed() - AttackTolerance)
+        if (Now - LastAttackTime < Stats.ServerValues.AttackSpeed - AttackTolerance)
             return;
         LastAttackTime = Now;
 
         Vector3 Origin = transform.position + transform.forward * HitDistance;
         ShapeHitDetection.TriggerSphere(Origin, HitDelay, HitRadius, isServer: true, serverCallback: (Obj) => ServerHit(Obj));
-        Loadout.StartWeaponCooldown(this, Stats.GetAttackSpeed() + 0.05f, isServer: true);
+        Loadout.StartWeaponCooldown(this, Stats.ClientValues.AttackSpeed + 0.05f, isServer: true);
 
         Observer_Attack_RPC();
     }
@@ -112,12 +111,12 @@ public class Pickaxe : Weapon
     public void ClientHit(GameObject obj, Vector3 hitPos)
     {
         var Damageable = obj.GetComponent<OreNode>();
-        Damageable.TakeDamage(Stats.GetDamage(), MiningLevel, false);
+        Damageable.TakeDamage(Stats.ClientValues.Damage, MiningLevel, false);
     }
 
     public void ServerHit(GameObject obj)
     {
         var Damageable = obj.GetComponent<OreNode>();
-        Damageable.TakeDamage(Stats.GetDamage(), MiningLevel, true);
+        Damageable.TakeDamage(Stats.ServerValues.Damage, MiningLevel, true);
     }
 }

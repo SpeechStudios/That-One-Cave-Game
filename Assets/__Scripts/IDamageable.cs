@@ -4,11 +4,9 @@ using System;
 
 public interface IDamageable
 {
-    void TakeDamage(float damage, bool isServer);
-    void TakeDamageOverTime(DamageOverTimeProperties properties, bool isServer) { }
-    void Heal(float health, bool isServer) { }
-    void GainTempHealth(float armor, float capacity, string source, bool isServer) { }
-
+    void TakeDamage(float damage);
+    void TakeDamageOverTime(DamageOverTimeProperties properties) { }
+    void Heal(float health) { }
 }
 public class DamageOverTimeProperties
 {
@@ -23,8 +21,8 @@ public class DamageOverTimeProperties
 }
 public class HealthState
 {
-    public float MaxHealth { get; private set; }
-    public float Health { get; private set; }
+    public float MaxValue;
+    public float Value;
 
     public event Action OnHealthChanged;
     private readonly List<DotInstance> Dots = new();
@@ -42,27 +40,27 @@ public class HealthState
 
     public void Init(float startingHealth)
     {
-        MaxHealth = startingHealth;
-        Health = startingHealth;
+        MaxValue = startingHealth;
+        Value = startingHealth;
     }
 
     public void IncreaseMaxHealth(float amount)
     {
-        if (Health == MaxHealth)
-            Health += amount;
-        MaxHealth += amount;
+        if (Value == MaxValue)
+            Value += amount;
+        MaxValue += amount;
         OnHealthChanged?.Invoke();
     }
 
     public void TakeDamage(float damage)
     {
-        Health = Mathf.Max(0f, Health - damage);
+        Value = Mathf.Max(0f, Value - damage);
         OnHealthChanged?.Invoke();
     }
 
     public void Heal(float amount)
     {
-        Health = Mathf.Min(MaxHealth, Health + amount);
+        Value = Mathf.Min(MaxValue, Value + amount);
         OnHealthChanged?.Invoke();
     }
 

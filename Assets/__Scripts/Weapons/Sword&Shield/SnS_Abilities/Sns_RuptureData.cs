@@ -42,27 +42,13 @@ public class Sns_Rupture : Ability
 
     private void ClientApplyDamage(GameObject target, Vector3 point)
     {
-        if (target.TryGetComponent<IDamageable>(out var damageable))
-        {
-            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * RuptureData.DamagePercentage, false);
-            DamageOverTimeProperties properties = new()
-            {
-                Damage = SwordAndShield.Stats.GetDamage() * RuptureData.DamagePercentage,
-                Interval = RuptureData.DamageInterval,
-                Duration = RuptureData.DamageDuration,
-                EffectId = RuptureData.AbilityName,
-                SourceId = Weapon.ObjectId,
-                RefreshAllDotDurations = true,
-                MaxStacks = RuptureData.MaxStacks
-            };
-            damageable.TakeDamageOverTime(properties, isServer: false);
-        }
+        //VFX
     }
     private void ServerApplyDamage(GameObject target)
     {
         if (target.TryGetComponent<IDamageable>(out var damageable))
         {
-            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * RuptureData.DamagePercentage, true);
+            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * RuptureData.DamagePercentage);
             DamageOverTimeProperties properties = new()
             {
                 Damage = SwordAndShield.Stats.GetDamage() * RuptureData.DamagePercentage,
@@ -73,8 +59,7 @@ public class Sns_Rupture : Ability
                 RefreshAllDotDurations = true,
                 MaxStacks = RuptureData.MaxStacks
             };
-            damageable.TakeDamageOverTime(properties, isServer: true);
+            damageable.TakeDamageOverTime(properties);
         }
-
     }
 }

@@ -11,6 +11,7 @@ public class PlayerModule : NetworkBehaviour
     public PlayerLoadoutModule Loadout;
     public PlayerStatsModule Stats;
     public CamFollowPlayer CameraFollow;
+    public ThirdPersonHealthBar ThirdPersonHealthBar;
     public override void OnStartServer()
     {
         base.OnStartServer();
@@ -38,7 +39,8 @@ public class PlayerModule : NetworkBehaviour
     }
     public void ClientInit()
     {
-        Stats.AllInit();
+        ThirdPersonHealthBar.Init();
+
         if (!IsOwner)
         {
             enabled = false;
@@ -46,7 +48,6 @@ public class PlayerModule : NetworkBehaviour
         }
         Stats.ClientInit();
         CameraFollow.ClientInit();
-        Stats.HealthBar.SetActive(false);
         Controller.enabled = true;
         DragGhost.enabled = true;
         Inventory.enabled = true;

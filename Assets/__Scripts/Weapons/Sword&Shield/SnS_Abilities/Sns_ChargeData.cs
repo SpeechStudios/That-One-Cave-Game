@@ -52,17 +52,12 @@ public class SnS_Charge : MovementAbility
         if (HitTarget == null) return;
         if (HitTarget.TryGetComponent<IDamageable>(out var damageable))
         {
-            damageable.TakeDamage(Weapon.Stats.GetDamage() * ChargeData.ChargeDamagePercentage, true);
+            damageable.TakeDamage(Weapon.Stats.GetDamage() * ChargeData.ChargeDamagePercentage);
         }
     }
     public override void ClientOnMovementComplete(PlayerControllerModule controller)
     {
         Weapon.AbilityComplete(this, false);
-        if (HitTarget == null) return;
-        if (HitTarget.TryGetComponent<IDamageable>(out var damageable))
-        {
-            damageable.TakeDamage(Weapon.Stats.GetDamage() * ChargeData.ChargeDamagePercentage, false);
-        }
     }
     private GameObject CheckCollisionAhead(PlayerControllerModule controller, Vector3 direction, float distance)
     {

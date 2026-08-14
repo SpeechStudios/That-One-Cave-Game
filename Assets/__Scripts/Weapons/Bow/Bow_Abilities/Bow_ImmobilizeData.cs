@@ -18,7 +18,7 @@ public class Bow_ImmobilizeData: AbilityData
         }
         if (ctx.HitEntity.TryGetComponent<IDamageable>(out var damageable))
         {
-            damageable.TakeDamage(ctx.TotalDamage * DamageMultiplier, isServer);
+            damageable.TakeDamage(ctx.TotalDamage * DamageMultiplier);
         }
 
         if (ctx.HitEntity.TryGetComponent<IMoveable>(out var moveable))

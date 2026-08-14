@@ -1,57 +1,97 @@
+using FishNet.Connection;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
+using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Text;
 using UnityEngine;
 
 [System.Serializable]
-public struct GearBonuses
+public class GearStatValues
 {
-    public float HPPercent;
-    public float ARMPercent;
-    public int DMGBonus;
-    public float DMGPercent;
-    public float MSPercent;
-    public float ATSPercent;
-
-    public static GearBonuses operator +(GearBonuses a, GearBonuses b)
-    {
-        return new GearBonuses
-        {
-            HPPercent = a.HPPercent + b.HPPercent,
-            ARMPercent = a.ARMPercent + b.ARMPercent,
-            DMGBonus = a.DMGBonus + b.DMGBonus,
-            DMGPercent = a.DMGPercent + b.DMGPercent,
-            MSPercent = a.MSPercent + b.MSPercent,
-            ATSPercent = a.ATSPercent + b.ATSPercent,
-        };
-    }
+    public int Damage;
+    public int CritChance;
+    public int CritDamage;
+    public int Armor;
+    public int Health;
+    public int MovementSpeed;
+    public int AttackSpeed;
+}
+public class Stats
+{
+    public int Damage;
+    public int AttackSpeed;
+    public int CritChance;
+    public int CritDamage;
+    public int Armor;
+    public int Health;
+    public int MovementSpeed;
+}
+public class StatValues
+{
+    public float Damage;
+    public float AttackSpeed;
+    public float CritChance;
+    public float CritDamage;
+    public float Armor;
+    public HealthState Health;
+}
+public class WeaponValues
+{
+    public float Damage;
+    public float AttackSpeed;
+}
+public class StatPacket
+{
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public float Damage;
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public float CritChance;
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public float CritDamage;
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public float Armor;
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public HealthState Health;
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public float AttackSpeed;
 }
 
 public class PlayerStatsModule : NetworkBehaviour, IDamageable
 {
-    public float BaseHealth;
-    public float BaseMoveSpeed;
+    public float BaseHealth = 100f;
+    public float BaseMoveSpeed = 8.5f;
+    public float BaseCritChance = 5f;
+    public float BaseCritDamage = 50f;
 
-    [Header("Third Person Health Bar")]
-    public GameObject HealthBar;
-    public Transform HealthBarPivot;
-    public float HealthBarActiveDuration;
-    private float HealthBarActiveTimer;
-    private Camera MainCam;
+    [Header("StatValue Multipliers")]
+    public float DamageMult = 0.04f;
+    public float AttackSpeedMult = 0.005f;
+    public float CritChanceMult = 0.05f;
+    public float CritDamageMult = 2.5f;
+    public float ArmorMult = 1;
+    public float HealthMult = 5;
+    public float MovementSpeedMult = 0.03f;
 
-    private float PredictedHealth;
-    private readonly HealthState ServerState = new();
-    private readonly SyncVar<float> SyncedHealth = new();
-    private readonly SyncVar<float> SyncedMaxHealth = new();
-    private readonly SyncVar<int> SyncedDamage = new(new SyncTypeSettings(WritePermission.ServerOnly, ReadPermission.OwnerOnly));
-    private readonly SyncVar<float> SyncedAttackSpeed = new(new SyncTypeSettings(WritePermission.ServerOnly, ReadPermission.OwnerOnly));
-    private readonly SyncVar<int> SyncedArmor = new(new SyncTypeSettings(WritePermission.ServerOnly, ReadPermission.OwnerOnly));
+    internal Stats ServerStats = new();
+    internal StatValues ServerValues = new();
+    internal WeaponValues ServerWeaponValues = new();
+
+    internal Stats ClientStats = new();
+    internal StatValues ClientValues = new();
+    internal WeaponValues ClientWeaponValues = new();
+
+    private readonly SyncVar<float> MoveSpeed = new SyncVar<float>();
 
 
-    private readonly SyncVar<GearBonuses> SyncedGearBonuses = new(new SyncTypeSettings(WritePermission.ServerOnly, ReadPermission.OwnerOnly));
-    private readonly Dictionary<string, GearBonuses> GearSources = new();
+    private Dictionary<string, GearStatValues> ServerGearSources = new();
+    private Dictionary<string, GearStatValues> ClientGearSources = new();
+
     private PlayerUIManager PlayerUI;
-
+    public ThirdPersonHealthBar TP_HealthBar;
+    internal float GetMoveSpeed() => MoveSpeed.Value;
+    internal float GetDamage()
+    {
+        float damage = ServerValues.Damage;
+        bool isCrit = ServerValues.CritChance > Random.Range(0, 100);
+        if (isCrit) damage *= 1 + (1 * ServerValues.CritDamage);
+        return damage;
+    }
     #region Initalize
     public override void OnStartServer()
     {
@@ -63,177 +103,119 @@ public class PlayerStatsModule : NetworkBehaviour, IDamageable
         base.OnStopServer();
         TimeManager.OnTick -= TimeManager_OnTick;
     }
-    public void ServerInit()
-    {
-        ServerState.Init(BaseHealth);
-        PushServerStateToSync();
-    }
-    public void AllInit()
-    {
-        PlayerUI = PlayerUIManager.Instance;
-        PredictedHealth = BaseHealth;
-    }
-    public void ClientInit()
-    {
-        MainCam = Camera.main;
-        PlayerUI.UI_Stats.Bind(this);
-        SyncedHealth.OnChange += OnSyncedHealthChanged;
-        SyncedMaxHealth.OnChange += OnAnyStatChanged;
-        SyncedDamage.OnChange += OnAnyStatChanged;
-        SyncedAttackSpeed.OnChange += OnAnyStatChanged;
-        SyncedArmor.OnChange += OnAnyStatChanged;
-        SyncedGearBonuses.OnChange += OnAnyStatChanged;
-    }
-    #endregion
-
-    public float GetMaxHealth() => SyncedMaxHealth.Value + (SyncedMaxHealth.Value / 100 * SyncedGearBonuses.Value.HPPercent);
-    public float GetHealth() => SyncedHealth.Value;
-    public float GetArmor() => SyncedArmor.Value + (SyncedArmor.Value / 100 * SyncedGearBonuses.Value.ARMPercent);
-    public float GetDamage()
-    {
-        float baseDamage = SyncedDamage.Value + SyncedGearBonuses.Value.DMGBonus;
-        return baseDamage + (baseDamage / 100 * SyncedGearBonuses.Value.DMGPercent);
-    }
-    public float GetAttackSpeed() => SyncedAttackSpeed.Value - (SyncedAttackSpeed.Value / 100 * SyncedGearBonuses.Value.ATSPercent);
-    public float GetMoveSpeed() => BaseMoveSpeed + (BaseMoveSpeed / 100 * SyncedGearBonuses.Value.MSPercent);
-
-    public void TakeDamage(float damage, bool isServer)
-    {
-        damage = Mathf.Round(damage);
-
-        if (isServer)
-        {
-            ServerState.TakeDamage(damage);
-            PushServerStateToSync();
-            Debug.Log("Damage Taken On Server:" + damage + " Remaining Health = " + SyncedHealth.Value);
-        }
-        else
-        {
-            ShowTPHealthBar(damage);
-            Debug.Log("Damage Taken On Client:" + damage + " Remaining Health = " + SyncedHealth.Value);
-        }
-    }
-    public void TakeDamageOverTime(DamageOverTimeProperties properties, bool isServer)
-    {
-        if (isServer)
-        {
-            ServerState.ApplyDot(properties);
-        }
-    }
-    public void Heal(float value, bool isServer)
-    {
-        if (isServer)
-        {
-            ServerState.Heal(value);
-            PushServerStateToSync();
-        }
-        else
-        {
-            ShowTPHealthBar(-value);
-        }
-    }
-    public void IncreaseMaxHealth(float health, bool isServer)
-    {
-        if (isServer)
-        {
-            ServerState.IncreaseMaxHealth(health);
-            PushServerStateToSync();
-        }
-    }
-    public void GainTempHealth(float armor, float capacity, string source, bool isServer)
-    {
-
-    }
-    public void SetWeaponContribution(int weaponDamage, float weaponAttackSpeed)
-    {
-        if (!IsServerInitialized) return;
-        SyncedDamage.Value = weaponDamage;
-        SyncedAttackSpeed.Value = weaponAttackSpeed;
-    }
-
-    public void GainArmor(int value)
-    {
-        if (!IsServerInitialized) return;
-        SyncedArmor.Value += value;
-    }
-
-    public void SetGearSource(string sourceId, GearBonuses bonuses)
-    {
-        if (!IsServerInitialized) return;
-        GearSources[sourceId] = bonuses;
-        RecalculateGearBonuses();
-    }
-    public void RemoveGearSource(string sourceId)
-    {
-        if (!IsServerInitialized) return;
-        if (GearSources.Remove(sourceId))
-            RecalculateGearBonuses();
-    }
-
-    private void RecalculateGearBonuses()
-    {
-        GearBonuses total = default;
-        foreach (var bonuses in GearSources.Values)
-            total += bonuses;
-
-        SyncedGearBonuses.Value = total;
-    }
-
-
     private void TimeManager_OnTick()
     {
         float tickDelta = (float)TimeManager.TickDelta;
-        float before = ServerState.Health;
-        ServerState.TickDots(tickDelta);
-        if (ServerState.Health != before)
-            PushServerStateToSync();
-    }
-    private void PushServerStateToSync()
-    {
-        SyncedHealth.Value = ServerState.Health;
-        SyncedMaxHealth.Value = ServerState.MaxHealth;
-    }
-    private void OnAnyStatChanged(float prev, float next, bool asServer) => PlayerUI.UI_Stats.UpdateStats();
-    private void OnAnyStatChanged(int prev, int next, bool asServer) => PlayerUI.UI_Stats.UpdateStats();
-    private void OnAnyStatChanged(GearBonuses prev, GearBonuses next, bool asServer) => PlayerUI.UI_Stats.UpdateStats();
-    private void OnSyncedHealthChanged(float prev, float next, bool asServer)
-    {
-        if (!IsClientInitialized) return;
+        ServerValues.Health.TickDots(tickDelta);
 
-        PredictedHealth = next;
-        Debug.Log(PredictedHealth);
-        PlayerUI.UI_PlayerOverlay.UpdateHealth(next, SyncedMaxHealth.Value);
-        UpdateHealthBar();
-        if (next != prev)
-            ShowTPHealthBar();
     }
-    private void ShowTPHealthBar(float predictedDamage = 0f)
+    public void ServerInit()
     {
-        if (HealthBar == null) return;
-        if (predictedDamage > 0f)
-            PredictedHealth = Mathf.Max(0f, PredictedHealth - predictedDamage);
-
-        UpdateHealthBar();
-        HealthBarActiveTimer = HealthBarActiveDuration;
-        HealthBar.SetActive(true);
+        ServerValues.Health = new();
+        ServerValues.Health.Init(BaseHealth);
+        MoveSpeed.Value = BaseMoveSpeed;
+        ServerValues.CritChance = BaseCritChance;
+        ServerValues.CritDamage = BaseCritDamage;
+        ServerValues.Health.OnHealthChanged += () =>
+        {
+            var packet = SerializePacket(new StatPacket { Health = ServerValues.Health });
+            TargetSync(Owner, packet);
+            ObserverSync(Mathf.Round(ServerValues.Health.Value / ServerValues.Health.MaxValue * 100f) / 100f);
+        };
     }
-    private void UpdateHealthBar()
+    public void ClientInit()
     {
-        if (HealthBar == null) return;
-        float ratio = PredictedHealth / SyncedMaxHealth.Value;
-        Debug.Log($"Ratio = {ratio}, PredictedHealth = {PredictedHealth}, SyncedMaxeHealth = {SyncedMaxHealth.Value}");
-        HealthBarPivot.localScale = new Vector3(ratio, HealthBarPivot.localScale.y, HealthBarPivot.localScale.z);
+        PlayerUI = PlayerUIManager.Instance;
+        ClientValues.Health = new();
+        ClientValues.Health.Init(BaseHealth);
+        ClientValues.CritChance = BaseCritChance;
+        ClientValues.CritDamage = BaseCritDamage;
+        PlayerUI.UI_Stats.Bind(this);
     }
-    void LateUpdate()
+    #endregion
+
+    [Server]
+    public void TakeDamage(float damage)
     {
-        if (HealthBar == null) return;
-        if (!HealthBar.activeInHierarchy) return;
+        Debug.Log("Dealing Damage" + damage);
+        damage = Mathf.Round(damage);
+        ServerValues.Health.TakeDamage(damage);
+        var packet = SerializePacket(new StatPacket { Health = ServerValues.Health });
+        TargetSync(Owner, packet);
+        ObserverSync(Mathf.Round(ServerValues.Health.Value / ServerValues.Health.MaxValue * 100f) / 100f);
+    }
+    [Server]
+    public void TakeDamageOverTime(DamageOverTimeProperties properties)
+    {
+        ServerValues.Health.ApplyDot(properties);
+    }
+    [Server]
+    public void Heal(float value)
+    {
+        ServerValues.Health.Heal(value);
+        var packet = SerializePacket(new StatPacket { Health = ServerValues.Health });
+        TargetSync(Owner, packet);
+        ObserverSync(Mathf.Round(ServerValues.Health.Value / ServerValues.Health.MaxValue * 100f) / 100f);
+    }
 
-        float camY = MainCam != null ? MainCam.transform.eulerAngles.y : 0f;
-        //HealthBar.transform.rotation = Quaternion.Euler(0f, camY, 0f);
+    public void SetWeaponContribution(int weaponDamage, float weaponAttackSpeed, bool isServer)
+    {
+        var weaponValues = isServer ? ServerWeaponValues : ClientWeaponValues;
+        weaponValues.Damage = weaponDamage;
+        weaponValues.AttackSpeed = weaponAttackSpeed;
+        Debug.Log("Setting Weapon Damage = " + ServerWeaponValues.Damage + " Is Server = " + isServer + " Damage To Set = " + weaponDamage);
+        RecalculateStats(isServer);
+    }
+    public void AddGear(string sourceId, GearStatValues bonuses, bool isServer)
+    {
+        var gearSources = isServer ? ServerGearSources : ClientGearSources;
+        gearSources[sourceId] = bonuses;
+        RecalculateStats(isServer);
+    }
+    public void RemoveGear(string sourceId, bool isServer)
+    {
+        var gearSources = isServer ? ServerGearSources : ClientGearSources;
+        if (gearSources.Remove(sourceId))
+            RecalculateStats(isServer);
+    }
+    private void RecalculateStats(bool isServer)
+    {
+        var Stats = isServer ? ServerStats : ClientStats;
+        var StatValues = isServer ? ServerValues : ClientValues;
+        var WeaponStats = isServer ? ServerWeaponValues : ClientWeaponValues;
 
-        HealthBarActiveTimer -= Time.deltaTime;
-        if (HealthBarActiveTimer <= 0)
-            HealthBar.SetActive(false);
+        StatValues.Damage = WeaponStats.Damage * (1 + (Stats.Damage * DamageMult));
+        StatValues.AttackSpeed = Mathf.Max(WeaponStats.AttackSpeed * (1 - (Stats.AttackSpeed * AttackSpeedMult)), 0.05f);
+        StatValues.CritChance = BaseCritChance + (Stats.CritChance * CritChanceMult);
+        StatValues.CritDamage = BaseCritDamage + (Stats.CritDamage * CritDamageMult);
+        StatValues.Health.MaxValue = BaseHealth + Stats.Health * HealthMult;
+        StatValues.Armor =  Stats.Armor * ArmorMult;
+        Debug.Log("Total Damage = " + ServerValues.Damage + " Is Server = " + isServer);
+        if (isServer)
+            MoveSpeed.Value = BaseMoveSpeed + Stats.MovementSpeed * MovementSpeedMult;
+    }
+
+    [TargetRpc]
+    private void TargetSync(NetworkConnection conn, byte[] json)
+    {
+        var packet = DeserializePacket(json);
+        PlayerUI.UI_PlayerOverlay.UpdateHealth(ClientValues.Health.Value, ClientValues.Health.MaxValue);
+    }
+    [ObserversRpc] 
+    private void ObserverSync(float healthRatio)
+    {
+        TP_HealthBar.Show(healthRatio);
+    }
+    public static byte[] SerializePacket(StatPacket packet)
+    {
+        string json = JsonConvert.SerializeObject(packet);
+        byte[] bytesToEncode = Encoding.UTF8.GetBytes(json);
+        return bytesToEncode;
+    }
+    public static StatPacket DeserializePacket(byte[] json)
+    {
+        string decodedText = Encoding.UTF8.GetString(json);
+        StatPacket packet = JsonConvert.DeserializeObject<StatPacket>(decodedText);
+        return packet;
     }
 }

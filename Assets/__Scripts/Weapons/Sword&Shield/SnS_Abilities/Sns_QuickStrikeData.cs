@@ -38,12 +38,11 @@ public class Sns_QuickStrike : Ability
 
     private void ClientApplyDamage(GameObject target, Vector3 point)
     {
-        if (target.TryGetComponent<IDamageable>(out var damageable))
-            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * QuickStrikeData.DamagePercentage, false); 
+        //VFX
     }
     private void ServerApplyDamage(GameObject target)
     {
         if (target.TryGetComponent<IDamageable>(out var damageable))
-            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * QuickStrikeData.DamagePercentage, true);
+            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * QuickStrikeData.DamagePercentage);
     }
 }

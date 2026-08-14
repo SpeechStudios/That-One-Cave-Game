@@ -57,8 +57,9 @@ public class Weapon : NetworkBehaviour
             MaterialArray = materialArray;
         else
             MaterialArray = null;
-
-        if (role == NetworkRole.Server || role == NetworkRole.Owner)
+        if (role == NetworkRole.Server)
+            InitalizeStats(stats: true, abilities: true);
+        if (role == NetworkRole.Owner)
             InitalizeStats(stats: true, abilities: true);
         if (role == NetworkRole.Observer)
             InitalizeStats(stats: false, abilities: true);
@@ -68,11 +69,12 @@ public class Weapon : NetworkBehaviour
     {
         if(role == NetworkRole.Server)
         {
-            GainStats();
+            Debug.Log("Activating For Server");
+            GainStats(true);
         }
         if(role == NetworkRole.Owner)
         {
-            GainStats();
+            GainStats(false);
             AffixateModel();
 
             Loadout.RebindAnimator(WeaponData.WeaponName);
@@ -94,19 +96,15 @@ public class Weapon : NetworkBehaviour
     {
         if (role == NetworkRole.Server)
         {
-            RemoveStats();
+            RemoveStats(true);
         }
         if (role == NetworkRole.Owner)
         {
-            RemoveStats();
-        }
-        if (role == NetworkRole.Observer)
-        {
-            RemoveStats();
+            RemoveStats(false);
         }
     }
-    public virtual void GainStats() { }
-    public virtual void RemoveStats() { }
+    public virtual void GainStats(bool isServer) { }
+    public virtual void RemoveStats(bool isServer) { }
     public virtual void AffixateModel() { }
     #endregion
 

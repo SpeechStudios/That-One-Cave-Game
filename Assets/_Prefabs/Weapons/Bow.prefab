@@ -1216,5 +1216,9 @@ MonoBehaviour:
   _addedNetworkObject: {fileID: -607580292008675632}
   _networkObjectCache: {fileID: -607580292008675632}
   WeaponData: {fileID: 11400000, guid: 5df0e87e925d5cf41b316dd895710cc2, type: 2}
-  TestingLimb: 0
+  ClientCooldown:
+    EndTick: 0
+  ServerCooldown:
+    EndTick: 0
+  TestingLimb: 1
   TestingHandle: 2

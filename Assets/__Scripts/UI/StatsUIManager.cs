@@ -25,10 +25,10 @@ public class StatsUIManager : MonoBehaviour
     {
         if (TargetStats == null) return;
 
-        HealthStatText.text = $"Health: {TargetStats.GetMaxHealth()}";
-        ArmorStatText.text = $"Armor:   {TargetStats.GetArmor()}";
-        DamageStatText.text = $"Damage: {TargetStats.GetDamage()}";
-        AttackSpeedStatText.text = $"AttackSpeed:   {TargetStats.GetAttackSpeed()}";
+        //HealthStatText.text = $"Health: {TargetStats.GetMaxHealth()}";
+        //ArmorStatText.text = $"Armor:   {TargetStats.GetArmor()}";
+        //DamageStatText.text = $"Damage: {TargetStats.GetDamage()}";
+        //AttackSpeedStatText.text = $"AttackSpeed:   {TargetStats.GetAttackSpeed()}";
         MoveSpeedStatText.text = $"MoveSpeed:   {TargetStats.GetMoveSpeed()}";
     }
 }

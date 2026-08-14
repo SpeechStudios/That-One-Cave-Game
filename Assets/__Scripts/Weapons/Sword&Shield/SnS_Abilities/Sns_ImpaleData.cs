@@ -42,13 +42,12 @@ public class Sns_Impale : Ability
 
     private void ClientApplyEffect(GameObject target, Vector3 point)
     {
-        if (target.TryGetComponent<IDamageable>(out var damageable))
-            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * ImpaleData.DamagePercentage, false);
+        //VFX
     }
     private void ServerApplyEffect(GameObject target)
     {
         if (target.TryGetComponent<IDamageable>(out var damageable))
-            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * ImpaleData.DamagePercentage, true);
+            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * ImpaleData.DamagePercentage);
         if (target.TryGetComponent<IMoveable>(out var movable))
             movable.ApplyImmobilize(ImpaleData.ImmobilizeDuration);
     }

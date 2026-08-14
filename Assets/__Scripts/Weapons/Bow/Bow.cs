@@ -101,13 +101,14 @@ public class Bow : Weapon
             }
         }
     }
-    public override void GainStats()
+    public override void GainStats(bool isServer)
     {
-        Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed);
+        Debug.Log("Gaining Stats + " + isServer);
+        Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed, isServer);
     }
-    public override void RemoveStats()
+    public override void RemoveStats(bool isServer)
     {
-        Stats.SetWeaponContribution(0, 0);
+        Stats.SetWeaponContribution(0, 0, isServer);
         SecondaryEAbility.Deinitialize();
         PrimaryQAbility.Deinitialize();
     }
@@ -125,7 +126,7 @@ public class Bow : Weapon
         if (!IsCharging)
             IsCharging = true;
 
-        CurrentCharge = Mathf.Clamp01(CurrentCharge + Time.deltaTime / Stats.GetAttackSpeed());
+        CurrentCharge = Mathf.Clamp01(CurrentCharge + Time.deltaTime / Stats.ClientValues.AttackSpeed);
 
         Loadout.WeaponAnimator.SetBool("Aiming", true);
     }
@@ -137,7 +138,7 @@ public class Bow : Weapon
         Loadout.WeaponAnimator.SetBool("Aiming", false);
 
         float chargedVelocity = ArrowVelocity * CurrentCharge;
-        float baseDamage = Stats.GetDamage();
+        float baseDamage = 0;
         float totalDamage = baseDamage * CurrentCharge;
 
         Vector3 spawnPos = Loadout.FPCam.ClientFirePoint.position;

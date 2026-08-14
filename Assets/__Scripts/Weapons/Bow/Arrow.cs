@@ -32,6 +32,7 @@ public class Arrow : MonoBehaviour
         TotalDamage = totalDamage;
         IsServer = isServer;
         Initialized = true;
+        MyRend.SetActive(true);
         MyRend.SetActive(!isServer);
         foreach (int i in effectArray)
         {
@@ -102,10 +103,18 @@ public class Arrow : MonoBehaviour
             }, IsServer);
         }
         //Default Arrow Behavior
-        if (EffectArray.Count == 0)
+        if (IsServer)
         {
-            if (other.transform.TryGetComponent<IDamageable>(out var explosionDamageable))
-                explosionDamageable.TakeDamage(TotalDamage, IsServer);
+            if (EffectArray.Count == 0)
+            {
+                Debug.Log("Server Damage" + TotalDamage);
+                if (other.transform.TryGetComponent<IDamageable>(out var explosionDamageable))
+                    explosionDamageable.TakeDamage(TotalDamage);
+            }
+        }
+        else
+        {
+            //VFX
         }
         
         Hit = true;

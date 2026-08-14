@@ -28,8 +28,8 @@ public class Bow_PoisonArrowData : AbilityData
                 MaxStacks = 3,
                 SourceId = ctx.Source.GetHashCode(),
             };
-            damageable.TakeDamage(ctx.TotalDamage, isServer);
-            damageable.TakeDamageOverTime(properties, isServer);
+            damageable.TakeDamage(ctx.TotalDamage);
+            damageable.TakeDamageOverTime(properties);
         }
     }
 }

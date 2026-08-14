@@ -117,13 +117,13 @@ public class SwordAndShield : Weapon
             }
         }
     }
-    public override void GainStats()
+    public override void GainStats(bool isServer)
     {
-        Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed);
+        Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed, isServer);
     }
-    public override void RemoveStats()
+    public override void RemoveStats(bool isServer)
     {
-        Stats.SetWeaponContribution(0, 0);
+        Stats.SetWeaponContribution(0, 0, isServer);
         SecondaryEAbility.Deinitialize();
         PrimaryQAbility.Deinitialize();
     }
@@ -139,11 +139,12 @@ public class SwordAndShield : Weapon
         ClientSwingIndex = (ClientSwingIndex + 1) % AnimationSwings.Count;
         SwingData Swing = AnimationSwings[SwingIndex];
 
-        Loadout.WeaponAnimator.speed = Swing.Clip.length / Stats.GetAttackSpeed();
+        Debug.Log("CLient AttackSpeed = " + Stats.ClientValues.AttackSpeed);
+        Loadout.WeaponAnimator.speed = Swing.Clip.length / Stats.ClientValues.AttackSpeed;
         Loadout.WeaponAnimator.SetTrigger("Attack");
 
-        SwingHitDetection.EnableHitDetection(Swing.AttackData, Stats.GetAttackSpeed(), isServer: false);
-        ClientCooldown.Start(Stats.GetAttackSpeed() + AttackTolerance);
+        SwingHitDetection.EnableHitDetection(Swing.AttackData, Stats.ClientValues.AttackSpeed, isServer: false);
+        ClientCooldown.Start(Stats.ClientValues.AttackSpeed + AttackTolerance);
 
         Server_Attack_RPC(currentTick);
     }
@@ -163,8 +164,8 @@ public class SwordAndShield : Weapon
         ServerSwingIndex = (ServerSwingIndex + 1) % AnimationSwings.Count;
         SwingData Swing = AnimationSwings[SwingIndex];
 
-        SwingHitDetection.EnableHitDetection(Swing.AttackData, Stats.GetAttackSpeed(), isServer: true);
-        ServerCooldown.StartAtTick(clampedTick, Stats.GetAttackSpeed() + AttackTolerance);
+        SwingHitDetection.EnableHitDetection(Swing.AttackData, Stats.ServerValues.AttackSpeed, isServer: true);
+        ServerCooldown.StartAtTick(clampedTick, Stats.ServerValues.AttackSpeed + AttackTolerance);
         Observer_Attack_RPC(SwingIndex);
     }
 
@@ -175,12 +176,11 @@ public class SwordAndShield : Weapon
 
     public void ClientHit(GameObject obj, Vector3 hitPos)
     {
-        var Damageable = obj.GetComponent<IDamageable>();
-        Damageable.TakeDamage(Stats.GetDamage(), false);
+        //VFX
     }
     public void ServerHit(GameObject obj)
     {
         var Damageable = obj.GetComponent<IDamageable>();
-        Damageable.TakeDamage(Stats.GetDamage(), true);
+        Damageable.TakeDamage(Stats.GetDamage());
     }
 }

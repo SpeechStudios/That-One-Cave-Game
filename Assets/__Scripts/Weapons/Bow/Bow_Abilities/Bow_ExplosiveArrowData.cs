@@ -15,6 +15,8 @@ public class Bow_ExplosiveArrowData : AbilityData
         {
             if (ExplosionEffectPrefab != null)
                 Instantiate(ExplosionEffectPrefab, ctx.HitPoint, Quaternion.identity);
+
+            return;
         }
         Collider[] hits = Physics.OverlapSphere(ctx.HitPoint, ExplosionRadius);
         HashSet<Transform> hitCharacters = new();
@@ -31,7 +33,7 @@ public class Bow_ExplosiveArrowData : AbilityData
                 continue;
 
             hitCharacters.Add(characterRoot);
-            explosionDamageable.TakeDamage(ctx.TotalDamage * DamageMultiplier, isServer);
+            explosionDamageable.TakeDamage(ctx.TotalDamage * DamageMultiplier);
         }
     }
 }
