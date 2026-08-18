@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 
@@ -9,15 +10,13 @@ public class Bow_ExplosiveArrowData : AbilityData
     public float ExplosionRadius = 5f;
     public GameObject ExplosionEffectPrefab;
     public override Ability CreateAbility() => new Bow_ExplosiveArrow();
-    public override void OnHitFunction(HitContext ctx, bool isServer)
+    public override void OnClientHit(Vector3 HitPoint, Transform HitEntity)
     {
-        if(!isServer)
-        {
-            if (ExplosionEffectPrefab != null)
-                Instantiate(ExplosionEffectPrefab, ctx.HitPoint, Quaternion.identity);
-
-            return;
-        }
+        if (ExplosionEffectPrefab != null)
+            Instantiate(ExplosionEffectPrefab, HitPoint, Quaternion.identity);
+    }
+    public override void OnServerHit(HitContext ctx, ref float damage)
+    {
         Collider[] hits = Physics.OverlapSphere(ctx.HitPoint, ExplosionRadius);
         HashSet<Transform> hitCharacters = new();
 
@@ -27,13 +26,16 @@ public class Bow_ExplosiveArrowData : AbilityData
                 continue;
 
             Transform characterRoot = col.transform.root;
-            if (characterRoot == ctx.Source.root)
+            if (characterRoot == ctx.Source.transform)
                 continue;
             if (hitCharacters.Contains(characterRoot))
                 continue;
+            bool hit = Weapon.ExplosiveLOSCheck(ctx.HitPoint, 0.02f, col, 10f, ctx.Source.Loadout.LOSLayers);
+            if (col != hit)
+                continue;
 
             hitCharacters.Add(characterRoot);
-            explosionDamageable.TakeDamage(ctx.TotalDamage * DamageMultiplier);
+            explosionDamageable.TakeDamage(damage * DamageMultiplier);
         }
     }
 }

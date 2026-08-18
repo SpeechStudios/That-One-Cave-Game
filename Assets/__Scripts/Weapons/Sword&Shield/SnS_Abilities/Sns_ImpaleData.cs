@@ -25,7 +25,7 @@ public class Sns_Impale : Ability
     {
         Vector3 p1 = SwordAndShield.ShapeHitDetection.transform.position;
         Vector3 p2 = p1 + (SwordAndShield.ShapeHitDetection.transform.forward * ImpaleData.AreaLength);
-        Weapon.Loadout.WeaponAnimator.SetTrigger("Impale");
+        Weapon.Player.Loadout.WeaponAnimator.SetTrigger("Impale");
         SwordAndShield.ShapeHitDetection.TriggerCapsule(p1, p2, ImpaleData.DelayBeforeCast, ImpaleData.AreaRadius, isServer: false,
             clientCallback: (obj, point) => ClientApplyEffect(obj, point));
     }
@@ -47,7 +47,7 @@ public class Sns_Impale : Ability
     private void ServerApplyEffect(GameObject target)
     {
         if (target.TryGetComponent<IDamageable>(out var damageable))
-            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * ImpaleData.DamagePercentage);
+            damageable.TakeDamage(SwordAndShield.Player.Stats.GetDamage() * ImpaleData.DamagePercentage);
         if (target.TryGetComponent<IMoveable>(out var movable))
             movable.ApplyImmobilize(ImpaleData.ImmobilizeDuration);
     }

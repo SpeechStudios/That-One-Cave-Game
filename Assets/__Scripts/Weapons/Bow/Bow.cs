@@ -17,19 +17,17 @@ public class Bow : Weapon
 
     internal List<Ability> ClientPendingAbilties = new();
     internal List<int> ClientPendingEffects = new();
-    private Dictionary<string, float> ClientPendingCrits = new();
 
     internal List<Ability> ServerPendingAbilties = new();
     internal List<int> ServerPendingEffects = new();
-    private Dictionary<string, float> ServerPendingCrits = new();
 
-    public override void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout, PlayerStatsModule stats, int[] materialArray, NetworkRole role)
+    public override void Initalize(PlayerModule player, int[] materialArray, int index, NetworkRole role)
     {
         Data = WeaponData as BowData;
-        base.Initalize(movement, loadout, stats, materialArray, role);
+        base.Initalize(player, materialArray,index, role);
         if (role == NetworkRole.Observer) return;
 
-        Loadout.RebindAnimator(WeaponData.WeaponName);
+        Player.Loadout.RebindAnimator(WeaponData.WeaponName);
     }
     public override void InitalizeStats(bool stats, bool abilities)
     {
@@ -103,12 +101,11 @@ public class Bow : Weapon
     }
     public override void GainStats(bool isServer)
     {
-        Debug.Log("Gaining Stats + " + isServer);
-        Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed, isServer);
+        Player.Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed, isServer);
     }
     public override void RemoveStats(bool isServer)
     {
-        Stats.SetWeaponContribution(0, 0, isServer);
+        Player.Stats.SetWeaponContribution(0, 0, isServer);
         SecondaryEAbility.Deinitialize();
         PrimaryQAbility.Deinitialize();
     }
@@ -116,7 +113,7 @@ public class Bow : Weapon
     {
         IsCharging = false;
         CurrentCharge = 0;
-        Loadout.WeaponAnimator.SetBool("Aiming", false);
+        Player.Loadout.WeaponAnimator.SetBool("Aiming", false);
     }
     public override void AttackRequest()
     {
@@ -126,25 +123,23 @@ public class Bow : Weapon
         if (!IsCharging)
             IsCharging = true;
 
-        CurrentCharge = Mathf.Clamp01(CurrentCharge + Time.deltaTime / Stats.ClientValues.AttackSpeed);
+        CurrentCharge = Mathf.Clamp01(CurrentCharge + Time.deltaTime / Player.Stats.ClientValues.AttackSpeed);
 
-        Loadout.WeaponAnimator.SetBool("Aiming", true);
+        Player.Loadout.WeaponAnimator.SetBool("Aiming", true);
     }
     public override void ReleaseRequest()
     {
         if (!IsCharging) return;
         IsCharging = false;
 
-        Loadout.WeaponAnimator.SetBool("Aiming", false);
+        Player.Loadout.WeaponAnimator.SetBool("Aiming", false);
 
         float chargedVelocity = ArrowVelocity * CurrentCharge;
-        float baseDamage = 0;
-        float totalDamage = baseDamage * CurrentCharge;
 
-        Vector3 spawnPos = Loadout.FPCam.ClientFirePoint.position;
-        Vector3 aimDir = Loadout.FPCam.ClientFirePoint.forward;
+        Vector3 spawnPos = Player.Loadout.FPCam.ClientFirePoint.position;
+        Vector3 aimDir = Player.Loadout.FPCam.ClientFirePoint.forward;
 
-        SpawnArrow(spawnPos, aimDir, Loadout.transform, chargedVelocity, baseDamage, totalDamage, ClientPendingEffects.ToArray(), 0f, isServer: false);
+        SpawnArrow(spawnPos, aimDir, Player, chargedVelocity, 0, ClientPendingEffects.ToArray(), 0f, isServer: false);
         ClearEffects(isServer: false);
         ClientCooldown.Start(ReloadSpeed + 0.05f);
 
@@ -164,35 +159,34 @@ public class Bow : Weapon
             return;
         float passedTime = (float)TimeManager.TimePassed(clampedTick, allowNegative: false);
 
-        Vector3 spawnPos = Loadout.FPCam.ServerFirePoint.position;
-        Vector3 aimDir = Loadout.FPCam.ServerFirePoint.forward;
+        Vector3 spawnPos = Player.Loadout.FPCam.ServerFirePoint.position;
+        Vector3 aimDir = Player.Loadout.FPCam.ServerFirePoint.forward;
 
         charge = Mathf.Clamp01(charge);
         float chargedVelocity = ArrowVelocity * charge;
-        float baseDamage = Stats.GetDamage();
-        float totalDamage = baseDamage * charge;
+        float totalDamage = Player.Stats.GetDamage() * charge;
 
-        SpawnArrow(spawnPos, aimDir, Loadout.transform, chargedVelocity, baseDamage, totalDamage, ServerPendingEffects.ToArray(), passedTime, isServer: true);
+        SpawnArrow(spawnPos, aimDir, Player, chargedVelocity, totalDamage, ServerPendingEffects.ToArray(), passedTime, isServer: true);
         foreach (NetworkConnection conn in ServerManager.Clients.Values)
         {
             if (conn == Owner) continue;
-            AllTargetFireRPC(conn, Loadout, baseDamage, totalDamage, chargedVelocity, clampedTick, ServerPendingEffects.ToArray());
+            AllTargetFireRPC(conn, totalDamage, chargedVelocity, clampedTick, ServerPendingEffects.ToArray());
         }
         ClearEffects(isServer: true, clampedTick);
         ServerCooldown.StartAtTick(clampedTick, ReloadSpeed + 0.05f);
     }
 
     [TargetRpc]
-    public void AllTargetFireRPC(NetworkConnection conn, NetworkObject shooter, float baseDamage, float totalDamage, float velocity, uint tick, int[] effects)
+    public void AllTargetFireRPC(NetworkConnection conn,  float totalDamage, float velocity, uint tick, int[] effects)
     {
         uint ObserverTick = TimeManager.LocalTick;
         uint clampedTick = tick > ObserverTick ? ObserverTick : tick;
         float passedTime = (float)TimeManager.TimePassed(clampedTick, allowNegative: false);
 
-        Vector3 spawnPos = Loadout.TP_BowFirePoint.position;
-        Vector3 aimDir = Loadout.TP_BowFirePoint.forward;
+        Vector3 spawnPos = Player.Loadout.TP_BowFirePoint.position;
+        Vector3 aimDir = Player.Loadout.TP_BowFirePoint.forward;
 
-        SpawnArrow(spawnPos, aimDir, shooter.transform, velocity, baseDamage, totalDamage, effects, passedTime, isServer: false);
+        SpawnArrow(spawnPos, aimDir, null, velocity, totalDamage, effects, passedTime, isServer: false);
     }
 
     public void QueueEffect(Ability ability, int abilityID, bool isServer)
@@ -209,27 +203,10 @@ public class Bow : Weapon
         if (!collection.Remove(item))
             collection.Add(item);
     }
-    public void QueueCrit(string source, float multiplier, bool isServer)
-    {
-        var Dict = isServer? ServerPendingCrits : ClientPendingCrits;
-        Dict[source] = multiplier;
-    }
-    public void DequeueCrit(string source, bool isServer)
-    {
-        var Dict = isServer ? ServerPendingCrits : ClientPendingCrits;
-        Dict.Remove(source);
-    }
-    private float GetPendingCritMultiplier(bool isServer)
-    {
-        var Dict = isServer ? ServerPendingCrits : ClientPendingCrits;
-        float Total = 1f;
-        foreach (var Value in Dict.Values) Total *= Value;
-        return Total;
-    }
-    public void SpawnArrow(Vector3 pos, Vector3 dir, Transform source, float velocity, float baseDamage, float totalDamage, int[] EffectArray, float passedTime, bool isServer)
+    public void SpawnArrow(Vector3 pos, Vector3 dir, PlayerModule source, float velocity, float totalDamage, int[] EffectArray, float passedTime, bool isServer)
     {
         Arrow ArrowInstance = ArrowPoolManager.Instance.Get(pos, Quaternion.LookRotation(dir));
-        ArrowInstance.Initialize(source, dir, velocity, passedTime, baseDamage, totalDamage, EffectArray, isServer);
+        ArrowInstance.Initialize(source, dir, velocity, passedTime, totalDamage, EffectArray, isServer);
     }
     public void ClearEffects(bool isServer, uint tick = 0)
     {
@@ -241,7 +218,6 @@ public class Bow : Weapon
             }
             ServerPendingAbilties.Clear();
             ServerPendingEffects.Clear();
-            ServerPendingCrits.Clear();
         }
         else
         {
@@ -251,7 +227,6 @@ public class Bow : Weapon
             }
             ClientPendingAbilties.Clear();
             ClientPendingEffects.Clear();
-            ClientPendingCrits.Clear();
         }
     }
 }

@@ -47,12 +47,11 @@ public class Bow_TrippleShot : Ability
 
     private void FireArrow(uint tick, bool isServer, bool isFinalArrow)
     {
-        Transform firePoint = isServer ? Bow.Loadout.FPCam.ServerFirePoint : Bow.Loadout.FPCam.ClientFirePoint;
+        Transform firePoint = isServer ? Bow.Player.Loadout.FPCam.ServerFirePoint : Bow.Player.Loadout.FPCam.ClientFirePoint;
         Vector3 spawnPos = firePoint.position;
         Vector3 aimDir = firePoint.forward;
         float velocity = Bow.ArrowVelocity;
-        float baseDamage = Bow.Stats.GetDamage();
-        float totalDamage = baseDamage * TrippleShotData.DamageMultiplier;
+        float totalDamage = Bow.Player.Stats.GetDamage() * TrippleShotData.DamageMultiplier;
 
         if (isServer)
         {
@@ -62,18 +61,18 @@ public class Bow_TrippleShot : Ability
                 return;
             float passedTime = (float)Bow.TimeManager.TimePassed(clampedTick, allowNegative: false);
 
-            Bow.SpawnArrow(spawnPos, aimDir, Weapon.Loadout.transform, velocity, baseDamage, totalDamage, Bow.ServerPendingEffects.ToArray(), passedTime, isServer: true);
+            Bow.SpawnArrow(spawnPos, aimDir, Weapon.Player, velocity, totalDamage, Bow.ServerPendingEffects.ToArray(), passedTime, isServer: true);
             foreach (NetworkConnection conn in Weapon.ServerManager.Clients.Values)
             {
                 if (conn == Weapon.Owner) continue;
-                Bow.AllTargetFireRPC(conn, Weapon.Loadout, baseDamage, totalDamage, velocity, tick, Bow.ServerPendingEffects.ToArray());
+                Bow.AllTargetFireRPC(conn,  totalDamage, velocity, tick, Bow.ServerPendingEffects.ToArray());
             }
             if (isFinalArrow)
                 Bow.ClearEffects(true, clampedTick);
         }
         else
         {
-            Bow.SpawnArrow(spawnPos, aimDir, Weapon.Loadout.transform, velocity, baseDamage, totalDamage, Bow.ClientPendingEffects.ToArray(), 0f, isServer: false);
+            Bow.SpawnArrow(spawnPos, aimDir, null, velocity, totalDamage, Bow.ClientPendingEffects.ToArray(), 0f, isServer: false);
             if (isFinalArrow)
                 Bow.ClearEffects(false);
         }

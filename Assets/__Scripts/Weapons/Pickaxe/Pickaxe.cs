@@ -13,13 +13,13 @@ public class Pickaxe : Weapon
     [SerializeField] internal ShapeHitDetection ShapeHitDetection;
 
 
-    public override void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout, PlayerStatsModule stats, int[] materialArray, NetworkRole role)
+    public override void Initalize(PlayerModule player, int[] materialArray, int index, NetworkRole role)
     {
         Data = WeaponData as PickaxeData;
-        base.Initalize(movement, loadout, stats, materialArray, role);
+        base.Initalize(player, materialArray, index, role);
         if (role == NetworkRole.Observer) return;
 
-        ShapeHitDetection.Initalize(loadout, HitLayers);
+        ShapeHitDetection.Initalize(Player.Loadout, HitLayers);
     }
     public override void InitalizeStats(bool stats, bool abilities)
     {
@@ -65,12 +65,12 @@ public class Pickaxe : Weapon
         }
     }
     public override void GainStats(bool isServer)
-    {  
-        Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed, isServer);
+    {
+        Player.Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed, isServer);
     }
     public override void RemoveStats(bool isServer)
     {
-        Stats.SetWeaponContribution(0, 0, isServer);
+        Player.Stats.SetWeaponContribution(0, 0, isServer);
     }
 
     public override void AttackRequest()
@@ -78,12 +78,12 @@ public class Pickaxe : Weapon
         if (!ClientCanAttack)
             return;
         ClientCanAttack = false;
-        Loadout.WeaponAnimator.speed = 1 / Stats.ClientValues.AttackSpeed;
-        Loadout.WeaponAnimator.SetTrigger("Attack");
+        Player.Loadout.WeaponAnimator.speed = 1 / Player.Stats.ClientValues.AttackSpeed;
+        Player.Loadout.WeaponAnimator.SetTrigger("Attack");
 
         Vector3 Origin = transform.position + transform.forward * HitDistance;
         ShapeHitDetection.TriggerSphere(Origin, HitDelay, HitRadius, isServer: false, clientCallback: (Obj, Point) => ClientHit(Obj, Point));
-        Loadout.StartWeaponCooldown(this, Stats.ClientValues.AttackSpeed + 0.05f, isServer: false);
+        Player.Loadout.StartWeaponCooldown(this, Player.Stats.ClientValues.AttackSpeed + 0.05f, isServer: false);
 
         Server_Attack_RPC();
     }
@@ -92,13 +92,13 @@ public class Pickaxe : Weapon
     public void Server_Attack_RPC()
     {
         float Now = TimeManager.Tick * (float)TimeManager.TickDelta;
-        if (Now - LastAttackTime < Stats.ServerValues.AttackSpeed - AttackTolerance)
+        if (Now - LastAttackTime < Player.Stats.ServerValues.AttackSpeed - AttackTolerance)
             return;
         LastAttackTime = Now;
 
         Vector3 Origin = transform.position + transform.forward * HitDistance;
         ShapeHitDetection.TriggerSphere(Origin, HitDelay, HitRadius, isServer: true, serverCallback: (Obj) => ServerHit(Obj));
-        Loadout.StartWeaponCooldown(this, Stats.ClientValues.AttackSpeed + 0.05f, isServer: true);
+        Player.Loadout.StartWeaponCooldown(this, Player.Stats.ClientValues.AttackSpeed + 0.05f, isServer: true);
 
         Observer_Attack_RPC();
     }
@@ -111,12 +111,12 @@ public class Pickaxe : Weapon
     public void ClientHit(GameObject obj, Vector3 hitPos)
     {
         var Damageable = obj.GetComponent<OreNode>();
-        Damageable.TakeDamage(Stats.ClientValues.Damage, MiningLevel, false);
+        Damageable.TakeDamage(Player.Stats.ClientValues.Damage, MiningLevel, false);
     }
 
     public void ServerHit(GameObject obj)
     {
         var Damageable = obj.GetComponent<OreNode>();
-        Damageable.TakeDamage(Stats.ServerValues.Damage, MiningLevel, true);
+        Damageable.TakeDamage(Player.Stats.ServerValues.Damage, MiningLevel, true);
     }
 }

@@ -35,7 +35,7 @@ public class Bow_JumpShot: MovementAbility
 
         Vector3 launchVelocity = (Vector3.up * JumpShotData.LaunchUpForce) + (-forward * JumpShotData.LaunchBackForce);
 
-        Bow.QueueCrit(JumpShotData.AbilityName, JumpShotData.CritMultiplier, isServer: true);
+        Bow.Player.Stats.TempCrit = 100f;
 
         Controller = controller;
         controller.OnLanded -= HandleLanded;
@@ -48,7 +48,7 @@ public class Bow_JumpShot: MovementAbility
     }
     private void HandleLanded()
     {
-        Bow.DequeueCrit(JumpShotData.AbilityName, isServer: true);
+        Bow.Player.Stats.TempCrit = 0f;
         if (Controller != null)
         {
             Controller.OnLanded -= HandleLanded;

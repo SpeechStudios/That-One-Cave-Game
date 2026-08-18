@@ -26,7 +26,7 @@ public class Sns_Rupture : Ability
     public override void ClientActivate(uint tick)
     {
         Vector3 origin = SwordAndShield.ShapeHitDetection.transform.position;
-        Weapon.Loadout.WeaponAnimator.SetTrigger("InstantStrike");
+        Weapon.Player.Loadout.WeaponAnimator.SetTrigger("InstantStrike");
         SwordAndShield.ShapeHitDetection.TriggerSphere(origin, RuptureData.DelayBeforeCast, RuptureData.SphereCastRadius, isServer: false,
             clientCallback: (obj, point) => ClientApplyDamage(obj, point));
     }
@@ -48,10 +48,10 @@ public class Sns_Rupture : Ability
     {
         if (target.TryGetComponent<IDamageable>(out var damageable))
         {
-            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * RuptureData.DamagePercentage);
+            damageable.TakeDamage(SwordAndShield.Player.Stats.GetDamage() * RuptureData.DamagePercentage);
             DamageOverTimeProperties properties = new()
             {
-                Damage = SwordAndShield.Stats.GetDamage() * RuptureData.DamagePercentage,
+                Damage = SwordAndShield.Player.Stats.GetDamage() * RuptureData.DamagePercentage,
                 Interval = RuptureData.DamageInterval,
                 Duration = RuptureData.DamageDuration,
                 EffectId = RuptureData.AbilityName,

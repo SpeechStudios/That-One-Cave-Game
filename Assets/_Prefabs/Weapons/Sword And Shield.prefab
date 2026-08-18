@@ -251,7 +251,7 @@ MonoBehaviour:
   _initializeOrder: 0
   _preventDespawnOnDisconnect: 0
   _defaultDespawnType: 0
-  _initializedTimestamp: -8584156890434406289
+  _initializedTimestamp: -8584147261109522076
 --- !u!114 &-396703920364613857
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -284,7 +284,11 @@ MonoBehaviour:
   _addedNetworkObject: {fileID: -10708954039162812}
   _networkObjectCache: {fileID: -10708954039162812}
   WeaponData: {fileID: 11400000, guid: 59352ac340fc5c3498c75c2be90c642c, type: 2}
-  TestingHandle: 2
+  ClientCooldown:
+    EndTick: 0
+  ServerCooldown:
+    EndTick: 0
+  TestingHandle: 0
   TestingBlade: 1
   SwingHitDetection: {fileID: 827482681854472615}
   ShapeHitDetection: {fileID: 2186440337431217251}
@@ -336,6 +340,9 @@ MonoBehaviour:
   _networkObjectCache: {fileID: -10708954039162812}
   Length: 2
   Radius: 0.4
+  ObstructionLayers:
+    serializedVersion: 2
+    m_Bits: 9
   ShowGizmos: 0
 --- !u!114 &2186440337431217251
 MonoBehaviour:

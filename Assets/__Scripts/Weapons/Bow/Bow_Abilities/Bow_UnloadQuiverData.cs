@@ -30,7 +30,7 @@ public class Bow_UnloadQuiver : Ability
     public override void ClientActivate(uint tick)
     {
         Weapon.StartCoroutine(ClientDelayedFire());
-        Weapon.Loadout.WeaponAnimator.SetTrigger("UnloadQuiver");
+        Weapon.Player.Loadout.WeaponAnimator.SetTrigger("UnloadQuiver");
     }
 
     private IEnumerator ClientDelayedFire()
@@ -81,7 +81,7 @@ public class Bow_UnloadQuiver : Ability
 
     private Vector3 GetSpreadDirection(int row, int indexInRow, int arrowsPerRow, bool isServer)
     {
-        Transform firePoint =isServer ? Bow.Loadout.FPCam.ServerFirePoint : Bow.Loadout.FPCam.ClientFirePoint;
+        Transform firePoint =isServer ? Bow.Player.Loadout.FPCam.ServerFirePoint : Bow.Player.Loadout.FPCam.ClientFirePoint;
         Vector3 baseDir = firePoint.forward;
         Vector3 up = firePoint.up;
         Vector3 right = firePoint.right;
@@ -100,24 +100,23 @@ public class Bow_UnloadQuiver : Ability
 
     private void FireArrow(Vector3 aimDir, uint tick, float passedTime, bool isFinalArrow, bool isServer)
     {
-        Vector3 spawnPos = isServer? Bow.Loadout.FPCam.ServerFirePoint.position : Bow.Loadout.FPCam.ClientFirePoint.position;
+        Vector3 spawnPos = isServer? Bow.Player.Loadout.FPCam.ServerFirePoint.position : Bow.Player.Loadout.FPCam.ClientFirePoint.position;
         float velocity = Bow.ArrowVelocity;
-        float baseDamage = Bow.Stats.GetDamage();
-        float totalDamage = baseDamage * UnloadQuiverData.DamageMultiplier;
+        float totalDamage = Bow.Player.Stats.GetDamage() * UnloadQuiverData.DamageMultiplier;
         if (isServer)
         {
-            Bow.SpawnArrow(spawnPos, aimDir, Bow.Loadout.transform, velocity, baseDamage, totalDamage, Bow.ServerPendingEffects.ToArray(), passedTime, isServer: true);
+            Bow.SpawnArrow(spawnPos, aimDir, Bow.Player, velocity, totalDamage, Bow.ServerPendingEffects.ToArray(), passedTime, isServer: true);
             foreach (NetworkConnection conn in Weapon.ServerManager.Clients.Values)
             {
                 if (conn == Weapon.Owner) continue;
-                Bow.AllTargetFireRPC(conn, Weapon.Loadout, baseDamage, totalDamage, velocity, tick, Bow.ServerPendingEffects.ToArray());
+                Bow.AllTargetFireRPC(conn, totalDamage, velocity, tick, Bow.ServerPendingEffects.ToArray());
             }
             if (isFinalArrow)
                 Bow.ClearEffects(true);
         }
         else
         {
-            Bow.SpawnArrow(spawnPos, aimDir, Bow.Loadout.transform, velocity, baseDamage, totalDamage, Bow.ClientPendingEffects.ToArray(), 0f, isServer: false);
+            Bow.SpawnArrow(spawnPos, aimDir, null, velocity, totalDamage, Bow.ClientPendingEffects.ToArray(), 0f, isServer: false);
             if (isFinalArrow)
                 Bow.ClearEffects(false);
         }

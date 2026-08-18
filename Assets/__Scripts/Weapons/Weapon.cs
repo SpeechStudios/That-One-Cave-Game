@@ -23,6 +23,7 @@ public class Weapon : NetworkBehaviour
 {
     public WeaponData WeaponData;
 
+    internal int WeaponIndex;
     internal int[] MaterialArray = null;
     internal int TotalWeaponDamage;
     internal float TotalWeaponAttackSpeed;
@@ -40,18 +41,15 @@ public class Weapon : NetworkBehaviour
     internal float LastAttackTime;
     internal bool ClientCanAttack = true;
 
-    internal PlayerLoadoutModule Loadout;
-    internal PlayerStatsModule Stats;
-    private PlayerControllerModule MovementController;
+    internal PlayerModule Player;
 
     internal const uint MAX_TICK_DELAY = 30;
 
     #region Initalization
-    public virtual void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout, PlayerStatsModule stats, int[] materialArray, NetworkRole role)
+    public virtual void Initalize(PlayerModule player, int[] materialArray, int index, NetworkRole role)
     {
-        MovementController = movement;
-        Loadout = loadout;
-        Stats = stats;
+        Player = player;
+        WeaponIndex = index;
         
         if (materialArray != null)
             MaterialArray = materialArray;
@@ -77,20 +75,29 @@ public class Weapon : NetworkBehaviour
             GainStats(false);
             AffixateModel();
 
-            Loadout.RebindAnimator(WeaponData.WeaponName);
-            if (Loadout.WeaponAnimator != null)
+            Player.Loadout.RebindAnimator(WeaponData.WeaponName);
+            if (Player.Loadout.WeaponAnimator != null)
             {
-                Loadout.WeaponAnimator.SetTrigger("Attack");
-                Loadout.WeaponAnimator.Update(0f);
-                int attackStateHash = Loadout.WeaponAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash;
-                Loadout.WeaponAnimator.Play(attackStateHash, 0, 0f);
-                Loadout.WeaponAnimator.Update(0f);
+                Player.Loadout.WeaponAnimator.SetTrigger("Attack");
+                Player.Loadout.WeaponAnimator.Update(0f);
+                int attackStateHash = Player.Loadout.WeaponAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash;
+                Player.Loadout.WeaponAnimator.Play(attackStateHash, 0, 0f);
+                Player.Loadout.WeaponAnimator.Update(0f);
             }
         }
         if(role == NetworkRole.Observer)
         {
             AffixateModel();
         }
+    }
+    public override void OnStopClient()
+    {
+        base.OnStopClient();
+        if (Player.Loadout.IsWeaponEquipped(WeaponIndex))
+        {
+            Deactivate(NetworkRole.Owner);
+        }
+
     }
     public virtual void Deactivate(NetworkRole role) 
     {
@@ -201,7 +208,7 @@ public class Weapon : NetworkBehaviour
 
         if (isMovementAbility)
         {
-            MovementController.BeginMovementOverride(isPrimary, currentTick);
+            Player.Controller.BeginMovementOverride(isPrimary, currentTick);
         }
         else
         {
@@ -229,11 +236,13 @@ public class Weapon : NetworkBehaviour
         {
             ClientVariables.PrimaryAbility.Cooldown.Start(PrimaryQAbility.Data.Cooldown);
             ClientVariables.PrimaryAbility.PendingEffect = false;
+            Player.Loadout.PlayerUI.UI_PlayerOverlay.TriggerCooldown(true, ClientVariables.PrimaryAbility.Cooldown, PrimaryQAbility.Data.Cooldown);
         }
         if (ability == SecondaryEAbility)
         {
             ClientVariables.SecondaryAbility.Cooldown.Start(SecondaryEAbility.Data.Cooldown);
             ClientVariables.SecondaryAbility.PendingEffect = false;
+            Player.Loadout.PlayerUI.UI_PlayerOverlay.TriggerCooldown(false, ClientVariables.SecondaryAbility.Cooldown, SecondaryEAbility.Data.Cooldown);
         }
     }
     public void ServerTriggerCooldown(uint startTick, Ability ability)
@@ -264,5 +273,67 @@ public class Weapon : NetworkBehaviour
             variables.SecondaryAbility.BlockAbilities = false;
             variables.SecondaryAbility.BlockSwapping = false;
         }
+    }
+    public static Collider GetFirstHitLOS(Vector3 origin, Vector3 direction, Transform ignore, float distance, LayerMask HitLayers)
+    {
+        RaycastHit[] RaycastHits = new RaycastHit[8];
+        int hitCount = Physics.RaycastNonAlloc(origin, direction, RaycastHits, distance, HitLayers, QueryTriggerInteraction.Ignore);
+
+        Collider closestCollider = null;
+        float closestDistance = float.MaxValue;
+
+        for (int i = 0; i < hitCount; i++)
+        {
+            Collider hitCollider = RaycastHits[i].collider;
+
+            if (hitCollider.transform.root == ignore)
+                continue;
+
+            if (RaycastHits[i].distance < closestDistance)
+            {
+                closestDistance = RaycastHits[i].distance;
+                closestCollider = hitCollider;
+            }
+        }
+
+        return closestCollider;
+    }
+    public static bool ExplosiveLOSCheck(Vector3 origin, float explosionSourceRadius, Collider target, float distance, LayerMask hitLayers)
+    {
+        Bounds bounds = target.bounds;
+        Vector3 center = bounds.center;
+        (Vector3 originOffset, Vector3 targetPoint)[] pairs =
+        {
+        (Vector3.zero,                                  center),
+        (Vector3.up * explosionSourceRadius,             new Vector3(center.x, bounds.max.y, center.z)),
+        (Vector3.down * explosionSourceRadius,           new Vector3(center.x, bounds.min.y, center.z)),
+        (Vector3.left * explosionSourceRadius,           new Vector3(bounds.min.x, center.y, center.z)),
+        (Vector3.right * explosionSourceRadius,          new Vector3(bounds.max.x, center.y, center.z)),
+        (Vector3.forward * explosionSourceRadius,        new Vector3(center.x, center.y, bounds.max.z)),
+        (Vector3.back * explosionSourceRadius,           new Vector3(center.x, center.y, bounds.min.z)),
+    };
+
+        foreach (var (originOffset, rawPoint) in pairs)
+        {
+            Vector3 castOrigin = origin + originOffset;
+            Vector3 point = target.ClosestPoint(rawPoint);
+
+            Vector3 toPoint = point - castOrigin;
+            float pointDistance = toPoint.magnitude;
+
+            if (pointDistance > distance)
+                continue;
+
+            float castDistance = Mathf.Max(pointDistance - 0.01f, 0f);
+            if (castDistance <= 0f)
+                return true;
+
+            Vector3 direction = toPoint / pointDistance;
+
+            if (!Physics.Raycast(castOrigin, direction, out RaycastHit hit, castDistance, hitLayers, QueryTriggerInteraction.Ignore))
+                return true;
+        }
+
+        return false;
     }
 }

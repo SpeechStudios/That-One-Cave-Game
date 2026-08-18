@@ -11,29 +11,27 @@ public class Arrow : MonoBehaviour
     internal float TotalDamage;
     internal float BaseDamage;
 
-    private Transform Source;
+    private PlayerModule Source;
     private Vector3 Velocity;
     private float PassedTime;
     private bool IsServer;
     private bool Initialized;
     private bool Hit;
     private List<AbilityData> EffectArray = new();
+    private const float CATCH_UP_STEP = 0.02f;
+    private const int MAX_CATCH_UP_STEPS_PER_FRAME = 50;
 
-    private const float CATCH_UP_RATE = 0.08f;
-
-
-    public void Initialize(Transform source, Vector3 direction, float speed, float passedTime, float baseDamage, float totalDamage, int[] effectArray, bool isServer)
+    public void Initialize(PlayerModule source, Vector3 direction, float speed, float passedTime, float totalDamage, int[] effectArray, bool isServer)
     {
         Hit = false;
         Source = source;
         Velocity = direction.normalized * speed;
         PassedTime = passedTime;
-        BaseDamage = baseDamage;
         TotalDamage = totalDamage;
         IsServer = isServer;
         Initialized = true;
         MyRend.SetActive(true);
-        MyRend.SetActive(!isServer);
+        //MyRend.SetActive(!isServer);
         foreach (int i in effectArray)
         {
             var data = Registry.GetAbilityData(i);
@@ -43,39 +41,35 @@ public class Arrow : MonoBehaviour
                 data.SpawnInitalizeClientVisuals();
         }
     }
+
     private void Update()
     {
         if (!Initialized) return;
-        if(Hit)
+        if (Hit) return;
+
+        int steps = 0;
+        while (PassedTime > 0f && steps < MAX_CATCH_UP_STEPS_PER_FRAME)
         {
-            return;
+            float step = Mathf.Min(CATCH_UP_STEP, PassedTime);
+            Move(step);
+            PassedTime -= step;
+            steps++;
+            if (Hit) return;
         }
+
         Move(Time.deltaTime);
     }
+
     private void Move(float delta)
     {
         Velocity += Physics.gravity * delta;
 
-        float passedTimeDelta = 0f;
-        if (PassedTime > 0f)
-        {
-            float step = PassedTime * CATCH_UP_RATE;
-            PassedTime -= step;
-            if (PassedTime <= delta * 0.5f)
-            {
-                step += PassedTime;
-                PassedTime = 0f;
-            }
-            passedTimeDelta = step;
-        }
+        Vector3 movement = Velocity * delta;
 
-        float totalDelta = delta + passedTimeDelta;
-        Vector3 movement = Velocity * totalDelta;
-
-        // Cast along the movement vector to catch fast tunnelling
         if (!Hit && Physics.SphereCast(transform.position, ColliderRadius, movement.normalized, out RaycastHit hit, movement.magnitude))
         {
             CheckHit(hit.collider, hit.point);
+            if (Hit) return;
         }
 
         transform.position += movement;
@@ -92,22 +86,20 @@ public class Arrow : MonoBehaviour
 
         foreach (var data in EffectArray)
         {
-            data.OnHitFunction(new HitContext
+            if(IsServer)
             {
-                HitPoint = hitPoint,
-                HitEntity = other.transform,
-                Source = Source,
-                BaseDamage = BaseDamage,
-                TotalDamage = TotalDamage,
-
-            }, IsServer);
+                data.OnServerHit(new HitContext { HitPoint = hitPoint, HitEntity = other.transform, Source = Source }, ref TotalDamage);
+            }
+            else
+            {
+                data.OnClientHit(hitPoint, other.transform);
+            }
         }
         //Default Arrow Behavior
         if (IsServer)
         {
             if (EffectArray.Count == 0)
             {
-                Debug.Log("Server Damage" + TotalDamage);
                 if (other.transform.TryGetComponent<IDamageable>(out var explosionDamageable))
                     explosionDamageable.TakeDamage(TotalDamage);
             }
@@ -124,7 +116,7 @@ public class Arrow : MonoBehaviour
     {
         if (col == null) return false;
         if (col.transform == transform.root) return false;
-        if (col.transform == Source.root) return false;
+        if (Source !=null && col.transform == Source.transform) return false;
         return true;
     }
     private IEnumerator ReturnToPool(Collider hitCollider)

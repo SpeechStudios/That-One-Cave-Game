@@ -23,7 +23,7 @@ public class Sns_ShieldBash : Ability
     public override void ClientActivate(uint tick)
     {
         Vector3 origin = SwordAndShield.ShapeHitDetection.transform.position;
-        Weapon.Loadout.WeaponAnimator.SetTrigger("ShieldBash");
+        Weapon.Player.Loadout.WeaponAnimator.SetTrigger("ShieldBash");
         SwordAndShield.ShapeHitDetection.TriggerSphere(origin, ShieldBashData.DelayBeforeCast, ShieldBashData.AreaRadius, isServer: false,
             clientCallback: (obj, point) => ClientApplyEffect(obj, point));
     }

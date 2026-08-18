@@ -7,28 +7,27 @@ public class Bow_PoisonArrowData : AbilityData
     public float TickInterval = 3f;
     public float Duration = 15f;
     public override Ability CreateAbility() => new Bow_PoisonArrow();
-    public override void OnHitFunction(HitContext ctx, bool isServer)
+    public override void OnClientHit(Vector3 HitPoint, Transform HitEntity)
     {
-        if (!isServer)
+        if (HitEntity.TryGetComponent<IDamageable>(out var clientDamageable))
         {
-            if (ctx.HitEntity.TryGetComponent<IDamageable>(out var clientDamageable))
-            {
-                //VFX
-            }
-            return;
+            //VFX
         }
+    }
+    public override void OnServerHit(HitContext ctx, ref float damage)
+    {
         if (ctx.HitEntity.TryGetComponent<IDamageable>(out var damageable))
         {
             DamageOverTimeProperties properties = new()
             {
-                Damage = ctx.BaseDamage * DamageMultiplierPerTick,
+                Damage = damage * DamageMultiplierPerTick,
                 Interval = TickInterval,
                 Duration = Duration,
                 EffectId = "PoisonEffect",
                 MaxStacks = 3,
                 SourceId = ctx.Source.GetHashCode(),
             };
-            damageable.TakeDamage(ctx.TotalDamage);
+            damageable.TakeDamage(damage);
             damageable.TakeDamageOverTime(properties);
         }
     }

@@ -17,6 +17,7 @@ public class SwingHitDetection : NetworkBehaviour
 
     // Client state
     public event Action<GameObject, Vector3> ClientOnHit;
+    public event Action ClientSwingComplete;
     private bool ClientHitDetectionActive;
     private bool ClientHasPrevPositions;
     private int ClientDurationTicks;
@@ -28,7 +29,8 @@ public class SwingHitDetection : NetworkBehaviour
     private readonly HashSet<GameObject> ClientHitObjects = new();
 
     // Server state
-    public event Action<GameObject> ServerOnHit;
+    public event Action<GameObject, Vector3> ServerOnHit;
+    public event Action ServerSwingComplete;
     private bool ServerHitDetectionActive;
     private bool ServerHasPrevPositions;
     private int ServerDurationTicks;
@@ -136,12 +138,14 @@ public class SwingHitDetection : NetworkBehaviour
             ServerHitDetectionActive = false;
             ServerHasPrevPositions = false;
             TimeManager.OnTick -= Server_OnTick;
+            ServerSwingComplete?.Invoke();
         }
         else
         {
             ClientHitDetectionActive = false;
             ClientHasPrevPositions = false;
             TimeManager.OnTick -= Client_OnTick;
+            ClientSwingComplete.Invoke();
         }
     }
 
@@ -231,26 +235,29 @@ public class SwingHitDetection : NetworkBehaviour
         if (!IsValidHit(col, hitObjects)) return;
 
         hitObjects.Add(col.gameObject);
-
+        Vector3 point = col.ClosestPoint(transform.position);
         if (!isServer && IsOwner)
         {
-            Vector3 point = col.ClosestPoint(transform.position);
             ClientOnHit?.Invoke(col.gameObject, point);
         }
-
         if (isServer)
         {
-            ServerOnHit?.Invoke(col.gameObject);
+            ServerOnHit?.Invoke(col.gameObject, point);
         }
     }
 
     private bool IsValidHit(Collider col, HashSet<GameObject> hitObjects)
     {
         if (col == null) return false;
-        if (col.transform == Loadout.transform.root) return false;
+        if (col.transform.root == Loadout.transform.root) return false;
         if (hitObjects.Contains(col.gameObject)) return false;
-        return true;
+        Collider hit = Weapon.GetFirstHitLOS(Loadout.FPCam.transform.position, Loadout.FPCam.transform.forward, Loadout.transform.root, 10f, Loadout.LOSLayers);
+        if (col == hit)
+            return true;
+
+        return false;
     }
+
 
 #if UNITY_EDITOR
     // Gizmos

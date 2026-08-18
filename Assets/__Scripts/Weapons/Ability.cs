@@ -3,9 +3,7 @@ public class HitContext
 {
     public Vector3 HitPoint;
     public Transform HitEntity;
-    public Transform Source;
-    public float BaseDamage;
-    public float TotalDamage;
+    public PlayerModule Source;
 }
 public enum CooldownType { Instant, TogglePending };
 public abstract class AbilityData : ScriptableObject
@@ -22,7 +20,8 @@ public abstract class AbilityData : ScriptableObject
     public bool BlockSwapping;
     public abstract Ability CreateAbility();
     public virtual void SpawnInitalizeClientVisuals() { }
-    public virtual void OnHitFunction(HitContext ctx, bool isServer) {  }
+    public virtual void OnClientHit(Vector3 HitPoint, Transform HitEntity) { }
+    public virtual void OnServerHit(HitContext ctx, ref float damage) { }
 }
 public abstract class Ability
 {

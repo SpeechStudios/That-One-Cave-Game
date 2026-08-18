@@ -7,13 +7,12 @@ using UnityEngine;
 
 public class PlayerLoadoutModule : NetworkBehaviour
 {
-    public PlayerControllerModule Controller;
-    public PlayerInventoryModule Inventory;
-    public PlayerStatsModule Stats;
+    public PlayerModule Player;
     public Transform TP_WeaponParent;
     public Transform TP_BowFirePoint;
     public FirstPersonCamera FPCam;
     public LayerMask HitLayers;
+    public LayerMask LOSLayers;
 
     internal MainCamera MainCam;
     internal Animator WeaponAnimator;
@@ -47,16 +46,14 @@ public class PlayerLoadoutModule : NetworkBehaviour
         ServerLoadout[type] = new EquippedSlot { Item = itemPrefab, IsEquipped = true };
 
         Weapon weapon = itemPrefab.GetComponent<Weapon>();
-        weapon.Initalize(Controller, this, Stats, materialArray, NetworkRole.Server);
+        weapon.Initalize(Player, materialArray, SlotToIndex(type), NetworkRole.Server);
         AssignSlot(type, weapon);
 
         bool activateWeapon = (Weapon == null && Pickaxe == null && Axe == null) || ServerCurrentItemIndex == SlotToIndex(type);
         if (activateWeapon)
         {
             ServerCurrentItemIndex = SlotToIndex(type);
-            Debug.Log("Activating Server Now");
             weapon.Activate(NetworkRole.Server);
-
         }
         else
         {
@@ -72,7 +69,7 @@ public class PlayerLoadoutModule : NetworkBehaviour
         SetLayerRecursively(obj.gameObject, LayerMask.NameToLayer("LocalTools"));
 
         Weapon weapon = obj.GetComponent<Weapon>();
-        weapon.Initalize(Controller, this, Stats, materialArray, NetworkRole.Server);
+        weapon.Initalize(Player, materialArray, SlotToIndex(slotType), NetworkRole.Server);
         AssignSlot(slotType, weapon);
         AssignIcon(slotType, itemID);
         obj.transform.SetParent(MainCam.MainHandPos, false);
@@ -94,7 +91,7 @@ public class PlayerLoadoutModule : NetworkBehaviour
     private void Observers_Equip_RPC(NetworkObject obj, int[] materialArray, ItemSlotType slotType, bool activate)
     {
         Weapon weapon = obj.GetComponent<Weapon>();
-        weapon.Initalize(Controller, this, Stats, materialArray, NetworkRole.Observer);
+        weapon.Initalize(Player, materialArray, SlotToIndex(slotType), NetworkRole.Observer);
         AssignSlot(slotType, weapon);
 
         obj.transform.SetParent(TP_WeaponParent, false);
@@ -127,27 +124,29 @@ public class PlayerLoadoutModule : NetworkBehaviour
         Target_UnEquip_RPC(conn, type);
         Observers_UnEquip_RPC(type);
     }
+    public bool IsWeaponEquipped(int index)
+    {
+        if (index == ClientCurrentItemIndex)
+            return true;
+
+        return false;
+    }
     [TargetRpc]
     private void Target_UnEquip_RPC(NetworkConnection conn, ItemSlotType slotType)
     {
         RemoveIcon(slotType);
+        AssignSlot(slotType, null);
         if (SlotToIndex(slotType) == ClientCurrentItemIndex)
         {
-            Weapon current = GetSlot(slotType);
-            current.Deactivate(NetworkRole.Owner);
             PlayerUI.UI_PlayerOverlay.SelectItem(-1);
         }
-        AssignSlot(slotType, null);
+
     }
     [ObserversRpc(ExcludeOwner = true)]
     private void Observers_UnEquip_RPC(ItemSlotType slotType)
     {
-        if (SlotToIndex(slotType) == ClientCurrentItemIndex)
-        {
-            Weapon current = GetSlot(slotType);
-            current.Deactivate(NetworkRole.Owner);
-        }
         AssignSlot(slotType, null);
+        return;
     }
 
     void Update()
@@ -162,7 +161,7 @@ public class PlayerLoadoutModule : NetworkBehaviour
 
     private void SetAttackInputs()
     {
-        bool Attack = Controller.PlayerInput.Player.Attack.IsPressed();
+        bool Attack = Player.Controller.PlayerInput.Player.Attack.IsPressed();
 
         if (Attack)
         {
@@ -193,7 +192,7 @@ public class PlayerLoadoutModule : NetworkBehaviour
             }
         }
 
-        bool AttackReleased = Controller.PlayerInput.Player.Attack.WasReleasedThisFrame();
+        bool AttackReleased = Player.Controller.PlayerInput.Player.Attack.WasReleasedThisFrame();
         if (AttackReleased)
         {
             if (ClientCurrentItemIndex == 0)
@@ -206,13 +205,13 @@ public class PlayerLoadoutModule : NetworkBehaviour
     private void SetAbilityInputs()
     {
         if (Weapon == null) return;
-        bool PrimaryAbility = Controller.PlayerInput.Player.PrimaryAbility.WasPressedThisFrame();
+        bool PrimaryAbility = Player.Controller.PlayerInput.Player.PrimaryAbility.WasPressedThisFrame();
         if (PrimaryAbility)
         {
             Weapon.PrimaryAbilityRequest();
         }
 
-        bool Secondary = Controller.PlayerInput.Player.SecondaryAbility.WasPressedThisFrame();
+        bool Secondary = Player.Controller.PlayerInput.Player.SecondaryAbility.WasPressedThisFrame();
         if (Secondary)
         {
             Weapon.SecondaryAbilityRequest();
@@ -225,19 +224,19 @@ public class PlayerLoadoutModule : NetworkBehaviour
         {
             if (Weapon.ClientVariables.PrimaryAbility.BlockSwapping || Weapon.ClientVariables.SecondaryAbility.BlockSwapping) return;
         }
-        if (Controller.PlayerInput.Player.Option1.WasPressedThisFrame())
+        if (Player.Controller.PlayerInput.Player.Option1.WasPressedThisFrame())
         {
             if (Weapon == null) return;
             SwapTo(0);
             PlayerUI.UI_PlayerOverlay.SelectItem(0);
         }
-        if (Controller.PlayerInput.Player.Option2.WasPressedThisFrame())
+        if (Player.Controller.PlayerInput.Player.Option2.WasPressedThisFrame())
         {
             if (Pickaxe == null) return;
             SwapTo(1);
             PlayerUI.UI_PlayerOverlay.SelectItem(1);
         }
-        if (Controller.PlayerInput.Player.Option3.WasPressedThisFrame())
+        if (Player.Controller.PlayerInput.Player.Option3.WasPressedThisFrame())
         {
             if (Axe == null) return;
             SwapTo(2);
@@ -388,7 +387,6 @@ public class PlayerLoadoutModule : NetworkBehaviour
     }
     private void RemoveIcon(ItemSlotType type)
     {
-        Debug.Log("Removing Icon");
         switch (type)
         {
             case ItemSlotType.Weapon:

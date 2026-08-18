@@ -3,7 +3,6 @@ using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using Newtonsoft.Json;
 using System.Collections.Generic;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using UnityEngine;
 
@@ -35,7 +34,7 @@ public class StatValues
     public float CritChance;
     public float CritDamage;
     public float Armor;
-    public HealthState Health;
+    public HealthState Health = new();
 }
 public class WeaponValues
 {
@@ -48,7 +47,8 @@ public class StatPacket
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public float CritChance;
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public float CritDamage;
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public float Armor;
-    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public HealthState Health;
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public float Health;
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public float MaxHealth;
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public float AttackSpeed;
 }
 
@@ -71,6 +71,7 @@ public class PlayerStatsModule : NetworkBehaviour, IDamageable
     internal Stats ServerStats = new();
     internal StatValues ServerValues = new();
     internal WeaponValues ServerWeaponValues = new();
+    internal float TempCrit;
 
     internal Stats ClientStats = new();
     internal StatValues ClientValues = new();
@@ -88,8 +89,9 @@ public class PlayerStatsModule : NetworkBehaviour, IDamageable
     internal float GetDamage()
     {
         float damage = ServerValues.Damage;
-        bool isCrit = ServerValues.CritChance > Random.Range(0, 100);
-        if (isCrit) damage *= 1 + (1 * ServerValues.CritDamage);
+        bool isCrit = ServerValues.CritChance + TempCrit > Random.Range(0, 100);
+        TempCrit = 0;
+        if (isCrit) damage *= 1 + (ServerValues.CritDamage / 100f);
         return damage;
     }
     #region Initalize
@@ -118,7 +120,7 @@ public class PlayerStatsModule : NetworkBehaviour, IDamageable
         ServerValues.CritDamage = BaseCritDamage;
         ServerValues.Health.OnHealthChanged += () =>
         {
-            var packet = SerializePacket(new StatPacket { Health = ServerValues.Health });
+            var packet = SerializePacket(new StatPacket { Health = ServerValues.Health.Value, MaxHealth = ServerValues.Health.MaxValue });
             TargetSync(Owner, packet);
             ObserverSync(Mathf.Round(ServerValues.Health.Value / ServerValues.Health.MaxValue * 100f) / 100f);
         };
@@ -137,10 +139,9 @@ public class PlayerStatsModule : NetworkBehaviour, IDamageable
     [Server]
     public void TakeDamage(float damage)
     {
-        Debug.Log("Dealing Damage" + damage);
         damage = Mathf.Round(damage);
         ServerValues.Health.TakeDamage(damage);
-        var packet = SerializePacket(new StatPacket { Health = ServerValues.Health });
+        var packet = SerializePacket(new StatPacket { Health = ServerValues.Health.Value, MaxHealth = ServerValues.Health.MaxValue });
         TargetSync(Owner, packet);
         ObserverSync(Mathf.Round(ServerValues.Health.Value / ServerValues.Health.MaxValue * 100f) / 100f);
     }
@@ -153,7 +154,7 @@ public class PlayerStatsModule : NetworkBehaviour, IDamageable
     public void Heal(float value)
     {
         ServerValues.Health.Heal(value);
-        var packet = SerializePacket(new StatPacket { Health = ServerValues.Health });
+        var packet = SerializePacket(new StatPacket { Health = ServerValues.Health.Value, MaxHealth = ServerValues.Health.MaxValue });
         TargetSync(Owner, packet);
         ObserverSync(Mathf.Round(ServerValues.Health.Value / ServerValues.Health.MaxValue * 100f) / 100f);
     }
@@ -163,7 +164,6 @@ public class PlayerStatsModule : NetworkBehaviour, IDamageable
         var weaponValues = isServer ? ServerWeaponValues : ClientWeaponValues;
         weaponValues.Damage = weaponDamage;
         weaponValues.AttackSpeed = weaponAttackSpeed;
-        Debug.Log("Setting Weapon Damage = " + ServerWeaponValues.Damage + " Is Server = " + isServer + " Damage To Set = " + weaponDamage);
         RecalculateStats(isServer);
     }
     public void AddGear(string sourceId, GearStatValues bonuses, bool isServer)
@@ -190,7 +190,6 @@ public class PlayerStatsModule : NetworkBehaviour, IDamageable
         StatValues.CritDamage = BaseCritDamage + (Stats.CritDamage * CritDamageMult);
         StatValues.Health.MaxValue = BaseHealth + Stats.Health * HealthMult;
         StatValues.Armor =  Stats.Armor * ArmorMult;
-        Debug.Log("Total Damage = " + ServerValues.Damage + " Is Server = " + isServer);
         if (isServer)
             MoveSpeed.Value = BaseMoveSpeed + Stats.MovementSpeed * MovementSpeedMult;
     }
@@ -199,6 +198,8 @@ public class PlayerStatsModule : NetworkBehaviour, IDamageable
     private void TargetSync(NetworkConnection conn, byte[] json)
     {
         var packet = DeserializePacket(json);
+        ClientValues.Health.Value = packet.Health;
+        ClientValues.Health.MaxValue = packet.MaxHealth;
         PlayerUI.UI_PlayerOverlay.UpdateHealth(ClientValues.Health.Value, ClientValues.Health.MaxValue);
     }
     [ObserversRpc] 

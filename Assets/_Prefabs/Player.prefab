@@ -175,7 +175,7 @@ Transform:
   m_GameObject: {fileID: 1397365641248521442}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalPosition: {x: 0, y: 0.8, z: -0.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -488,7 +488,7 @@ MonoBehaviour:
   _initializeOrder: 0
   _preventDespawnOnDisconnect: 0
   _defaultDespawnType: 0
-  _initializedTimestamp: -8584149763845680636
+  _initializedTimestamp: -8584145684440478450
 --- !u!114 &1364280588342638064
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -601,15 +601,16 @@ MonoBehaviour:
   _componentIndexCache: 3
   _addedNetworkObject: {fileID: 3544688354330196895}
   _networkObjectCache: {fileID: 3544688354330196895}
-  Controller: {fileID: 2480432547822470069}
-  Inventory: {fileID: 8452158226212797364}
-  Stats: {fileID: -3166358744567229087}
+  Player: {fileID: -8966319286158825527}
   TP_WeaponParent: {fileID: 8682809256073907498}
   TP_BowFirePoint: {fileID: 6342583638923845617}
   FPCam: {fileID: 3392866399899305118}
   HitLayers:
     serializedVersion: 2
     m_Bits: 8
+  LOSLayers:
+    serializedVersion: 2
+    m_Bits: 649
 --- !u!114 &-3166358744567229087
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1119,17 +1120,17 @@ MonoBehaviour:
   _controllerMovementSettings:
     EnableTeleport: 0
     TeleportThreshold: 0
-    AdaptiveInterpolationValue: 0
+    AdaptiveInterpolationValue: 4
     InterpolationValue: 2
-    SmoothedProperties: 4294967295
+    SmoothedProperties: 3
     SnapNonSmoothedProperties: 0
   _favorPredictionNetworkTransform: 1
   _spectatorMovementSettings:
     EnableTeleport: 0
     TeleportThreshold: 0
-    AdaptiveInterpolationValue: 0
+    AdaptiveInterpolationValue: 4
     InterpolationValue: 2
-    SmoothedProperties: 4294967295
+    SmoothedProperties: 3
     SnapNonSmoothedProperties: 0
 --- !u!4 &4035375698883825403 stripped
 Transform:

@@ -22,7 +22,7 @@ public class Sns_QuickStrike : Ability
     public override void ClientActivate(uint tick)
     {
         Vector3 origin = SwordAndShield.ShapeHitDetection.transform.position;
-        Weapon.Loadout.WeaponAnimator.SetTrigger("InstantStrike");
+        Weapon.Player.Loadout.WeaponAnimator.SetTrigger("InstantStrike");
         SwordAndShield.ShapeHitDetection.TriggerSphere(origin, QuickStrikeData.DelayBeforeCast, QuickStrikeData.SphereCastRadius, isServer: false,
             clientCallback: (obj, point) => ClientApplyDamage(obj, point));
     }
@@ -43,6 +43,6 @@ public class Sns_QuickStrike : Ability
     private void ServerApplyDamage(GameObject target)
     {
         if (target.TryGetComponent<IDamageable>(out var damageable))
-            damageable.TakeDamage(SwordAndShield.Stats.GetDamage() * QuickStrikeData.DamagePercentage);
+            damageable.TakeDamage(SwordAndShield.Player.Stats.GetDamage() * QuickStrikeData.DamagePercentage);
     }
 }

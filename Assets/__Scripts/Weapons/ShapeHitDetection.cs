@@ -180,6 +180,9 @@ public class ShapeHitDetection : NetworkBehaviour
         if (col == null) return false;
         if (col.transform == Loadout.transform.root) return false;
         if (hitObjects.Contains(col.gameObject)) return false;
+        Collider hit = Weapon.GetFirstHitLOS(Loadout.FPCam.transform.position, Loadout.FPCam.transform.forward, Loadout.transform.root, 10f, Loadout.LOSLayers);
+        if (col == hit)
+            return true;
         return true;
     }
 }

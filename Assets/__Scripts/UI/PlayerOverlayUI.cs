@@ -8,6 +8,9 @@ public class PlayerOverlayUI : MonoBehaviour
     public RectTransform HealthBar;
     public List<RectTransform> Items;
     public Image WeaponIcon, PickaxeIcon, AxeIcon;
+    public GameObject WeaponAbilities;
+    public AbilityUI Ability1;
+    public AbilityUI Ability2;
 
     public float Radius = 400f;
     public float ArcRotationOffset = 90f;
@@ -56,15 +59,12 @@ public class PlayerOverlayUI : MonoBehaviour
     public void SelectItem(int index)
     {
         SelectedIndex = Items.Count - 1 - index;
+        if (index == 0)
+            ShowWeapon(true);
+        else
+            ShowWeapon(false);
         Lerping = true;
     }
-
-    public void DeselectItem()
-    {
-        SelectedIndex = -1;
-        Lerping = true;
-    }
-
     public void LayoutImmediate()
     {
         ComputeTargets(out var positions, out var scales);
@@ -75,7 +75,6 @@ public class PlayerOverlayUI : MonoBehaviour
             Items[i].localScale = Vector3.one * scales[i];
         }
     }
-
     private void ComputeTargets(out Vector2[] positions, out float[] scales)
     {
         int count = Items.Count;
@@ -115,6 +114,18 @@ public class PlayerOverlayUI : MonoBehaviour
         Vector3 scale = HealthBar.localScale;
         scale.x = ratio;
         HealthBar.localScale = scale;
+    }
+    public void ShowWeapon(bool show)
+    {
+        if (show)
+            WeaponAbilities.SetActive(true);
+        else
+            WeaponAbilities.SetActive(false);
+    }
+    public void TriggerCooldown(bool isPrimary, CooldownTimer cooldown, float fullDuration)
+    {
+        var target = isPrimary ? Ability1 : Ability2;
+        target.BeginCooldown(cooldown, fullDuration);
     }
 
 }

@@ -1,6 +1,7 @@
 using FishNet.Object;
 using System.Collections.Generic;
 using UnityEngine;
+using static Unity.VisualScripting.Member;
 
 
 public class SwordAndShield : Weapon
@@ -14,30 +15,23 @@ public class SwordAndShield : Weapon
     [SerializeField] private float HitDetectionXOffset;
     [SerializeField] private List<SwingData> AnimationSwings;
 
+    internal List<int> ClientPendingBAEffects = new();
+    internal List<int> ServerPendingBAEffects = new();
+
     private float Resilliance;
 
     private int ServerSwingIndex = 0;
     private int ClientSwingIndex = 0;
 
-    public void OnEnable()
-    {
-        SwingHitDetection.ClientOnHit += ClientHit;
-        SwingHitDetection.ServerOnHit += ServerHit;
-    }
-    public void OnDisable()
-    {
-        SwingHitDetection.ClientOnHit -= ClientHit;
-        SwingHitDetection.ServerOnHit -= ServerHit;
-    }
-    public override void Initalize(PlayerControllerModule movement, PlayerLoadoutModule loadout, PlayerStatsModule stats, int[] materialArray, NetworkRole role)
+    public override void Initalize(PlayerModule player, int[] materialArray, int index, NetworkRole role)
     {
         Data = WeaponData as SnSData;
-        base.Initalize(movement, loadout, stats, materialArray, role);
+        base.Initalize(player, materialArray, index, role);
         if (role == NetworkRole.Observer) return;
 
-        loadout.FPCam.MeleeHitPoint.transform.localPosition = new Vector2(HitDetectionXOffset, loadout.FPCam.MeleeHitPoint.transform.localPosition.y);
-        SwingHitDetection.Initalize(loadout);
-        ShapeHitDetection.Initalize(loadout, Loadout.HitLayers);
+        player.Loadout.FPCam.MeleeHitPoint.transform.localPosition = new Vector2(HitDetectionXOffset, player.Loadout.FPCam.MeleeHitPoint.transform.localPosition.y);
+        SwingHitDetection.Initalize(player.Loadout);
+        ShapeHitDetection.Initalize(player.Loadout, Player.Loadout.HitLayers);
 
     }
     public override void InitalizeStats(bool stats, bool abilties)
@@ -119,13 +113,33 @@ public class SwordAndShield : Weapon
     }
     public override void GainStats(bool isServer)
     {
-        Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed, isServer);
+        Player.Stats.SetWeaponContribution(TotalWeaponDamage, TotalWeaponAttackSpeed, isServer);
+        if(isServer)
+        {
+            SwingHitDetection.ServerOnHit += ServerHit;
+            SwingHitDetection.ServerSwingComplete += ServerSwingEnded;
+        }
+        else
+        {
+            SwingHitDetection.ClientOnHit += ClientHit;
+            SwingHitDetection.ClientSwingComplete += ClientSwingEnded;
+        }
     }
     public override void RemoveStats(bool isServer)
     {
-        Stats.SetWeaponContribution(0, 0, isServer);
+        Player.Stats.SetWeaponContribution(0, 0, isServer);
         SecondaryEAbility.Deinitialize();
         PrimaryQAbility.Deinitialize();
+        if (isServer)
+        {
+            SwingHitDetection.ServerOnHit -= ServerHit;
+            SwingHitDetection.ServerSwingComplete -= ServerSwingEnded;
+        }
+        else
+        {
+            SwingHitDetection.ClientOnHit -= ClientHit;
+            SwingHitDetection.ClientSwingComplete -= ClientSwingEnded;
+        }
     }
 
     public override void AttackRequest()
@@ -139,13 +153,11 @@ public class SwordAndShield : Weapon
         ClientSwingIndex = (ClientSwingIndex + 1) % AnimationSwings.Count;
         SwingData Swing = AnimationSwings[SwingIndex];
 
-        Debug.Log("CLient AttackSpeed = " + Stats.ClientValues.AttackSpeed);
-        Loadout.WeaponAnimator.speed = Swing.Clip.length / Stats.ClientValues.AttackSpeed;
-        Loadout.WeaponAnimator.SetTrigger("Attack");
+        Player.Loadout.WeaponAnimator.speed = Swing.Clip.length / Player.Stats.ClientValues.AttackSpeed;
+        Player.Loadout.WeaponAnimator.SetTrigger("Attack");
 
-        SwingHitDetection.EnableHitDetection(Swing.AttackData, Stats.ClientValues.AttackSpeed, isServer: false);
-        ClientCooldown.Start(Stats.ClientValues.AttackSpeed + AttackTolerance);
-
+        SwingHitDetection.EnableHitDetection(Swing.AttackData, Player.Stats.ClientValues.AttackSpeed, isServer: false);
+        ClientCooldown.Start(Player.Stats.ClientValues.AttackSpeed + AttackTolerance);
         Server_Attack_RPC(currentTick);
     }
 
@@ -164,23 +176,59 @@ public class SwordAndShield : Weapon
         ServerSwingIndex = (ServerSwingIndex + 1) % AnimationSwings.Count;
         SwingData Swing = AnimationSwings[SwingIndex];
 
-        SwingHitDetection.EnableHitDetection(Swing.AttackData, Stats.ServerValues.AttackSpeed, isServer: true);
-        ServerCooldown.StartAtTick(clampedTick, Stats.ServerValues.AttackSpeed + AttackTolerance);
+        SwingHitDetection.EnableHitDetection(Swing.AttackData, Player.Stats.ServerValues.AttackSpeed, isServer: true);
+        ServerCooldown.StartAtTick(clampedTick, Player.Stats.ServerValues.AttackSpeed + AttackTolerance);
         Observer_Attack_RPC(SwingIndex);
     }
 
     [ObserversRpc(ExcludeOwner = true)]
     private void Observer_Attack_RPC(int swingIndex)
     {
+        ClearBAEffects(false);
     }
+    public void QueueBAEffect(int abilityID, bool isServer)
+    {
+        var pendingEffects = isServer ? ServerPendingBAEffects : ClientPendingBAEffects;
 
+        if (!pendingEffects.Remove(abilityID))
+            pendingEffects.Add(abilityID);
+    }
+    public void ClearBAEffects(bool isServer)
+    {
+        var pendingEffects = isServer ? ServerPendingBAEffects : ClientPendingBAEffects;
+        pendingEffects.Clear();
+    }
     public void ClientHit(GameObject obj, Vector3 hitPos)
     {
         //VFX
+        if (obj.TryGetComponent<IDamageable>(out var damageable))
+        {
+            foreach (var item in ClientPendingBAEffects)
+            {
+                var data = Registry.GetAbilityData(item);
+                data.OnClientHit(hitPos, obj.transform);
+            }
+        }
     }
-    public void ServerHit(GameObject obj)
+    public void ServerHit(GameObject obj, Vector3 hitPoint)
     {
-        var Damageable = obj.GetComponent<IDamageable>();
-        Damageable.TakeDamage(Stats.GetDamage());
+        if (obj.TryGetComponent<IDamageable>(out var damageable))
+        { 
+            float Damage = Player.Stats.GetDamage();
+            foreach (var item in ServerPendingBAEffects)
+            {
+                var data = Registry.GetAbilityData(item);
+                data.OnServerHit(new HitContext { HitPoint = hitPoint, HitEntity = obj.transform, Source = Player }, ref Damage);
+            }
+            damageable.TakeDamage(Damage);
+        }
+    }
+    public void ClientSwingEnded()
+    {
+        ClearBAEffects(false);
+    }
+    public void ServerSwingEnded()
+    {
+        ClearBAEffects(true);
     }
 }

@@ -52,7 +52,7 @@ public class SnS_Charge : MovementAbility
         if (HitTarget == null) return;
         if (HitTarget.TryGetComponent<IDamageable>(out var damageable))
         {
-            damageable.TakeDamage(Weapon.Stats.GetDamage() * ChargeData.ChargeDamagePercentage);
+            damageable.TakeDamage(Weapon.Player.Stats.GetDamage() * ChargeData.ChargeDamagePercentage);
         }
     }
     public override void ClientOnMovementComplete(PlayerControllerModule controller)
@@ -64,7 +64,7 @@ public class SnS_Charge : MovementAbility
         CharacterController cc = controller.CC;
         Vector3 origin = controller.transform.position + (controller.transform.forward * 0.2f);
 
-        if (Physics.SphereCast(origin, ChargeData.CheckRadius, direction, out RaycastHit hit, distance, Weapon.Loadout.HitLayers, QueryTriggerInteraction.Ignore))
+        if (Physics.SphereCast(origin, ChargeData.CheckRadius, direction, out RaycastHit hit, distance, Weapon.Player.Loadout.HitLayers, QueryTriggerInteraction.Ignore))
         {
             return hit.collider.gameObject;
         }

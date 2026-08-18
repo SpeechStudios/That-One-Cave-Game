@@ -6,19 +6,18 @@ public class Bow_ImmobilizeData: AbilityData
     public float ImmobilizeDuration = 3f;
     public float DamageMultiplier = 0.3f;
     public override Ability CreateAbility() => new Bow_Immobilize();
-    public override void OnHitFunction(HitContext ctx, bool isServer)
+    public override void OnClientHit(Vector3 HitPoint, Transform HitEntity)
     {
-        if (!isServer)
+        if (HitEntity.TryGetComponent<IDamageable>(out var clientDamageable))
         {
-            if (ctx.HitEntity.TryGetComponent<IDamageable>(out var clientDamageable))
-            {
-                //VFX
-            }
-            return;
+            //VFX
         }
+    }
+    public override void OnServerHit(HitContext ctx, ref float damage)
+    {
         if (ctx.HitEntity.TryGetComponent<IDamageable>(out var damageable))
         {
-            damageable.TakeDamage(ctx.TotalDamage * DamageMultiplier);
+            damageable.TakeDamage(damage * DamageMultiplier);
         }
 
         if (ctx.HitEntity.TryGetComponent<IMoveable>(out var moveable))
