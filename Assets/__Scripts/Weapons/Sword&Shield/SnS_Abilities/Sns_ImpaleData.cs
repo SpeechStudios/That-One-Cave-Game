@@ -30,15 +30,14 @@ public class Sns_Impale : Ability
             clientCallback: (obj, point) => ClientApplyEffect(obj, point));
     }
 
-    public override void ServerActivate(uint tick)
+    public override (ObserverType, byte[]) ServerActivate(uint tick)
     {
         Vector3 p1 = SwordAndShield.ShapeHitDetection.transform.position;
         Vector3 p2 = p1 + (SwordAndShield.ShapeHitDetection.transform.forward * ImpaleData.AreaLength);
         SwordAndShield.ShapeHitDetection.TriggerCapsule(p1, p2, ImpaleData.DelayBeforeCast, ImpaleData.AreaRadius, isServer: true,
             serverCallback: (obj) => ServerApplyEffect(obj));
+        return default;
     }
-
-    public override void ObserverActivate(uint tick) { }
 
     private void ClientApplyEffect(GameObject target, Vector3 point)
     {

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 
 
@@ -51,10 +50,17 @@ public class Bow_ExplosiveArrow : Ability
     public override void ClientActivate(uint tick) 
     {
         Bow.QueueEffect(this, Data.ID, isServer: false);
+        Bow.FireEffectActive = !Bow.FireEffectActive;
+        Bow.FireEffect.SetActive(Bow.FireEffectActive);
+        foreach (var item in Bow.FireArrows)
+        {
+            item.SetActive(Bow.FireEffectActive);
+        }
     }
 
-    public override void ServerActivate(uint tick)
+    public override (ObserverType, byte[]) ServerActivate(uint tick)
     {
         Bow.QueueEffect(this, Data.ID, isServer: true);
+        return default;
     }
 }

@@ -31,8 +31,8 @@ public abstract class Ability
     public virtual void Initialize(Weapon weapon, AbilityData data) { Weapon = weapon; Data = data; }
     public virtual void Deinitialize() { }
     public virtual void ClientActivate(uint tick) { }
-    public virtual void ServerActivate(uint tick) { }
-    public virtual void ObserverActivate(uint tick) { }
+    public virtual (ObserverType, byte[]) ServerActivate(uint tick) { return (default, default); }
+    public virtual void ObserverActivate(byte[] jsonData, uint tick) { }
 }
 
 public enum MovementAbilityResult { Continue, Completed }

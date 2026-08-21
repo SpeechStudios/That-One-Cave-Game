@@ -1,10 +1,8 @@
-using FishNet.Component.Ownership;
 using FishNet.Connection;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using FishNet.Observing;
 using FishNet.Serializing;
-using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(NetworkObject))]

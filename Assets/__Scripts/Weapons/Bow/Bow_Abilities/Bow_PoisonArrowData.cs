@@ -45,8 +45,9 @@ public class Bow_PoisonArrow: Ability
         Bow.QueueEffect(this, Data.ID, isServer: false);
     }
 
-    public override void ServerActivate(uint tick)
+    public override (ObserverType, byte[]) ServerActivate(uint tick)
     {
         Bow.QueueEffect(this, Data.ID, isServer : true);
+        return default;
     }
 }

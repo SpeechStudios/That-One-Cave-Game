@@ -1,6 +1,5 @@
+using FishNet.Connection;
 using FishNet.Object;
-using Unity.GraphToolkit.Editor;
-using Unity.VisualScripting;
 using UnityEngine;
 public class WeaponData : ScriptableObject
 {
@@ -59,15 +58,12 @@ public class Weapon : NetworkBehaviour
             InitalizeStats(stats: true, abilities: true);
         if (role == NetworkRole.Owner)
             InitalizeStats(stats: true, abilities: true);
-        if (role == NetworkRole.Observer)
-            InitalizeStats(stats: false, abilities: true);
     }
     public virtual void InitalizeStats(bool stats, bool abilities) { }
     public void Activate(NetworkRole role)
     {
         if(role == NetworkRole.Server)
         {
-            Debug.Log("Activating For Server");
             GainStats(true);
         }
         if(role == NetworkRole.Owner)
@@ -93,11 +89,6 @@ public class Weapon : NetworkBehaviour
     public override void OnStopClient()
     {
         base.OnStopClient();
-        if (Player.Loadout.IsWeaponEquipped(WeaponIndex))
-        {
-            Deactivate(NetworkRole.Owner);
-        }
-
     }
     public virtual void Deactivate(NetworkRole role) 
     {
@@ -129,8 +120,7 @@ public class Weapon : NetworkBehaviour
         Ability ability = isPrimary ? PrimaryQAbility : SecondaryEAbility;
         if (!AbilityCanBeActivated(ability, ClientVariables, isPrimary)) return;
 
-        uint currentTick = TimeManager.LocalTick;
-
+        uint currentTick = TimeManager.Tick;
         switch (ability.Data.CooldownType)
         {
             case CooldownType.Instant:
@@ -148,8 +138,9 @@ public class Weapon : NetworkBehaviour
     {
         Ability ability = isPrimary ? PrimaryQAbility : SecondaryEAbility;
         if (!AbilityCanBeActivated(ability, ServerVariables, isPrimary)) return;
-        uint serverTick = TimeManager.LocalTick;
+        uint serverTick = TimeManager.Tick;
         uint clampedTick = tick > serverTick ? serverTick : tick;
+
         if (serverTick - clampedTick > MAX_TICK_DELAY)
             return;
 
@@ -168,16 +159,20 @@ public class Weapon : NetworkBehaviour
         }
     }
     [ObserversRpc]
-    private void ObserverActivate(bool isPrimary, uint tick)
+    private void ObserverActivate(int abilityID, byte[] jsonData, uint tick)
     {
-        if (isPrimary)
-        {
-            PrimaryQAbility.ObserverActivate(tick);
-        }
-        else
-        {
-            SecondaryEAbility.ObserverActivate(tick);
-        }
+        var abilityData = Registry.GetAbilityData(abilityID);
+        var ability = abilityData.CreateAbility();
+        ability.Initialize(this, abilityData);
+        ability.ObserverActivate(jsonData, tick);
+    }
+    [TargetRpc]
+    private void TargetActivate(NetworkConnection conn, int abilityID, byte[] jsonData, uint tick)
+    {
+        var abilityData = Registry.GetAbilityData(abilityID);
+        var ability = abilityData.CreateAbility();
+        ability.Initialize(this, abilityData);
+        ability.ObserverActivate(jsonData, tick);
     }
     private bool AbilityCanBeActivated(Ability ability, WeaponNetworkVariables variables, bool isPrimary)
     {
@@ -205,6 +200,10 @@ public class Weapon : NetworkBehaviour
         if (ability.Data.BlockOtherAbilities) abilityVariables.BlockAbilities = true;
         if (ability.Data.BlockSwapping) abilityVariables.BlockSwapping = true;
         if (ability.Data.InterruptAutoAttack) InterruptAttack();
+        if (isPrimary)
+            ClientVariables.PrimaryAbility = abilityVariables;
+        else
+            ClientVariables.SecondaryAbility = abilityVariables;
 
         if (isMovementAbility)
         {
@@ -214,6 +213,7 @@ public class Weapon : NetworkBehaviour
         {
             ability.ClientActivate(currentTick);
         }
+        var clientSendTime = Time.realtimeSinceStartup;
         ServerActivate(isPrimary, currentTick);
     }
     private void ServerActivateAbility(Ability ability, uint serverTick, bool isPrimary)
@@ -222,11 +222,33 @@ public class Weapon : NetworkBehaviour
         if (ability.Data.BlockAttacks) abilityVariables.BlockAttacks = true;
         if (ability.Data.BlockOtherAbilities) abilityVariables.BlockAbilities = true;
         if (ability.Data.BlockSwapping) abilityVariables.BlockSwapping = true;
+        if (isPrimary)
+            ServerVariables.PrimaryAbility = abilityVariables;
+        else
+            ServerVariables.SecondaryAbility = abilityVariables;
 
         if (ability is not MovementAbility)
         {
-            ability.ServerActivate(serverTick);
-            ObserverActivate(isPrimary, serverTick);
+            (ObserverType, byte[]) data = ability.ServerActivate(serverTick);
+            switch (data.Item1)
+            {
+                case ObserverType.None:
+                    Debug.Log("Returning Default");
+                    return;
+                case ObserverType.Observer:
+                    ObserverActivate(ability.Data.ID, data.Item2, serverTick);
+                    break;
+                case ObserverType.All:
+                    foreach (NetworkConnection conn in ServerManager.Clients.Values)
+                    {
+                        if (conn == Owner) continue;
+                        TargetActivate(conn, ability.Data.ID, data.Item2, serverTick);
+                    }
+                    break;
+                default:
+                    break;
+            }
+           
         }
     }
 
@@ -260,7 +282,8 @@ public class Weapon : NetworkBehaviour
     }
     public void AbilityComplete(Ability ability, bool isServer)
     {
-        var variables = isServer? ServerVariables : ClientVariables;
+        var variables = isServer ? ServerVariables : ClientVariables;
+
         if (ability == PrimaryQAbility)
         {
             variables.PrimaryAbility.BlockAttacks = false;
@@ -273,6 +296,11 @@ public class Weapon : NetworkBehaviour
             variables.SecondaryAbility.BlockAbilities = false;
             variables.SecondaryAbility.BlockSwapping = false;
         }
+
+        if (isServer)
+            ServerVariables = variables;
+        else
+            ClientVariables = variables;
     }
     public static Collider GetFirstHitLOS(Vector3 origin, Vector3 direction, Transform ignore, float distance, LayerMask HitLayers)
     {

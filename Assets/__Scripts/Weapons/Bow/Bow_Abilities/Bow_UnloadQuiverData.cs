@@ -1,7 +1,11 @@
-using FishNet.Connection;
-using FishNet.Managing.Timing;
 using System.Collections;
 using UnityEngine;
+
+public struct UnloadQuiverPacket
+{
+    public float Velocity;
+    public int[] Effects;
+}
 
 [CreateAssetMenu(menuName = "New Ability/Bow/UnloadQuiver")]
 public class Bow_UnloadQuiverData : AbilityData
@@ -36,52 +40,117 @@ public class Bow_UnloadQuiver : Ability
     private IEnumerator ClientDelayedFire()
     {
         yield return new WaitForSeconds(UnloadQuiverData.FireDelay);
-        uint fireTick = Bow.TimeManager.LocalTick;
-        FireVolley(fireTick, passedTime: 0f, isServer: false);
+        FireVolley(Bow.ArrowVelocity, Bow.ClientPendingEffects.ToArray(), 0f, NetworkRole.Owner);
         Weapon.AbilityComplete(this, false);
     }
 
-    public override void ServerActivate(uint tick)
+    public override (ObserverType, byte[]) ServerActivate(uint tick)
     {
         uint serverTick = Bow.TimeManager.LocalTick;
         uint clampedTick = tick > serverTick ? serverTick : tick;
-        if (serverTick - clampedTick > Bow.MAX_TICK_DELAY)
-            return;
+        if (serverTick - clampedTick > Weapon.MAX_TICK_DELAY)
+            return default;
 
         float latency = (float)Bow.TimeManager.TimePassed(clampedTick, allowNegative: false);
-        float maxPassedTimeSeconds = Bow.MAX_TICK_DELAY * (float)Bow.TimeManager.TickDelta;
+        float maxPassedTimeSeconds = Weapon.MAX_TICK_DELAY * (float)Weapon.TimeManager.TickDelta;
 
         float delayRemaining = Mathf.Max(0f, UnloadQuiverData.FireDelay - latency);
         float arrowPassedTime = Mathf.Clamp(latency - UnloadQuiverData.FireDelay, 0f, maxPassedTimeSeconds);
 
-        Weapon.StartCoroutine(ServerDelayedFire(tick, delayRemaining, arrowPassedTime));
+
+        Weapon.StartCoroutine(ServerDelayedFire(delayRemaining, arrowPassedTime));
+        byte[] bytes = Serializer.Serialize(new UnloadQuiverPacket { Velocity = Bow.ArrowVelocity, Effects = Bow.ServerPendingEffects.ToArray() });
+        return (ObserverType.All, bytes);
     }
 
-    private IEnumerator ServerDelayedFire(uint activationTick, float delayRemaining, float arrowPassedTime)
+    private IEnumerator ServerDelayedFire(float delayRemaining, float arrowPassedTime)
     {
         if (delayRemaining > 0f)
             yield return new WaitForSeconds(delayRemaining);
-        uint fireTick = Bow.TimeManager.LocalTick;
-        FireVolley(fireTick, arrowPassedTime, isServer: true);
+
+        FireVolley(Bow.ArrowVelocity, Bow.ServerPendingEffects.ToArray(), arrowPassedTime, NetworkRole.Server);
         Weapon.AbilityComplete(this, true);
     }
+    public override void ObserverActivate(byte[] bytes, uint tick)
+    {
+        var packet = Serializer.Deserialize<UnloadQuiverPacket>(bytes);
 
-    private void FireVolley(uint tick, float passedTime, bool isServer)
+        float latency = (float)Bow.TimeManager.TimePassed(tick, allowNegative: false);
+        float delayRemaining = Mathf.Max(0f, UnloadQuiverData.FireDelay - latency);
+        float arrowPassedTime = latency - UnloadQuiverData.FireDelay;
+
+        Weapon.StartCoroutine(ObserverDelayedFire(packet.Velocity, packet.Effects, delayRemaining, arrowPassedTime));
+    }
+    public IEnumerator ObserverDelayedFire(float velocity, int[] effects, float delayRemaining, float arrowPassedTime)
+    {
+        if (delayRemaining > 0f)
+            yield return new WaitForSeconds(delayRemaining);
+
+        FireVolley(velocity, effects, arrowPassedTime, NetworkRole.Observer);
+    }
+    private void FireVolley(float velocity, int[] effects, float passedTime, NetworkRole role)
     {
         int arrowsPerRow = Mathf.Max(1, UnloadQuiverData.ArrowCount / 2);
         for (int row = 0; row < 2; row++)
         {
             for (int i = 0; i < arrowsPerRow; i++)
             {
-                Vector3 dir = GetSpreadDirection(row, i, arrowsPerRow, isServer);
-                FireArrow(dir, tick, passedTime, (row == 1 && i == arrowsPerRow - 1), isServer);
+                Vector3 dir = GetSpreadDirection(row, i, arrowsPerRow, role);
+                bool isFinalArrow = (row == 1 && i == arrowsPerRow - 1);
+                FireArrow(dir, velocity, effects, isFinalArrow, passedTime, role);
             }
         }
     }
-
-    private Vector3 GetSpreadDirection(int row, int indexInRow, int arrowsPerRow, bool isServer)
+    private void FireArrow(Vector3 aimDir, float velocity, int[] effects, bool isFinalArrow, float passedTime,  NetworkRole role)
     {
-        Transform firePoint =isServer ? Bow.Player.Loadout.FPCam.ServerFirePoint : Bow.Player.Loadout.FPCam.ClientFirePoint;
+        Vector3 firePoint = Vector3.zero;
+        switch (role)
+        {
+            case NetworkRole.Owner:
+                firePoint = Bow.Player.Loadout.FPCam.ClientFirePoint.position;
+                break;
+            case NetworkRole.Server:
+                firePoint = Bow.Player.Loadout.FPCam.ServerFirePoint.position;
+                break;
+            case NetworkRole.Observer:
+                firePoint = Bow.Player.Loadout.TP_BowFirePoint.position;
+                break;
+        }
+        if (role == NetworkRole.Server)
+        {
+            float totalDamage = Bow.Player.Stats.GetDamage() * UnloadQuiverData.DamageMultiplier;
+            Bow.SpawnArrow(firePoint, aimDir, Bow.Player, velocity, totalDamage, effects, passedTime, isServer: true);
+            if (isFinalArrow)
+                Bow.ClearEffects(true);
+        }
+        else
+        {
+            Bow.SpawnArrow(firePoint, aimDir, null, velocity, 0f, effects, passedTime, isServer: false);
+            if (isFinalArrow)
+                Bow.ClearEffects(false);
+        }
+    }
+
+
+    private Vector3 GetSpreadDirection(int row, int indexInRow, int arrowsPerRow, NetworkRole role)
+    {
+        Transform firePoint;
+        switch (role)
+        {
+            case NetworkRole.Owner:
+                firePoint = Bow.Player.Loadout.FPCam.ClientFirePoint;
+                break;
+            case NetworkRole.Server:
+                firePoint = Bow.Player.Loadout.FPCam.ServerFirePoint;
+                break;
+            case NetworkRole.Observer:
+                firePoint = Bow.Player.Loadout.FPCam.ServerFirePoint;
+                break;
+            default:
+                Debug.LogError("Role Not Sent");
+                firePoint = null;
+                break;
+        }
         Vector3 baseDir = firePoint.forward;
         Vector3 up = firePoint.up;
         Vector3 right = firePoint.right;
@@ -90,35 +159,10 @@ public class Bow_UnloadQuiver : Ability
         float horizontalAngle = Mathf.Lerp(-UnloadQuiverData.XSpreadAngle * 0.5f, UnloadQuiverData.XSpreadAngle * 0.5f, horizontalT);
         float verticalAngle = row == 0 ? UnloadQuiverData.YSpreadAngle * 0.5f : -UnloadQuiverData.YSpreadAngle * 0.5f;
 
-        // Add random jitter on top of the deterministic grid position
         horizontalAngle += Random.Range(-UnloadQuiverData.RandomSpreadJitter, UnloadQuiverData.RandomSpreadJitter);
         verticalAngle += Random.Range(-UnloadQuiverData.RandomSpreadJitter, UnloadQuiverData.RandomSpreadJitter);
 
         Quaternion rot = Quaternion.AngleAxis(horizontalAngle, up) * Quaternion.AngleAxis(verticalAngle, right);
         return rot * baseDir;
-    }
-
-    private void FireArrow(Vector3 aimDir, uint tick, float passedTime, bool isFinalArrow, bool isServer)
-    {
-        Vector3 spawnPos = isServer? Bow.Player.Loadout.FPCam.ServerFirePoint.position : Bow.Player.Loadout.FPCam.ClientFirePoint.position;
-        float velocity = Bow.ArrowVelocity;
-        float totalDamage = Bow.Player.Stats.GetDamage() * UnloadQuiverData.DamageMultiplier;
-        if (isServer)
-        {
-            Bow.SpawnArrow(spawnPos, aimDir, Bow.Player, velocity, totalDamage, Bow.ServerPendingEffects.ToArray(), passedTime, isServer: true);
-            foreach (NetworkConnection conn in Weapon.ServerManager.Clients.Values)
-            {
-                if (conn == Weapon.Owner) continue;
-                Bow.AllTargetFireRPC(conn, totalDamage, velocity, tick, Bow.ServerPendingEffects.ToArray());
-            }
-            if (isFinalArrow)
-                Bow.ClearEffects(true);
-        }
-        else
-        {
-            Bow.SpawnArrow(spawnPos, aimDir, null, velocity, totalDamage, Bow.ClientPendingEffects.ToArray(), 0f, isServer: false);
-            if (isFinalArrow)
-                Bow.ClearEffects(false);
-        }
     }
 }

@@ -31,14 +31,10 @@ public class SnS_Heal : Ability
         SwordAndShield.QueueBAEffect(Data.ID, false);
     }
 
-    public override void ServerActivate(uint tick)
+    public override (ObserverType, byte[]) ServerActivate(uint tick)
     {
         Weapon.Player.Loadout.GetComponent<IDamageable>().Heal(SwordAndShield.Player.Stats.GetDamage() * HealData.HealPercentage);
         SwordAndShield.QueueBAEffect(Data.ID, true);
-    }
-
-    public override void ObserverActivate(uint tick)
-    {
-        SwordAndShield.QueueBAEffect(Data.ID, false);
+        return default;
     }
 }

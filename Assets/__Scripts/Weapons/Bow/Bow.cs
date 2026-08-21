@@ -7,6 +7,9 @@ public class Bow : Weapon
 {
     public int TestingLimb;
     public int TestingHandle;
+    internal bool FireEffectActive;
+    public GameObject FireEffect;
+    public List<GameObject> FireArrows;
 
     private BowData Data;
     private float ReloadSpeed;
@@ -119,7 +122,6 @@ public class Bow : Weapon
     {
         if (!ClientCooldown.IsReady || ClientVariables.PrimaryAbility.BlockAttacks || ClientVariables.SecondaryAbility.BlockAttacks)
             return;
-
         if (!IsCharging)
             IsCharging = true;
 
@@ -153,7 +155,7 @@ public class Bow : Weapon
         if (!ServerCooldown.IsReady || ServerVariables.PrimaryAbility.BlockAttacks || ServerVariables.SecondaryAbility.BlockAttacks)
             return;
 
-        uint serverTick = TimeManager.LocalTick;
+        uint serverTick = TimeManager.Tick;
         uint clampedTick = tick > serverTick ? serverTick : tick;
         if (serverTick - clampedTick > MAX_TICK_DELAY)
             return;
@@ -170,21 +172,19 @@ public class Bow : Weapon
         foreach (NetworkConnection conn in ServerManager.Clients.Values)
         {
             if (conn == Owner) continue;
-            AllTargetFireRPC(conn, totalDamage, chargedVelocity, clampedTick, ServerPendingEffects.ToArray());
+            FireTargetRPC(conn, totalDamage, chargedVelocity, ServerPendingEffects.ToArray(), clampedTick);
         }
         ClearEffects(isServer: true, clampedTick);
         ServerCooldown.StartAtTick(clampedTick, ReloadSpeed + 0.05f);
     }
 
     [TargetRpc]
-    public void AllTargetFireRPC(NetworkConnection conn,  float totalDamage, float velocity, uint tick, int[] effects)
+    public void FireTargetRPC(NetworkConnection conn, float totalDamage, float velocity, int[] effects, uint tick)
     {
-        uint ObserverTick = TimeManager.LocalTick;
-        uint clampedTick = tick > ObserverTick ? ObserverTick : tick;
-        float passedTime = (float)TimeManager.TimePassed(clampedTick, allowNegative: false);
+        float passedTime = (float)TimeManager.TimePassed(tick, allowNegative: false);
 
-        Vector3 spawnPos = Player.Loadout.TP_BowFirePoint.position;
-        Vector3 aimDir = Player.Loadout.TP_BowFirePoint.forward;
+        Vector3 spawnPos = Player.Loadout.FPCam.ServerFirePoint.position;
+        Vector3 aimDir = Player.Loadout.FPCam.ServerFirePoint.forward;
 
         SpawnArrow(spawnPos, aimDir, null, velocity, totalDamage, effects, passedTime, isServer: false);
     }
@@ -227,6 +227,19 @@ public class Bow : Weapon
             }
             ClientPendingAbilties.Clear();
             ClientPendingEffects.Clear();
+            if(FireEffectActive)
+            {
+                FireEffectActive = false;
+                FireEffect.SetActive(false);
+                foreach (var item in FireArrows)
+                {
+                    item.SetActive(false);
+                }
+            }
         }
     }
+
+    //Empty Data Classes For Serialization Compile
+    [ServerRpc]
+    private void UnloadQuiverPacket(UnloadQuiverPacket packet) { }
 }

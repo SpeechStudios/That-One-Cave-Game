@@ -27,9 +27,10 @@ public class Bow_TrippleShot : Ability
         Bow.StartCoroutine(FireSequence(tick, isServer: false));
     }
 
-    public override void ServerActivate(uint tick)
+    public override (ObserverType, byte[]) ServerActivate(uint tick)
     {
         Bow.StartCoroutine(FireSequence(tick, isServer: true));
+        return default;
     }
 
     private IEnumerator FireSequence(uint activationTick, bool isServer)
@@ -57,7 +58,7 @@ public class Bow_TrippleShot : Ability
         {
             uint serverTick = Bow.TimeManager.LocalTick;
             uint clampedTick = tick > serverTick ? serverTick : tick;
-            if (serverTick - clampedTick > Bow.MAX_TICK_DELAY)
+            if (serverTick - clampedTick > Weapon.MAX_TICK_DELAY)
                 return;
             float passedTime = (float)Bow.TimeManager.TimePassed(clampedTick, allowNegative: false);
 
@@ -65,7 +66,7 @@ public class Bow_TrippleShot : Ability
             foreach (NetworkConnection conn in Weapon.ServerManager.Clients.Values)
             {
                 if (conn == Weapon.Owner) continue;
-                Bow.AllTargetFireRPC(conn,  totalDamage, velocity, tick, Bow.ServerPendingEffects.ToArray());
+                Bow.FireTargetRPC(conn,  totalDamage, velocity,Bow.ServerPendingEffects.ToArray(), clampedTick);
             }
             if (isFinalArrow)
                 Bow.ClearEffects(true, clampedTick);

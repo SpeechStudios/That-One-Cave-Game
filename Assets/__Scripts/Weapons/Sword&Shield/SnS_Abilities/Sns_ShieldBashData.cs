@@ -28,14 +28,14 @@ public class Sns_ShieldBash : Ability
             clientCallback: (obj, point) => ClientApplyEffect(obj, point));
     }
 
-    public override void ServerActivate(uint tick)
+    public override (ObserverType, byte[]) ServerActivate(uint tick)
     {
         Vector3 origin = SwordAndShield.ShapeHitDetection.transform.position;
         SwordAndShield.ShapeHitDetection.TriggerSphere(origin, ShieldBashData.DelayBeforeCast, ShieldBashData.AreaRadius, isServer: true,
             serverCallback: (obj) => ServerApplyEffect(obj));
+        return default;
     }
 
-    public override void ObserverActivate(uint tick) { }
 
     private void ClientApplyEffect(GameObject target, Vector3 point)
     {

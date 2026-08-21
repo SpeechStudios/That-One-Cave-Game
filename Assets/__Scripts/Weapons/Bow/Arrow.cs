@@ -8,6 +8,7 @@ public class Arrow : MonoBehaviour
     public GameObject MyRend;
     public Transform ColliderPosition;
     public float ColliderRadius;
+    public GameObject FireEffect;
     internal float TotalDamage;
     internal float BaseDamage;
 
@@ -30,15 +31,18 @@ public class Arrow : MonoBehaviour
         TotalDamage = totalDamage;
         IsServer = isServer;
         Initialized = true;
-        MyRend.SetActive(true);
-        //MyRend.SetActive(!isServer);
+        //MyRend.SetActive(true);
+        MyRend.SetActive(!isServer);
         foreach (int i in effectArray)
         {
             var data = Registry.GetAbilityData(i);
             EffectArray.Add(data);
 
             if (!isServer)
-                data.SpawnInitalizeClientVisuals();
+            {
+                if (data is Bow_ExplosiveArrowData)
+                    FireEffect.SetActive(true);
+            }
         }
     }
 
@@ -82,7 +86,6 @@ public class Arrow : MonoBehaviour
     {
         if (Hit) return;
         if (!IsValidHit(other)) return;
-        transform.SetParent(other.transform);
 
         foreach (var data in EffectArray)
         {
@@ -107,6 +110,8 @@ public class Arrow : MonoBehaviour
         else
         {
             //VFX
+            if (other.GetComponent<IDamageable>() != null)
+                transform.SetParent(other.transform, true);
         }
         
         Hit = true;
@@ -132,6 +137,7 @@ public class Arrow : MonoBehaviour
         MyRend.SetActive(false);
         Initialized = false;
         EffectArray.Clear();
+        FireEffect.SetActive(false);
         ArrowPoolManager.Instance.Return(this);
     }
 }

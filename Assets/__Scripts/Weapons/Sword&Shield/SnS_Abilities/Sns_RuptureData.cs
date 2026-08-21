@@ -31,14 +31,14 @@ public class Sns_Rupture : Ability
             clientCallback: (obj, point) => ClientApplyDamage(obj, point));
     }
 
-    public override void ServerActivate(uint tick)
+    public override (ObserverType, byte[]) ServerActivate(uint tick)
     {
         Vector3 origin = SwordAndShield.ShapeHitDetection.transform.position;
         SwordAndShield.ShapeHitDetection.TriggerSphere(origin, RuptureData.DelayBeforeCast, RuptureData.SphereCastRadius, isServer: true,
             serverCallback: (obj) => ServerApplyDamage(obj));
+        return default;
     }
 
-    public override void ObserverActivate(uint tick) { }
 
     private void ClientApplyDamage(GameObject target, Vector3 point)
     {

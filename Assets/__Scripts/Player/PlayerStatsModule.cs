@@ -1,9 +1,7 @@
 using FishNet.Connection;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
-using Newtonsoft.Json;
 using System.Collections.Generic;
-using System.Text;
 using UnityEngine;
 
 [System.Serializable]
@@ -41,15 +39,15 @@ public class WeaponValues
     public float Damage;
     public float AttackSpeed;
 }
-public class StatPacket
+public struct StatPacket
 {
-    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public float Damage;
-    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public float CritChance;
-    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public float CritDamage;
-    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public float Armor;
-    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public float Health;
-    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public float MaxHealth;
-    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)] public float AttackSpeed;
+   public float Damage;
+   public float CritChance;
+   public float CritDamage;
+   public float Armor;
+   public float Health;
+   public float MaxHealth;
+   public float AttackSpeed;
 }
 
 public class PlayerStatsModule : NetworkBehaviour, IDamageable
@@ -120,7 +118,7 @@ public class PlayerStatsModule : NetworkBehaviour, IDamageable
         ServerValues.CritDamage = BaseCritDamage;
         ServerValues.Health.OnHealthChanged += () =>
         {
-            var packet = SerializePacket(new StatPacket { Health = ServerValues.Health.Value, MaxHealth = ServerValues.Health.MaxValue });
+            var packet = new StatPacket { Health = ServerValues.Health.Value, MaxHealth = ServerValues.Health.MaxValue };
             TargetSync(Owner, packet);
             ObserverSync(Mathf.Round(ServerValues.Health.Value / ServerValues.Health.MaxValue * 100f) / 100f);
         };
@@ -141,7 +139,7 @@ public class PlayerStatsModule : NetworkBehaviour, IDamageable
     {
         damage = Mathf.Round(damage);
         ServerValues.Health.TakeDamage(damage);
-        var packet = SerializePacket(new StatPacket { Health = ServerValues.Health.Value, MaxHealth = ServerValues.Health.MaxValue });
+        var packet = new StatPacket { Health = ServerValues.Health.Value, MaxHealth = ServerValues.Health.MaxValue };
         TargetSync(Owner, packet);
         ObserverSync(Mathf.Round(ServerValues.Health.Value / ServerValues.Health.MaxValue * 100f) / 100f);
     }
@@ -154,7 +152,7 @@ public class PlayerStatsModule : NetworkBehaviour, IDamageable
     public void Heal(float value)
     {
         ServerValues.Health.Heal(value);
-        var packet = SerializePacket(new StatPacket { Health = ServerValues.Health.Value, MaxHealth = ServerValues.Health.MaxValue });
+        var packet = new StatPacket { Health = ServerValues.Health.Value, MaxHealth = ServerValues.Health.MaxValue };
         TargetSync(Owner, packet);
         ObserverSync(Mathf.Round(ServerValues.Health.Value / ServerValues.Health.MaxValue * 100f) / 100f);
     }
@@ -195,9 +193,8 @@ public class PlayerStatsModule : NetworkBehaviour, IDamageable
     }
 
     [TargetRpc]
-    private void TargetSync(NetworkConnection conn, byte[] json)
+    private void TargetSync(NetworkConnection conn, StatPacket packet)
     {
-        var packet = DeserializePacket(json);
         ClientValues.Health.Value = packet.Health;
         ClientValues.Health.MaxValue = packet.MaxHealth;
         PlayerUI.UI_PlayerOverlay.UpdateHealth(ClientValues.Health.Value, ClientValues.Health.MaxValue);
@@ -206,17 +203,5 @@ public class PlayerStatsModule : NetworkBehaviour, IDamageable
     private void ObserverSync(float healthRatio)
     {
         TP_HealthBar.Show(healthRatio);
-    }
-    public static byte[] SerializePacket(StatPacket packet)
-    {
-        string json = JsonConvert.SerializeObject(packet);
-        byte[] bytesToEncode = Encoding.UTF8.GetBytes(json);
-        return bytesToEncode;
-    }
-    public static StatPacket DeserializePacket(byte[] json)
-    {
-        string decodedText = Encoding.UTF8.GetString(json);
-        StatPacket packet = JsonConvert.DeserializeObject<StatPacket>(decodedText);
-        return packet;
     }
 }
