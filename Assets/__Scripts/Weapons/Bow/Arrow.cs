@@ -9,6 +9,7 @@ public class Arrow : MonoBehaviour
     public Transform ColliderPosition;
     public float ColliderRadius;
     public GameObject FireEffect;
+    public GameObject PoisonEffect;
     internal float TotalDamage;
     internal float BaseDamage;
 
@@ -42,6 +43,8 @@ public class Arrow : MonoBehaviour
             {
                 if (data is Bow_ExplosiveArrowData)
                     FireEffect.SetActive(true);
+                if (data is Bow_PoisonArrowData)
+                    PoisonEffect.SetActive(true);
             }
         }
     }
@@ -91,7 +94,7 @@ public class Arrow : MonoBehaviour
         {
             if(IsServer)
             {
-                data.OnServerHit(new HitContext { HitPoint = hitPoint, HitEntity = other.transform, Source = Source }, ref TotalDamage);
+                data.OnServerHit(new HitContext { HitPoint = hitPoint, HitEntity = other.transform, Source = Source, Effects = EffectArray }, ref TotalDamage);
             }
             else
             {
@@ -138,6 +141,7 @@ public class Arrow : MonoBehaviour
         Initialized = false;
         EffectArray.Clear();
         FireEffect.SetActive(false);
+        PoisonEffect.SetActive(false);
         ArrowPoolManager.Instance.Return(this);
     }
 }

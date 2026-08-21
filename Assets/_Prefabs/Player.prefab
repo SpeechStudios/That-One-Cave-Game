@@ -1120,7 +1120,7 @@ MonoBehaviour:
   _controllerMovementSettings:
     EnableTeleport: 0
     TeleportThreshold: 0
-    AdaptiveInterpolationValue: 4
+    AdaptiveInterpolationValue: 0
     InterpolationValue: 2
     SmoothedProperties: 3
     SnapNonSmoothedProperties: 0

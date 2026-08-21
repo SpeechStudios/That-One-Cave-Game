@@ -1,5 +1,6 @@
 using FishNet.Connection;
 using System.Collections;
+using System.Linq;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "New Ability/Bow/TripleShot")]
@@ -62,18 +63,18 @@ public class Bow_TrippleShot : Ability
                 return;
             float passedTime = (float)Bow.TimeManager.TimePassed(clampedTick, allowNegative: false);
 
-            Bow.SpawnArrow(spawnPos, aimDir, Weapon.Player, velocity, totalDamage, Bow.ServerPendingEffects.ToArray(), passedTime, isServer: true);
+            Bow.SpawnArrow(spawnPos, aimDir, Weapon.Player, velocity, totalDamage, Bow.ServerPendingEffects.Select(x => x.Item2).ToArray(), passedTime, isServer: true);
             foreach (NetworkConnection conn in Weapon.ServerManager.Clients.Values)
             {
                 if (conn == Weapon.Owner) continue;
-                Bow.FireTargetRPC(conn,  totalDamage, velocity,Bow.ServerPendingEffects.ToArray(), clampedTick);
+                Bow.FireTargetRPC(conn,  totalDamage, velocity,Bow.ServerPendingEffects.Select(x => x.Item2).ToArray(), clampedTick);
             }
             if (isFinalArrow)
                 Bow.ClearEffects(true, clampedTick);
         }
         else
         {
-            Bow.SpawnArrow(spawnPos, aimDir, null, velocity, totalDamage, Bow.ClientPendingEffects.ToArray(), 0f, isServer: false);
+            Bow.SpawnArrow(spawnPos, aimDir, null, velocity, totalDamage, Bow.ClientPendingEffects.Select(x => x.Item2).ToArray(), 0f, isServer: false);
             if (isFinalArrow)
                 Bow.ClearEffects(false);
         }

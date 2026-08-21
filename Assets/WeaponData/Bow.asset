@@ -17,7 +17,7 @@ MonoBehaviour:
   - MaterialType: 1
     BaseAttackSpeed: 1
     BaseDamage: 10
-    PrimaryQAbility: {fileID: 11400000, guid: fe6791c7ea21dc84daf3ad5df3912cd4, type: 2}
+    PrimaryQAbility: {fileID: 11400000, guid: daf6452543915544f997af32ff4390c5, type: 2}
   - MaterialType: 2
     BaseAttackSpeed: 1.2
     BaseDamage: 14
@@ -30,7 +30,7 @@ MonoBehaviour:
   - MaterialType: 1
     BonusDamage: 0
     ArrowVelocity: 40
-    SecondaryEAbility: {fileID: 11400000, guid: daf6452543915544f997af32ff4390c5, type: 2}
+    SecondaryEAbility: {fileID: 11400000, guid: fe6791c7ea21dc84daf3ad5df3912cd4, type: 2}
   - MaterialType: 2
     BonusDamage: 4
     ArrowVelocity: 30

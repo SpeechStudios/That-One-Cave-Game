@@ -1,15 +1,14 @@
 using FishNet.Connection;
 using FishNet.Object;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using static UnityEditor.Progress;
 
 public class Bow : Weapon
 {
     public int TestingLimb;
     public int TestingHandle;
-    internal bool FireEffectActive;
-    public GameObject FireEffect;
-    public List<GameObject> FireArrows;
 
     private BowData Data;
     private float ReloadSpeed;
@@ -17,12 +16,12 @@ public class Bow : Weapon
 
     private float CurrentCharge;
     private bool IsCharging;
+    public bool EffectActive() => ClientPendingEffects.Count > 0;
+    public BowEffect BowEffect;
+    public List<ArrowEffect> ArrowEffects;
 
-    internal List<Ability> ClientPendingAbilties = new();
-    internal List<int> ClientPendingEffects = new();
-
-    internal List<Ability> ServerPendingAbilties = new();
-    internal List<int> ServerPendingEffects = new();
+    internal List<(Ability, int)> ClientPendingEffects = new();
+    internal List<(Ability, int)> ServerPendingEffects = new();
 
     public override void Initalize(PlayerModule player, int[] materialArray, int index, NetworkRole role)
     {
@@ -140,8 +139,7 @@ public class Bow : Weapon
 
         Vector3 spawnPos = Player.Loadout.FPCam.ClientFirePoint.position;
         Vector3 aimDir = Player.Loadout.FPCam.ClientFirePoint.forward;
-
-        SpawnArrow(spawnPos, aimDir, Player, chargedVelocity, 0, ClientPendingEffects.ToArray(), 0f, isServer: false);
+        SpawnArrow(spawnPos, aimDir, Player, chargedVelocity, 0, ClientPendingEffects.Select(x => x.Item2).ToArray(), 0f, isServer: false);
         ClearEffects(isServer: false);
         ClientCooldown.Start(ReloadSpeed + 0.05f);
 
@@ -168,11 +166,11 @@ public class Bow : Weapon
         float chargedVelocity = ArrowVelocity * charge;
         float totalDamage = Player.Stats.GetDamage() * charge;
 
-        SpawnArrow(spawnPos, aimDir, Player, chargedVelocity, totalDamage, ServerPendingEffects.ToArray(), passedTime, isServer: true);
+        SpawnArrow(spawnPos, aimDir, Player, chargedVelocity, totalDamage, ServerPendingEffects.Select(x => x.Item2).ToArray(), passedTime, isServer: true);
         foreach (NetworkConnection conn in ServerManager.Clients.Values)
         {
             if (conn == Owner) continue;
-            FireTargetRPC(conn, totalDamage, chargedVelocity, ServerPendingEffects.ToArray(), clampedTick);
+            FireTargetRPC(conn, totalDamage, chargedVelocity, ServerPendingEffects.Select(x => x.Item2).ToArray(), clampedTick);
         }
         ClearEffects(isServer: true, clampedTick);
         ServerCooldown.StartAtTick(clampedTick, ReloadSpeed + 0.05f);
@@ -192,16 +190,36 @@ public class Bow : Weapon
     public void QueueEffect(Ability ability, int abilityID, bool isServer)
     {
         var pendingEffects = isServer ? ServerPendingEffects : ClientPendingEffects;
-        var pendingAbilities = isServer ? ServerPendingAbilties : ClientPendingAbilties;
+        bool isEnabled;
 
-        Toggle(pendingEffects, abilityID);
-        Toggle(pendingAbilities, ability);
-    }
+        if (!pendingEffects.Remove((ability, abilityID)))
+        {
+            pendingEffects.Add((ability, abilityID));
+            isEnabled = true;
+        }
+        else
+        {
+            isEnabled = false;
+        }
 
-    private static void Toggle<T>(ICollection<T> collection, T item)
-    {
-        if (!collection.Remove(item))
-            collection.Add(item);
+        if (!isServer)
+        {
+            BowEffectType? effectType = ability switch
+            {
+                Bow_ExplosiveArrow => BowEffectType.Fire,
+                Bow_PoisonArrow => BowEffectType.Poison,
+                Bow_JumpShot => BowEffectType.Wind,
+                _ => null
+            };
+
+            if (effectType.HasValue)
+            {
+                BowEffect.Toggle(effectType.Value, isEnabled);
+
+                foreach (var arrow in ArrowEffects)
+                    arrow.Toggle(effectType.Value, isEnabled);
+            }
+        }
     }
     public void SpawnArrow(Vector3 pos, Vector3 dir, PlayerModule source, float velocity, float totalDamage, int[] EffectArray, float passedTime, bool isServer)
     {
@@ -212,30 +230,27 @@ public class Bow : Weapon
     {
         if (isServer)
         {
-            foreach(var ability in ServerPendingAbilties)
+            foreach (var ability in ServerPendingEffects.Select(x => x.Item1))
             {
                 ServerTriggerCooldown(tick, ability);
             }
-            ServerPendingAbilties.Clear();
             ServerPendingEffects.Clear();
         }
         else
         {
-            foreach (var ability in ClientPendingAbilties)
+            foreach (var ability in ServerPendingEffects.Select(x => x.Item1))
             {
                 ClientTriggerCooldown(ability);
             }
-            ClientPendingAbilties.Clear();
-            ClientPendingEffects.Clear();
-            if(FireEffectActive)
+            if (EffectActive())
             {
-                FireEffectActive = false;
-                FireEffect.SetActive(false);
-                foreach (var item in FireArrows)
+                BowEffect.Clear();
+                foreach (var arrowEffect in ArrowEffects)
                 {
-                    item.SetActive(false);
+                    arrowEffect.Clear();
                 }
             }
+            ClientPendingEffects.Clear();
         }
     }
 

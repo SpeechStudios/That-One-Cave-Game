@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Linq;
 using UnityEngine;
 
 public struct UnloadQuiverPacket
@@ -40,7 +41,7 @@ public class Bow_UnloadQuiver : Ability
     private IEnumerator ClientDelayedFire()
     {
         yield return new WaitForSeconds(UnloadQuiverData.FireDelay);
-        FireVolley(Bow.ArrowVelocity, Bow.ClientPendingEffects.ToArray(), 0f, NetworkRole.Owner);
+        FireVolley(Bow.ArrowVelocity, Bow.ClientPendingEffects.Select(x => x.Item2).ToArray(), 0f, NetworkRole.Owner);
         Weapon.AbilityComplete(this, false);
     }
 
@@ -59,7 +60,7 @@ public class Bow_UnloadQuiver : Ability
 
 
         Weapon.StartCoroutine(ServerDelayedFire(delayRemaining, arrowPassedTime));
-        byte[] bytes = Serializer.Serialize(new UnloadQuiverPacket { Velocity = Bow.ArrowVelocity, Effects = Bow.ServerPendingEffects.ToArray() });
+        byte[] bytes = Serializer.Serialize(new UnloadQuiverPacket { Velocity = Bow.ArrowVelocity, Effects = Bow.ServerPendingEffects.Select(x => x.Item2).ToArray() });
         return (ObserverType.All, bytes);
     }
 
@@ -68,7 +69,7 @@ public class Bow_UnloadQuiver : Ability
         if (delayRemaining > 0f)
             yield return new WaitForSeconds(delayRemaining);
 
-        FireVolley(Bow.ArrowVelocity, Bow.ServerPendingEffects.ToArray(), arrowPassedTime, NetworkRole.Server);
+        FireVolley(Bow.ArrowVelocity, Bow.ServerPendingEffects.Select(x => x.Item2).ToArray(), arrowPassedTime, NetworkRole.Server);
         Weapon.AbilityComplete(this, true);
     }
     public override void ObserverActivate(byte[] bytes, uint tick)
@@ -125,7 +126,7 @@ public class Bow_UnloadQuiver : Ability
         }
         else
         {
-            Bow.SpawnArrow(firePoint, aimDir, null, velocity, 0f, effects, passedTime, isServer: false);
+            Bow.SpawnArrow(firePoint, aimDir, Bow.Player, velocity, 0f, effects, passedTime, isServer: false);
             if (isFinalArrow)
                 Bow.ClearEffects(false);
         }

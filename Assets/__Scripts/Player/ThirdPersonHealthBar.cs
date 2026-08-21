@@ -29,7 +29,7 @@ public class ThirdPersonHealthBar : MonoBehaviour
         if (Controller == null) return;
 
         float camY = MainCam != null ? MainCam.transform.eulerAngles.y : 0f;
-        HealthBar.transform.SetPositionAndRotation(Controller.SmoothedVisual.transform.position, Quaternion.Euler(0f, camY, 0f));
+        HealthBar.transform.SetPositionAndRotation(Controller.SmoothedVisual.transform.position + new Vector3(0,0.5f,0), Quaternion.Euler(0f, camY, 0f));
         HealthBarActiveTimer -= Time.deltaTime;
 
         if (HealthBarActiveTimer <= 0)

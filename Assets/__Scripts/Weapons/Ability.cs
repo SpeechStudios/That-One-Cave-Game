@@ -1,9 +1,12 @@
+
+using System.Collections.Generic;
 using UnityEngine;
 public class HitContext
 {
     public Vector3 HitPoint;
     public Transform HitEntity;
     public PlayerModule Source;
+    public List<AbilityData> Effects = new();
 }
 public enum CooldownType { Instant, TogglePending };
 public abstract class AbilityData : ScriptableObject
